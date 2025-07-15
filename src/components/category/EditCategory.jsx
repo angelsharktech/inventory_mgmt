@@ -21,16 +21,43 @@ const style = {
   minWidth: 400,
 };
 
-const EditCategory = ({ edit, data, handleCloseEdit }) => {
+const EditCategory = ({ edit, data, handleCloseEdit ,refresh }) => {
+  
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
+    slug:"",
     description: "",
     parent: "",
   });
 
   // Pre-fill form when modal opens
- useEffect(() => {
+//  useEffect(() => {
+//   const fetchCategories = async () => {
+//     try {
+//       const res = await getAllCategories();
+//       const parentsOnly = res.data.filter((cat) => cat.parent === null);
+//       setCategories(parentsOnly);
+
+//       if (data) {
+//         // Find the parent category by name to get its _id
+//         const matchedParent = parentsOnly.find(cat => cat.name === data.parent);
+
+//         setFormData({
+//           name: data.name || "",
+//           description: data.description || "",
+//           parent: matchedParent?._id || "", // get _id if matched
+//         });
+//       }
+//     } catch (err) {
+//       console.error("Error loading categories", err);
+//     }
+//   };
+
+//   fetchCategories();
+// }, [data]);
+
+useEffect(() => {
   const fetchCategories = async () => {
     try {
       const res = await getAllCategories();
@@ -38,13 +65,10 @@ const EditCategory = ({ edit, data, handleCloseEdit }) => {
       setCategories(parentsOnly);
 
       if (data) {
-        // Find the parent category by name to get its _id
-        const matchedParent = parentsOnly.find(cat => cat.name === data.parent);
-
         setFormData({
           name: data.name || "",
           description: data.description || "",
-          parent: matchedParent?._id || "", // get _id if matched
+          parent: data.parent?._id || "", // access parent._id directly
         });
       }
     } catch (err) {
@@ -55,7 +79,6 @@ const EditCategory = ({ edit, data, handleCloseEdit }) => {
   fetchCategories();
 }, [data]);
 
-
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -64,12 +87,21 @@ const EditCategory = ({ edit, data, handleCloseEdit }) => {
   };
 
   const handleUpdate = async () => {
-    try {
-    const result = await updateCategory()
-    } catch (error) {
-      console.error("Update failed", error);
-    }
-  };
+  try {
+    const payload = {
+      ...formData,
+      slug:formData.name,
+      parent: formData.parent === "" ? null : formData.parent, // convert "" to null
+    };
+
+    const result = await updateCategory(data.id, payload);
+    refresh();
+    handleCloseEdit(); // close modal after successful update
+  } catch (error) {
+    console.error("Update failed", error);
+  }
+};
+
 
   return (
     <Modal open={edit} onClose={handleCloseEdit}>
@@ -102,15 +134,6 @@ const EditCategory = ({ edit, data, handleCloseEdit }) => {
           onChange={handleChange}
           margin="normal"
         />
-
-        {/* <TextField
-          fullWidth
-          label="Description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          margin="normal"
-        /> */}
 
         <Box mt={3} display="flex" justifyContent="flex-end">
           <Button onClick={handleCloseEdit} sx={{ mr: 2 }}>

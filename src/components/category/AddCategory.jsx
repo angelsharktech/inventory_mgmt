@@ -27,7 +27,7 @@ const style = {
   minWidth: 350,
 };
 
-const AddCategory = ({ open, handleClose }) => {
+const AddCategory = ({ open, handleClose ,refresh }) => {
   const [categories, setCategories] = useState([]);
   const [main, setMain] = useState(false);
   const [formData, setFormData] = useState({
@@ -106,12 +106,11 @@ const AddCategory = ({ open, handleClose }) => {
           parent: formData.parent,
         };
       }
-      console.log("Sending:", payload);
       const res = await addCategories(payload);
-      console.log(res);
       if (res) {
         setSnackbarMessage("Category Added!");
         setSnackbarOpen(true);
+        refresh();
         handleClose();
       }
     } catch (error) {

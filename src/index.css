@@ -72,3 +72,30 @@ html, body {
   overflow: hidden;
   height: 100%;
 }
+/* Hide from screen, but show on print */
+.barcode-print {
+  display: none;
+}
+
+/* Only show the barcode when printing */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .barcode-print,
+  .barcode-print * {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .barcode-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm; /* For thermal printer size */
+    padding: 10px;
+    text-align: center;
+    background: white;
+  }
+}

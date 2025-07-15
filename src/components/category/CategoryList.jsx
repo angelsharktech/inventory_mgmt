@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { getCategoryTree } from "../../services/CategoryService";
+import { getAllCategories, getCategoryTree } from "../../services/CategoryService";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
 
@@ -30,37 +30,62 @@ const CategoryList = () => {
   const handleCloseEdit = () => setEdit(false);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await getCategoryTree();
-        if (res.success) {
-          const flattened = [];
-
-          res.data.forEach((parent) => {
-            if (parent.children.length === 0) {
-              // If no children, push parent as standalone
-              flattened.push({ name: parent.name, parent: "-" });
-            } else {
-              parent.children.forEach((child) => {
-                flattened.push({ name: child.name, parent: parent.name });
-              });
-            }
-          });
-
-          setRows(flattened);
-        }
-      } catch (err) {
-        console.error("Error loading categories", err);
-      }
-    };
-
     fetchCategories();
   }, []);
+// const fetchCategories = async () => {
+//   try {
+//     const res = await getAllCategories();
+//     if (res.success) {
+//       const flattened = [];
+
+//       res.data.forEach((cat) => {
+//         flattened.push({
+//           id: cat._id,
+//           name: cat.name,
+//           description: cat.description,
+//           parent: cat.parent && typeof cat.parent === "object"
+//             ? { _id: cat.parent._id, name: cat.parent.name }
+//             : null,
+//         });
+//       });
+
+//       setRows(flattened);
+//     }
+//   } catch (err) {
+//     console.error("Error loading categories", err);
+//   }
+// };
+
+const fetchCategories = async () => {
+  try {
+    const res = await getAllCategories();
+    if (res.success) {
+      const flattened = [];
+
+      res.data
+        .filter(cat => cat.parent) // ✅ Only include categories with a parent
+        .forEach((cat) => {
+          flattened.push({
+            id: cat._id,
+            name: cat.name,
+            description: cat.description,
+            parent:
+              typeof cat.parent === "object"
+                ? { _id: cat.parent._id, name: cat.parent.name }
+                : null,
+          });
+        });
+
+      setRows(flattened);
+    }
+  } catch (err) {
+    console.error("Error loading categories", err);
+  }
+};
 
   const handleEdit = (rowData) => {
-    console.log("Edit clicked for:", rowData);
     setData(rowData);
-    setEdit(true)
+    setEdit(true);
   };
 
   const handleDelete = (id) => {
@@ -107,13 +132,13 @@ const CategoryList = () => {
                 <TableRow key={index}>
                   <TableCell>{row.name}</TableCell>
                   <TableCell>
-                    {row.parent !== "-" ? <>{row.parent}</> : "-"}
+                    {row.parent && typeof row.parent === "object"
+                      ? row.parent.name
+                      : "-"}
                   </TableCell>
+
                   <TableCell align="center">
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleEdit(row.id)}
-                    >
+                    <IconButton color="primary" onClick={() => handleEdit(row)}>
                       <EditIcon />
                     </IconButton>
                   </TableCell>
@@ -132,8 +157,12 @@ const CategoryList = () => {
         </TableContainer>
       </Box>
 
-      <AddCategory open={open} handleClose={handleClose}/>
-      <EditCategory edit={edit} data={data} handleCloseEdit={handleCloseEdit} />
+      <AddCategory open={open} handleClose={handleClose} refresh={fetchCategories} />
+      <EditCategory 
+      edit={edit} 
+      data={data} 
+      handleCloseEdit={handleCloseEdit} 
+      refresh={fetchCategories}/>
     </>
   );
 };

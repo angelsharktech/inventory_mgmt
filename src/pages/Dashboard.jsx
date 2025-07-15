@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import Category from "../components/Category";
 import LogOut from "../components/LogOut";
+import Product from "../components/Product";
 
 const Item = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -276,6 +277,7 @@ const Dashboard = () => {
         return <Category />;
 
       case "Product":
+        return <Product />
 
       case "Purchase Bill":
 

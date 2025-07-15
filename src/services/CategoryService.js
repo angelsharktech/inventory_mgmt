@@ -1,7 +1,6 @@
 // src/services/CategoryService.js
 import axios from "axios";
 
-// Replace this with your actual local server URL or .env variable
 const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/categories`;
 
 const getAuthHeader = () => {
@@ -45,7 +44,7 @@ export const addCategories = async (categoryData) => {
 
 export const updateCategory = async (id, payload) => {
  try {
-     const response = await axios.put(`${BASE_URL}/${id}`, payload, getAuthHeader());
+     const response = await axios.put(`${BASE_URL}/${id}`, payload, getAuthHeader());     
      return response.data;
  } catch (error) {
     throw error;
