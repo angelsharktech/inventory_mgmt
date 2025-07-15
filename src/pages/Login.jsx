@@ -1,0 +1,140 @@
+import React, { useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Grid,
+  Paper,
+  Snackbar,
+  TextField,
+  Typography,
+} from "@mui/material";
+import invoice from "../assets/invoice.jpg";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../services/UserService";
+
+const Login = () => {
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+    const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const res = await loginUser(credentials);
+      if (res) {
+        // console.log("Login successful", res);
+        localStorage.setItem("token", res.token); // store token if needed
+        setSnackbarMessage("Login successful!");
+        setShowSnackbar(true);
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
+      }
+    } catch (err) {
+      setSnackbarMessage(err.error);
+      setShowSnackbar(true);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        height: "100vh",
+        backgroundImage: `url(${invoice})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "left",
+        // p: 2,
+        overflow: "hidden",
+      }}
+    >
+      <Paper
+        elevation={8}
+        sx={{
+          p: 4,
+          maxWidth: 500,
+          width: "50%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          marginLeft: "10%",
+          borderRadius: 5,
+          //   marginTop: "1%",
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Login
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={credentials.email}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={credentials.password}
+              onChange={handleChange}
+            />
+          </Grid>
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Button
+              //   fullWidth
+              variant="contained"
+              color="primary"
+              onClick={handleSubmit}
+              sx={{ mt: "10%" }}
+            >
+              Login
+            </Button>
+          </Grid>
+
+          <Grid item xs={12} textAlign="right" mt={"3%"}>
+            <Link
+              to="/register"
+              style={{ textDecoration: "none", color: "#1976d2" }}
+            >
+              No Account? Register Here
+            </Link>
+          </Grid>
+        </Grid>
+      </Paper>
+      <Snackbar
+        open={showSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setShowSnackbar(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Login successful!" ? "success" : "error"
+          }
+          onClose={() => setShowSnackbar(false)}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default Login;
