@@ -1,8 +1,11 @@
 import React from 'react'
+import VendorList from './vendors/VendorList'
 
 const Vendors = () => {
   return (
-    <div>Vendors</div>
+   <>
+   <VendorList />
+   </>
   )
 }
 

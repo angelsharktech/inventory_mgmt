@@ -21,8 +21,8 @@ import { useNavigate } from 'react-router-dom';
 const Registration = () => {
   const [step, setStep] = useState(0); // 0: Personal, 1: Company, 2: Bank
 
-  const [positions, setPositions] = useState([]);
   const [organizations, setOrganizations] = useState([]);
+  const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -61,6 +61,7 @@ const navigate = useNavigate();
           getAllOrganization(),
           getAllRoles(),
         ]);
+        
         setPositions(posData);
         setOrganizations(orgData);
         setRoles(roleData);

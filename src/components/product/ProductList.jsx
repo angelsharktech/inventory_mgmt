@@ -39,9 +39,9 @@ const ProductList = () => {
   const [code, setCode] = useState();
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const openExportMenu = Boolean(anchorEl);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -92,12 +92,12 @@ const ProductList = () => {
     setSearchQuery(e.target.value);
   };
 
+  
   const filteredProducts = products.data?.filter(
     (prod) =>
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prod.sku?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -113,7 +113,7 @@ const ProductList = () => {
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={2}
+          mb={2}    
         >
           <Typography variant="h4" fontWeight={600}>
             Products
@@ -162,8 +162,9 @@ const ProductList = () => {
           </MenuItem>
         </Menu>
 
-        <TableContainer component={Paper}>
-          <Table>
+       {/* <Box > */}
+  <TableContainer component={Paper} sx={{width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" } , overflowX: "auto" }}>
+    <Table sx={{ minWidth: 1000 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
@@ -236,6 +237,7 @@ const ProductList = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        {/* </Box> */}
       </Box>
 
       <Snackbar

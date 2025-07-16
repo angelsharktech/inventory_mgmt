@@ -23,6 +23,7 @@ import {
 import Category from "../components/Category";
 import LogOut from "../components/LogOut";
 import Product from "../components/Product";
+import Customer from "../components/Customer";
 
 const Item = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -273,6 +274,9 @@ const Dashboard = () => {
       case "Vendors":
         return <Vendors />;
 
+      case "Customer":
+        return <Customer />;
+
       case "Category":
         return <Category />;
 
@@ -285,8 +289,6 @@ const Dashboard = () => {
 
       case "Income Tax Reports":
 
-      case "LogOut":
-        return <LogOut />
         
       default:
         return <h2></h2>;

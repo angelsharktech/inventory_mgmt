@@ -12,10 +12,16 @@ import {
   IconButton,
   Stack,
   Button,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { getAllCategories, getCategoryTree } from "../../services/CategoryService";
+import {
+  deleteCategory,
+  getAllCategories,
+  getCategoryTree,
+} from "../../services/CategoryService";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
 
@@ -24,6 +30,8 @@ const CategoryList = () => {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState();
   const [edit, setEdit] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -32,65 +40,77 @@ const CategoryList = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
-// const fetchCategories = async () => {
-//   try {
-//     const res = await getAllCategories();
-//     if (res.success) {
-//       const flattened = [];
+  // const fetchCategories = async () => {
+  //   try {
+  //     const res = await getAllCategories();
+  //     if (res.success) {
+  //       const flattened = [];
 
-//       res.data.forEach((cat) => {
-//         flattened.push({
-//           id: cat._id,
-//           name: cat.name,
-//           description: cat.description,
-//           parent: cat.parent && typeof cat.parent === "object"
-//             ? { _id: cat.parent._id, name: cat.parent.name }
-//             : null,
-//         });
-//       });
+  //       res.data.forEach((cat) => {
+  //         flattened.push({
+  //           id: cat._id,
+  //           name: cat.name,
+  //           description: cat.description,
+  //           parent: cat.parent && typeof cat.parent === "object"
+  //             ? { _id: cat.parent._id, name: cat.parent.name }
+  //             : null,
+  //         });
+  //       });
 
-//       setRows(flattened);
-//     }
-//   } catch (err) {
-//     console.error("Error loading categories", err);
-//   }
-// };
+  //       setRows(flattened);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error loading categories", err);
+  //   }
+  // };
 
-const fetchCategories = async () => {
-  try {
-    const res = await getAllCategories();
-    if (res.success) {
-      const flattened = [];
+  const fetchCategories = async () => {
+    try {
+      const res = await getAllCategories();
+      if (res.success) {
+        const flattened = [];
 
-      res.data
-        .filter(cat => cat.parent) // ✅ Only include categories with a parent
-        .forEach((cat) => {
-          flattened.push({
-            id: cat._id,
-            name: cat.name,
-            description: cat.description,
-            parent:
-              typeof cat.parent === "object"
-                ? { _id: cat.parent._id, name: cat.parent.name }
-                : null,
+        res.data
+          .filter((cat) => cat.parent) // ✅ Only include categories with a parent
+          .forEach((cat) => {
+            flattened.push({
+              id: cat._id,
+              name: cat.name,
+              slug: cat.slug,
+              description: cat.description,
+              parent:
+                typeof cat.parent === "object"
+                  ? { _id: cat.parent._id, name: cat.parent.name }
+                  : null,
+            });
           });
-        });
 
-      setRows(flattened);
+        setRows(flattened);
+      }
+    } catch (err) {
+      console.error("Error loading categories", err);
     }
-  } catch (err) {
-    console.error("Error loading categories", err);
-  }
-};
+  };
 
   const handleEdit = (rowData) => {
     setData(rowData);
     setEdit(true);
   };
 
-  const handleDelete = (id) => {
-    console.log("Delete clicked for:", id);
-    // Delete logic or confirmation here
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        const res = await deleteCategory(id);
+        if (res) {
+          setSnackbarMessage("Category Deleted!");
+          setSnackbarOpen(true);
+          fetchCategories(); // Refresh the list
+        }
+      } catch (error) {
+        console.error("Error deleting category", error);
+        alert("Failed to delete category.");
+      }
+    }
   };
   return (
     <>
@@ -157,12 +177,34 @@ const fetchCategories = async () => {
         </TableContainer>
       </Box>
 
-      <AddCategory open={open} handleClose={handleClose} refresh={fetchCategories} />
-      <EditCategory 
-      edit={edit} 
-      data={data} 
-      handleCloseEdit={handleCloseEdit} 
-      refresh={fetchCategories}/>
+ <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Category Deleted!" ? "success" : "error"
+          }
+          onClose={() => setSnackbarOpen(false)}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <AddCategory
+        open={open}
+        handleClose={handleClose}
+        refresh={fetchCategories}
+      />
+      <EditCategory
+        edit={edit}
+        data={data}
+        handleCloseEdit={handleCloseEdit}
+        refresh={fetchCategories}
+      />
     </>
   );
 };

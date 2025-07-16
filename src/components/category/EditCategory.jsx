@@ -22,6 +22,7 @@ const style = {
 };
 
 const EditCategory = ({ edit, data, handleCloseEdit ,refresh }) => {
+  console.log('edit Data:', data);
   
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
@@ -67,6 +68,7 @@ useEffect(() => {
       if (data) {
         setFormData({
           name: data.name || "",
+          slug: data.name || "",
           description: data.description || "",
           parent: data.parent?._id || "", // access parent._id directly
         });
@@ -90,11 +92,14 @@ useEffect(() => {
   try {
     const payload = {
       ...formData,
-      slug:formData.name,
+      slug: formData.name.toLowerCase(),
       parent: formData.parent === "" ? null : formData.parent, // convert "" to null
     };
-
+    console.log('after edit::',payload);
+    
     const result = await updateCategory(data.id, payload);
+    console.log(result);
+    
     refresh();
     handleCloseEdit(); // close modal after successful update
   } catch (error) {

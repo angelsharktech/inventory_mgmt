@@ -7,9 +7,7 @@ export const getAllOrganization = async () => {
   try {
     console.log(API_URL);
     
-    const response = await axios.get(API_URL);
-    console.log('org:',response);
-    
+    const response = await axios.get(API_URL);    
     return response.data;
   } catch (error) {
     console.error("Error fetching organizations:", error);

@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import Registration from "../pages/Registration";
 import Dashboard from "../pages/Dashboard";
 import Vendors from "../components/Vendors";
+import PrivateRoute from "./PrivateRoute";
 // import ProtectedRoute from "./ProtectedRoute"; // if using auth guard
 
 const AppRoutes = () => {
@@ -13,7 +14,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Registration />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
     
       {/* <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
 

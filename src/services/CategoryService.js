@@ -50,3 +50,12 @@ export const updateCategory = async (id, payload) => {
     throw error;
  }
 };
+export const deleteCategory = async (id) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/${id}` , getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting category :", error);
+    throw error;
+  }
+};

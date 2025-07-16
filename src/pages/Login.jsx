@@ -12,8 +12,10 @@ import {
 import invoice from "../assets/invoice.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../services/UserService";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
+  const { loginData } = useAuth();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -28,7 +30,8 @@ const Login = () => {
       const res = await loginUser(credentials);
       if (res) {
         // console.log("Login successful", res);
-        localStorage.setItem("token", res.token); // store token if needed
+        loginData(res.user, res.token); 
+        // localStorage.setItem("token", res.token); // store token if needed
         setSnackbarMessage("Login successful!");
         setShowSnackbar(true);
         setTimeout(() => {

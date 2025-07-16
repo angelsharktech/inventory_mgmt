@@ -6,7 +6,7 @@ import SearchIcon from "@mui/icons-material/Search";
 const FilterData = ({ value, onChange }) => {
   return (
     <TextField
-      label="Search products..."
+      placeholder="Search..."
       variant="outlined"
       size="small"
       value={value}
