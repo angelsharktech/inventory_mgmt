@@ -1,5 +1,5 @@
 import {
-    Alert,
+  Alert,
   Box,
   Button,
   Paper,
@@ -10,6 +10,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -17,10 +18,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterData from "../shared/FilterData";
 import AddCustomer from "./AddCustomer";
-import { getAllUser } from "../../services/UserService";
+import { getAllUser, updateUser } from "../../services/UserService";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import EditCustomer from "./EditCustomer";
+import PaginationComponent from "../shared/PaginationComponent";
 
 const CustomerList = () => {
   const [open, setOpen] = useState(false);
@@ -33,6 +35,9 @@ const CustomerList = () => {
   const [edit, setEdit] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -50,7 +55,11 @@ const CustomerList = () => {
     fetchAll();
     fetchUsers();
   }, []);
-
+  useEffect(() => {
+    if (roles && roles.length > 0) {
+      fetchUsers();
+    }
+  }, [roles]);
   const fetchUsers = async () => {
     try {
       const data = await getAllUser();
@@ -59,52 +68,66 @@ const CustomerList = () => {
       const customerRole = roles.find(
         (r) => r.name.toLowerCase() === "customer"
       );
-
       if (customerRole) {
         const customersOnly = data.filter(
-          (u) => u.role_id === customerRole._id
+          (u) => u.role_id._id === customerRole._id && u.status === "active"
         );
+
         setFilteredCustomers(customersOnly);
       }
+      // console.log('filterCustomer::',filteredCustomer);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
   };
 
-//   search bar code 
-const filteredCustomer = filteredCustomers?.filter(
+  //   search bar code
+  const filteredCustomer = filteredCustomers?.filter(
     (cust) =>
       cust.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cust.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cust.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cust.phone_number?.includes(searchQuery.toLowerCase())
   );
-   const handleSearchChange = (e) => {
+  const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
-// --------------end of search
+  // --------------end of search
+  useEffect(() => {
+    if (filteredCustomer) {
+      setTotalPages(Math.ceil(filteredCustomer.length / pageSize));
+    }
+  }, [filteredCustomer]);
+  const paginatedCustomers = filteredCustomer?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleCloseEdit = () => setEdit(false);
 
- 
   const handleEdit = (rowData) => {
     setData(rowData);
     setEdit(true);
   };
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
+    if (window.confirm("Are you sure you want to delete this Customer?")) {
       try {
-        // const res = await deleteUser(id);
-        // if (res) {
-        //   setSnackbarMessage("Customer Deleted!");
-        //   setSnackbarOpen(true);
-        //   fetchProducts(); // Refresh the list
-        // }
+        const updatedUser = {
+          status: "inactive",
+        };
+        const res = await updateUser(id, updatedUser);
+        console.log(res);
+
+        if (res) {
+          setSnackbarMessage("Customer Deleted!");
+          setSnackbarOpen(true);
+          fetchUsers(); // Refresh the list
+        }
       } catch (error) {
-        console.error("Error deleting customer", error);
-        alert("Failed to delete customer.");
+        console.error("Error deleting Customer", error);
+        alert("Failed to delete Customer.");
       }
     }
   };
@@ -141,18 +164,18 @@ const filteredCustomer = filteredCustomers?.filter(
           }}
         >
           <Table sx={{ minWidth: 1000 }}>
-            <TableHead>
+            <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Phone</TableCell>
-                <TableCell>City</TableCell>
-                <TableCell>Address</TableCell>
-                <TableCell>Edit</TableCell>
-                <TableCell>Delete</TableCell>
+                <TableCell><strong>Name</strong></TableCell>
+                <TableCell><strong>Phone</strong></TableCell>
+                <TableCell><strong>City</strong></TableCell>
+                <TableCell><strong>Address</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredCustomer.map((customer) => (
+              {paginatedCustomers.map((customer) => (
                 <TableRow key={customer._id}>
                   <TableCell>
                     {customer.first_name} {customer.last_name}
@@ -160,7 +183,7 @@ const filteredCustomer = filteredCustomers?.filter(
                   <TableCell>{customer.phone_number}</TableCell>
                   <TableCell>{customer.city}</TableCell>
                   <TableCell>{customer.address}</TableCell>
-                  <TableCell align="center">
+                  <TableCell>
                     <IconButton
                       color="primary"
                       onClick={() => handleEdit(customer)}
@@ -168,7 +191,7 @@ const filteredCustomer = filteredCustomers?.filter(
                       <EditIcon />
                     </IconButton>
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell>
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(customer._id)}
@@ -200,17 +223,19 @@ const filteredCustomer = filteredCustomers?.filter(
         </Alert>
       </Snackbar>
 
-      <AddCustomer
-        open={open}
-        handleClose={handleClose}
-        // refresh={fetchvendors}
-      />
+      <AddCustomer open={open} handleClose={handleClose} refresh={fetchUsers} />
 
       <EditCustomer
         open={edit}
         data={data}
         handleCloseEdit={handleCloseEdit}
-        // refresh={fetchProducts}
+        refresh={fetchUsers}
+      />
+
+       <PaginationComponent
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
       />
     </>
   );

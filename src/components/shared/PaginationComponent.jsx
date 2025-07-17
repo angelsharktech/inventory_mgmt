@@ -7,7 +7,7 @@ const PaginationComponent = ({ totalPages, currentPage, onPageChange }) => {
   };
 
   return (
-    <Stack spacing={2} alignItems="end" mt={3}>
+    <Stack spacing={2} alignItems="end" mt={1}>
       <Pagination
         count={totalPages}
         page={currentPage}

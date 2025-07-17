@@ -24,14 +24,20 @@ import {
 } from "../../services/CategoryService";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
+import PaginationComponent from "../shared/PaginationComponent";
+import FilterData from "../shared/FilterData";
 
 const CategoryList = () => {
   const [rows, setRows] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [data, setData] = useState();
   const [edit, setEdit] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -40,29 +46,6 @@ const CategoryList = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
-  // const fetchCategories = async () => {
-  //   try {
-  //     const res = await getAllCategories();
-  //     if (res.success) {
-  //       const flattened = [];
-
-  //       res.data.forEach((cat) => {
-  //         flattened.push({
-  //           id: cat._id,
-  //           name: cat.name,
-  //           description: cat.description,
-  //           parent: cat.parent && typeof cat.parent === "object"
-  //             ? { _id: cat.parent._id, name: cat.parent.name }
-  //             : null,
-  //         });
-  //       });
-
-  //       setRows(flattened);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error loading categories", err);
-  //   }
-  // };
 
   const fetchCategories = async () => {
     try {
@@ -91,7 +74,24 @@ const CategoryList = () => {
       console.error("Error loading categories", err);
     }
   };
-
+const filteredCategory = rows?.filter(
+    (cat) =>
+      cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cat.parent.name?.toLowerCase().includes(searchQuery.toLowerCase()) 
+  );
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+  // --------------end of search
+  useEffect(() => {
+    if (filteredCategory) {
+      setTotalPages(Math.ceil(filteredCategory.length / pageSize));
+    }
+  }, [filteredCategory]);
+  const paginatedCategory = filteredCategory?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
   const handleEdit = (rowData) => {
     setData(rowData);
     setEdit(true);
@@ -115,9 +115,17 @@ const CategoryList = () => {
   return (
     <>
       <Box p={3}>
-        <Typography variant="h5" fontWeight={600} mb={2}>
-          Categories
-        </Typography>
+         <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
+          <Typography variant="h4" fontWeight={600}>
+            Categories
+          </Typography>
+          <FilterData value={searchQuery} onChange={handleSearchChange} />
+        </Box>
 
         <Box display="flex" justifyContent="flex-end" mb={2}>
           <Button
@@ -131,7 +139,7 @@ const CategoryList = () => {
 
         <TableContainer component={Paper} elevation={3}>
           <Table>
-            <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
                 <TableCell>
                   <strong>Name</strong>
@@ -140,15 +148,15 @@ const CategoryList = () => {
                   <strong>Parent category</strong>
                 </TableCell>
                 <TableCell align="center">
-                  <strong>Edit</strong>
+                  <strong>Actions</strong>
                 </TableCell>
                 <TableCell align="center">
-                  <strong>Delete</strong>
+                  <strong>Actions</strong>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row, index) => (
+              {paginatedCategory?.map((row, index) => (
                 <TableRow key={index}>
                   <TableCell>{row.name}</TableCell>
                   <TableCell>
@@ -177,7 +185,7 @@ const CategoryList = () => {
         </TableContainer>
       </Box>
 
- <Snackbar
+      <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
         onClose={() => setSnackbarOpen(false)}
@@ -204,6 +212,11 @@ const CategoryList = () => {
         data={data}
         handleCloseEdit={handleCloseEdit}
         refresh={fetchCategories}
+      />
+      <PaginationComponent
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
       />
     </>
   );

@@ -12,7 +12,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { getAllUser, registerUser } from "../../services/UserService";
+import { getAllUser, getUserById, registerUser } from "../../services/UserService";
 
 const style = {
   position: "absolute",
@@ -28,7 +28,7 @@ const style = {
   overflowY: "auto",
 };
 
-const AddCustomer = ({ open, handleClose }) => {
+const AddCustomer = ({ open, handleClose ,refresh }) => {
   const { webuser } = useAuth();
   const [formData, setFormData] = useState({
     first_name: "",
@@ -37,34 +37,28 @@ const AddCustomer = ({ open, handleClose }) => {
     country: "",
     address: "",
     city: "",
-    bio: "",
-  });
-
-  const [bankDetails, setBankDetails] = useState({
-    bankName: "",
-    accountNumber: "",
-    accountName: "",
-    ifscCode: "",
-    upiId: "",
   });
 
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [mainUser, setMainUser] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData, userData] = await Promise.all([
+        const [posData, roleData, userData , user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
           getAllUser(),
+          getUserById(webuser.id)
         ]);
         setPositions(posData);
         setRoles(roleData);
         setUsers(userData);
+        setMainUser(user)
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -75,14 +69,6 @@ const AddCustomer = ({ open, handleClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleBankChange = (e) => {
-    const { name, value } = e.target;
-    setBankDetails((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -112,19 +98,20 @@ const AddCustomer = ({ open, handleClose }) => {
     const payload = {
       ...formData,
       bankDetails,
-      organization_id: "685e8ae67615a4ca4184e0e3",
-      email: "abc@example.com",
-      password: "abc@example.com",
+      organization_id: mainUser.organization_id?._id,
+      email: formData.first_name +"@example.com",
+      password: formData.first_name +"@example.com",
       role_id: customerRole._id,
       position_id: customerposition._id,
     };
 
     console.log("Submitted Customer Data:", payload);
-
-    const result = await registerUser(payload);
+try {
+   const result = await registerUser(payload);
     if (result) {
-      setSnackbarMessage("User Added successful!");
+      setSnackbarMessage("Customer Added successful!");
       setSnackbarOpen(true);
+      refresh();
       handleClose();
     }
 
@@ -136,15 +123,14 @@ const AddCustomer = ({ open, handleClose }) => {
       country: "",
       address: "",
       city: "",
-      bio: "",
+     
     });
-    setBankDetails({
-      bankName: "",
-      accountNumber: "",
-      accountName: "",
-      ifscCode: "",
-      upiId: "",
-    });
+   
+} catch (error) {
+  setSnackbarMessage(error);
+      setSnackbarOpen(true);
+}
+   
   };
   return (
     <>
@@ -171,26 +157,6 @@ const AddCustomer = ({ open, handleClose }) => {
             ))}
           </Grid>
 
-          <Typography variant="h6" mt={2} mb={2}>
-            Bank Details
-          </Typography>
-
-          <Grid container spacing={2}>
-            {Object.entries(bankDetails).map(([key, value]) => (
-              <Grid item xs={12} sm={6} key={key}>
-                <TextField
-                  fullWidth
-                  label={key
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())}
-                  name={key}
-                  value={value}
-                  onChange={handleBankChange}
-                />
-              </Grid>
-            ))}
-          </Grid>
-
           <Box mt={3} display="flex" justifyContent="flex-end">
             <Button onClick={handleClose} sx={{ mr: 2, color: "#2F4F4F" }}>
               Cancel
@@ -204,6 +170,8 @@ const AddCustomer = ({ open, handleClose }) => {
             </Button>
           </Box>
 
+        </Box>
+      </Modal>
           <Snackbar
             open={snackbarOpen}
             autoHideDuration={3000}
@@ -212,7 +180,7 @@ const AddCustomer = ({ open, handleClose }) => {
           >
             <Alert
               severity={
-                snackbarMessage === "User Added successful!"
+                snackbarMessage === "Customer Added successful!"
                   ? "success"
                   : "error"
               }
@@ -222,8 +190,6 @@ const AddCustomer = ({ open, handleClose }) => {
               {snackbarMessage}
             </Alert>
           </Snackbar>
-        </Box>
-      </Modal>
     </>
   );
 };

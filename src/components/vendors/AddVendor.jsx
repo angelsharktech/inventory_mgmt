@@ -12,7 +12,11 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { getAllUser, registerUser } from "../../services/UserService";
+import {
+  getAllUser,
+  getUserById,
+  registerUser,
+} from "../../services/UserService";
 
 const style = {
   position: "absolute",
@@ -37,7 +41,7 @@ const AddVendor = ({ open, handleClose }) => {
     country: "",
     address: "",
     city: "",
-    bio: "",
+    // bio: "",
   });
 
   const [bankDetails, setBankDetails] = useState({
@@ -51,20 +55,23 @@ const AddVendor = ({ open, handleClose }) => {
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [mainUser, setMainUser] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData, userData] = await Promise.all([
+        const [posData, roleData, userData, user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
           getAllUser(),
+          getUserById(webuser.id),
         ]);
         setPositions(posData);
         setRoles(roleData);
         setUsers(userData);
+        setMainUser(user);
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -112,16 +119,16 @@ const AddVendor = ({ open, handleClose }) => {
     const payload = {
       ...formData,
       bankDetails,
-      organization_id: "685e8ae67615a4ca4184e0e3",
-      email: "abc@example.com",
-      password: "abc@example.com",
+      organization_id: mainUser.organization_id?._id,
+      email: formData.first_name + "@example.com",
+      password: formData.first_name + "@example.com",
       role_id: vendorRole._id,
       position_id: vendorposition._id,
     };
 
     const result = await registerUser(payload);
     if (result) {
-      setSnackbarMessage("User Added successful!");
+      setSnackbarMessage("Vendor Added successful!");
       setSnackbarOpen(true);
       handleClose();
     }
@@ -134,7 +141,7 @@ const AddVendor = ({ open, handleClose }) => {
       country: "",
       address: "",
       city: "",
-      bio: "",
+      // bio: "",
     });
     setBankDetails({
       bankName: "",
@@ -201,27 +208,24 @@ const AddVendor = ({ open, handleClose }) => {
               Save
             </Button>
           </Box>
-
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={3000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <Alert
-              severity={
-                snackbarMessage === "User Added successful!"
-                  ? "success"
-                  : "error"
-              }
-              variant="filled"
-              onClose={() => setSnackbarOpen(false)}
-            >
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
         </Box>
       </Modal>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Vendor Added successful!" ? "success" : "error"
+          }
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

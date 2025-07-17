@@ -36,9 +36,30 @@ export const loginUser = async (credentials) => {
 //All User
 export const getAllUser = async() =>{
   try {
-    const response = await axios.get(`${BASE_URL}/user` ,getAuthHeader());
+    const response = await axios.get(`${BASE_URL}/user`);
     return response.data;
   } catch (error) {
      throw error.response?.data || { message: "error geting all users" };
   }
 }
+
+export const getUserById = async(id) =>{
+  try{
+    const response = await axios.get(`${BASE_URL}/user/${id}`)
+    return response.data;
+  }catch(error) {
+    throw error.response?.data || { message: "error geting all users" };
+  }
+}
+
+export const updateUser = async (id, userData) => {
+  try {
+    const response = await axios.patch(`${BASE_URL}/user/${id}`, userData ,getAuthHeader()); // adjust path as needed
+     return response.data;
+  } catch (err) {
+    console.error("Error updating user", err);
+    return { success: false };
+  }
+};
+
+

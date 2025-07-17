@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_EXT_API }/api/role/`;
+const API_URL = `${import.meta.env.VITE_API_BASE_URL }/role/`;
 // Fetch all role
 export const getAllRoles = async () => {
   try {

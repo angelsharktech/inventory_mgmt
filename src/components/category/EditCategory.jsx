@@ -1,13 +1,18 @@
 import {
+  Alert,
   Box,
   Button,
   MenuItem,
   Modal,
+  Snackbar,
   TextField,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { getAllCategories, updateCategory } from "../../services/CategoryService";
+import {
+  getAllCategories,
+  updateCategory,
+} from "../../services/CategoryService";
 
 const style = {
   position: "absolute",
@@ -21,65 +26,66 @@ const style = {
   minWidth: 400,
 };
 
-const EditCategory = ({ edit, data, handleCloseEdit ,refresh }) => {
-  console.log('edit Data:', data);
-  
+const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
+  console.log("edit Data:", data);
+
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
-    slug:"",
+    slug: "",
     description: "",
     parent: "",
   });
-
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   // Pre-fill form when modal opens
-//  useEffect(() => {
-//   const fetchCategories = async () => {
-//     try {
-//       const res = await getAllCategories();
-//       const parentsOnly = res.data.filter((cat) => cat.parent === null);
-//       setCategories(parentsOnly);
+  //  useEffect(() => {
+  //   const fetchCategories = async () => {
+  //     try {
+  //       const res = await getAllCategories();
+  //       const parentsOnly = res.data.filter((cat) => cat.parent === null);
+  //       setCategories(parentsOnly);
 
-//       if (data) {
-//         // Find the parent category by name to get its _id
-//         const matchedParent = parentsOnly.find(cat => cat.name === data.parent);
+  //       if (data) {
+  //         // Find the parent category by name to get its _id
+  //         const matchedParent = parentsOnly.find(cat => cat.name === data.parent);
 
-//         setFormData({
-//           name: data.name || "",
-//           description: data.description || "",
-//           parent: matchedParent?._id || "", // get _id if matched
-//         });
-//       }
-//     } catch (err) {
-//       console.error("Error loading categories", err);
-//     }
-//   };
+  //         setFormData({
+  //           name: data.name || "",
+  //           description: data.description || "",
+  //           parent: matchedParent?._id || "", // get _id if matched
+  //         });
+  //       }
+  //     } catch (err) {
+  //       console.error("Error loading categories", err);
+  //     }
+  //   };
 
-//   fetchCategories();
-// }, [data]);
+  //   fetchCategories();
+  // }, [data]);
 
-useEffect(() => {
-  const fetchCategories = async () => {
-    try {
-      const res = await getAllCategories();
-      const parentsOnly = res.data.filter((cat) => cat.parent === null);
-      setCategories(parentsOnly);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await getAllCategories();
+        const parentsOnly = res.data.filter((cat) => cat.parent === null);
+        setCategories(parentsOnly);
 
-      if (data) {
-        setFormData({
-          name: data.name || "",
-          slug: data.name || "",
-          description: data.description || "",
-          parent: data.parent?._id || "", // access parent._id directly
-        });
+        if (data) {
+          setFormData({
+            name: data.name || "",
+            slug: data.name || "",
+            description: data.description || "",
+            parent: data.parent?._id || "", // access parent._id directly
+          });
+        }
+      } catch (err) {
+        console.error("Error loading categories", err);
       }
-    } catch (err) {
-      console.error("Error loading categories", err);
-    }
-  };
+    };
 
-  fetchCategories();
-}, [data]);
+    fetchCategories();
+  }, [data]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -89,71 +95,88 @@ useEffect(() => {
   };
 
   const handleUpdate = async () => {
-  try {
-    const payload = {
-      ...formData,
-      slug: formData.name.toLowerCase(),
-      parent: formData.parent === "" ? null : formData.parent, // convert "" to null
-    };
-    console.log('after edit::',payload);
-    
-    const result = await updateCategory(data.id, payload);
-    console.log(result);
-    
-    refresh();
-    handleCloseEdit(); // close modal after successful update
-  } catch (error) {
-    console.error("Update failed", error);
-  }
-};
-
+    try {
+      const payload = {
+        ...formData,
+        slug: formData.name.toLowerCase(),
+        parent: formData.parent === "" ? null : formData.parent,
+      };
+      const result = await updateCategory(data.id, payload);
+      if (result) {
+        setSnackbarMessage("Category Updated!");
+        setSnackbarOpen(true);
+        refresh();
+        handleCloseEdit();
+      }
+    } catch (error) {
+      console.error("Update failed", error);
+      setSnackbarMessage(error);
+      setSnackbarOpen(true);
+    }
+  };
 
   return (
-    <Modal open={edit} onClose={handleCloseEdit}>
-      <Box sx={style}>
-        <Typography variant="h6" mb={2}>
-          Edit Category
-        </Typography>
+    <>
+      <Modal open={edit} onClose={handleCloseEdit}>
+        <Box sx={style}>
+          <Typography variant="h6" mb={2}>
+            Edit Category
+          </Typography>
 
-        <TextField
-          fullWidth
-          select
-          label="Parent Category"
-          name="parent"
-          value={formData.parent}
-          onChange={handleChange}
-          margin="normal"
-        >
-          {categories.map((cat) => (
-            <MenuItem key={cat._id} value={cat._id}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          fullWidth
-          label="Category Name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          margin="normal"
-        />
-
-        <Box mt={3} display="flex" justifyContent="flex-end">
-          <Button onClick={handleCloseEdit} sx={{ mr: 2 }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
-            onClick={handleUpdate}
+          <TextField
+            fullWidth
+            select
+            label="Parent Category"
+            name="parent"
+            value={formData.parent}
+            onChange={handleChange}
+            margin="normal"
           >
-            Update
-          </Button>
+            {categories.map((cat) => (
+              <MenuItem key={cat._id} value={cat._id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            fullWidth
+            label="Category Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <Box mt={3} display="flex" justifyContent="flex-end">
+            <Button onClick={handleCloseEdit} sx={{ mr: 2 }}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              onClick={handleUpdate}
+            >
+              Update
+            </Button>
+          </Box>
         </Box>
-      </Box>
-    </Modal>
+      </Modal>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbarMessage === "Category Updated!" ? "success" : "error"}
+          onClose={() => setSnackbarOpen(false)}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

@@ -25,7 +25,7 @@ import { deleteProduct, getAllProducts } from "../../services/ProductService";
 import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
 import BarcodePrinter from "./BarcodePrinter";
-import Pagination from "../shared/PaginationComponent";
+import PaginationComponent from "../shared/PaginationComponent";
 import { exportColumns, exportToExcel, exportToPDF } from "../shared/Export";
 import FilterData from "../shared/FilterData";
 
@@ -47,6 +47,8 @@ const ProductList = () => {
   const handleClose = () => setOpen(false);
   const handleCloseEdit = () => setEdit(false);
 
+  const pageSize = 4;
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -55,7 +57,6 @@ const ProductList = () => {
     try {
       const data = await getAllProducts();
       setProducts(data);
-      setTotalPages(data.pages);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -92,11 +93,19 @@ const ProductList = () => {
     setSearchQuery(e.target.value);
   };
 
-  
   const filteredProducts = products.data?.filter(
     (prod) =>
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prod.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  useEffect(() => {
+    if (filteredProducts) {
+      setTotalPages(Math.ceil(filteredProducts.length / pageSize));
+    }
+  }, [filteredProducts]);
+  const paginatedProducts = filteredProducts?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -113,7 +122,7 @@ const ProductList = () => {
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={2}    
+          mb={2}
         >
           <Typography variant="h4" fontWeight={600}>
             Products
@@ -162,27 +171,33 @@ const ProductList = () => {
           </MenuItem>
         </Menu>
 
-       {/* <Box > */}
-  <TableContainer component={Paper} sx={{width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" } , overflowX: "auto" }}>
-    <Table sx={{ minWidth: 1000 }}>
-            <TableHead>
+        {/* <Box > */}
+        <TableContainer
+          component={Paper}
+          sx={{
+            width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" },
+            overflowX: "auto",
+          }}
+        >
+          <Table sx={{ minWidth: 1000 }}>
+            <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Short Description</TableCell>
-                <TableCell>Price ($)</TableCell>
-                <TableCell>Compare Price ($)</TableCell>
-                <TableCell>Discount (%)</TableCell>
-                <TableCell>SKU</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Tags</TableCell>
-                <TableCell>Edit</TableCell>
-                <TableCell>Delete</TableCell>
-                <TableCell>Print</TableCell>
+                <TableCell><strong>Name</strong></TableCell>
+                <TableCell><strong>Short Description</strong></TableCell>
+                <TableCell><strong>Price ($)</strong></TableCell>
+                <TableCell><strong>Compare Price ($)</strong></TableCell>
+                <TableCell><strong>Discount (%)</strong></TableCell>
+                <TableCell><strong>SKU</strong></TableCell>
+                <TableCell><strong>Quantity</strong></TableCell>
+                <TableCell><strong>Status</strong></TableCell>
+                <TableCell><strong>Tags</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
+                <TableCell><strong>Barcode</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredProducts?.map((prod) => (
+              {paginatedProducts?.map((prod) => (
                 <TableRow key={prod._id}>
                   <TableCell>{prod.name}</TableCell>
                   <TableCell>{prod.shortDescription}</TableCell>
@@ -270,7 +285,7 @@ const ProductList = () => {
         refresh={fetchProducts}
       />
 
-      <Pagination
+      <PaginationComponent
         totalPages={totalPages}
         currentPage={currentPage}
         onPageChange={(page) => setCurrentPage(page)}

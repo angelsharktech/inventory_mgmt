@@ -13,10 +13,9 @@ import { getAllPositions } from "../services/Position";
 import { getAllOrganization } from "../services/Organization";
 import { getAllRoles } from "../services/Role";
 import { Link } from "react-router-dom";
-import { registerUser } from "../services/UserService";
-import { Snackbar, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-
+import { getAllUser, registerUser } from "../services/UserService";
+import { Snackbar, Alert } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const Registration = () => {
   const [step, setStep] = useState(0); // 0: Personal, 1: Company, 2: Bank
@@ -24,6 +23,7 @@ const Registration = () => {
   const [organizations, setOrganizations] = useState([]);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [users, setUsers] = useState([]);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -49,22 +49,24 @@ const Registration = () => {
     ifscCode: "",
     upiId: "",
   });
-const [snackbarOpen, setSnackbarOpen] = useState(false);
-const [snackbarMessage, setSnackbarMessage] = useState('');
-const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, orgData, roleData] = await Promise.all([
+        const [posData, orgData, roleData, userData] = await Promise.all([
           getAllPositions(),
           getAllOrganization(),
           getAllRoles(),
+          getAllUser(),
         ]);
-        
+
         setPositions(posData);
         setOrganizations(orgData);
         setRoles(roleData);
+        setUsers(userData);
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -73,7 +75,19 @@ const navigate = useNavigate();
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "email") {
+      const emailExists = users?.some(
+        (u) => u.email.toLowerCase() === value.toLowerCase()
+      );
+      if (emailExists) {
+        setSnackbarMessage("Email already exists!");
+        setSnackbarOpen(true);
+      }
+    }
+
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleBankChange = (e) => {
@@ -83,16 +97,23 @@ const navigate = useNavigate();
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
+    const emailExists = users?.some(
+      (u) => u.email.toLowerCase() === formData.email.toLowerCase()
+    );
+    if (emailExists) {
+      setSnackbarMessage("Email already exists!");
+      setSnackbarOpen(true);
+      return;
+    }
     const finalData = { ...formData, bankDetails };
-    console.log("Submitted Data:", finalData);
     // Add API call here
-    const result = await registerUser(finalData)
-    if(result){
-      setSnackbarMessage('Register successful!');
+    const result = await registerUser(finalData);
+    if (result) {
+      setSnackbarMessage("Register successful!");
       setSnackbarOpen(true);
       setTimeout(() => {
-        navigate('/login');
+        navigate("/login");
       }, 2000);
     }
   };
@@ -123,7 +144,6 @@ const navigate = useNavigate();
           />
         </Grid>
       ))}
-     
     </>
   );
 
@@ -225,89 +245,93 @@ const navigate = useNavigate();
 
   return (
     <>
-    <Box
-      sx={{
-        height: "100vh",
-        backgroundImage: `url(${invoice})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "left",
-        // p: 2,
-        overflow: "hidden",
-      }}
-    >
-      <Paper
-        elevation={8}
+      <Box
         sx={{
-          p: 4,
-          maxWidth: 500,
-          width: "50%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          marginLeft: "15%",
-          borderRadius: 5,
-          //   marginTop: "10%",
+          height: "100vh",
+          backgroundImage: `url(${invoice})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "left",
+          // p: 2,
+          overflow: "hidden",
         }}
       >
-        <Typography variant="h5" mb={2}>
-          {step === 0
-            ? "Personal Info"
-            : step === 1
-            ? "Company Info"
-            : "Bank Details"}
-        </Typography>
+        <Paper
+          elevation={8}
+          sx={{
+            p: 4,
+            maxWidth: 500,
+            width: "50%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            marginLeft: "15%",
+            borderRadius: 5,
+            //   marginTop: "10%",
+          }}
+        >
+          <Typography variant="h5" mb={2}>
+            {step === 0
+              ? "Personal Info"
+              : step === 1
+              ? "Company Info"
+              : "Bank Details"}
+          </Typography>
 
-        <Grid container spacing={2}>
-          {step === 0 && renderPersonalInfo()}
-          {step === 1 && renderCompanyInfo()}
-          {step === 2 && renderBankDetails()}
+          <Grid container spacing={2}>
+            {step === 0 && renderPersonalInfo()}
+            {step === 1 && renderCompanyInfo()}
+            {step === 2 && renderBankDetails()}
 
-          <Grid item xs={12} sx={{ mt: 2 }}>
-            {step > 0 && (
-              <Button variant="outlined" onClick={prevStep} sx={{ mr: 2 }}>
-                Back
-              </Button>
-            )}
-            {step < 2 ? (
-              <Button variant="contained" onClick={nextStep}>
-                Next
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSubmit}
-              >
-                Submit
-              </Button>
-            )}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              {step > 0 && (
+                <Button variant="outlined" onClick={prevStep} sx={{ mr: 2 }}>
+                  Back
+                </Button>
+              )}
+              {step < 2 ? (
+                <Button variant="contained" onClick={nextStep}>
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                >
+                  Submit
+                </Button>
+              )}
+            </Grid>
           </Grid>
-        </Grid>
-         <Grid item xs={12} textAlign="right" mt={"3%"}>
-        <Link to="/login" style={{ textDecoration: "none", color: "#1976d2" }}>
-          Back To Login
-        </Link>
-      </Grid>
-      </Paper>
-      
-    </Box>
-    <Snackbar
-  open={snackbarOpen}
-  autoHideDuration={3000}
-  onClose={() => setSnackbarOpen(false)}
-  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
->
-  <Alert
-    severity={snackbarMessage === 'Register successful!' ? 'success' : 'error'}
-    onClose={() => setSnackbarOpen(false)}
-    variant="filled"
-  >
-    {snackbarMessage}
-  </Alert>
-</Snackbar>
-</>
+          <Grid item xs={12} textAlign="right" mt={"3%"}>
+            <Link
+              to="/login"
+              style={{ textDecoration: "none", color: "#1976d2" }}
+            >
+              Back To Login
+            </Link>
+          </Grid>
+        </Paper>
+      </Box>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Register successful!" ? "success" : "error"
+          }
+          onClose={() => setSnackbarOpen(false)}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

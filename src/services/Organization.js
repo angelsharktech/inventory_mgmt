@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_EXT_API }/api/organization/`;
+const API_URL = `${import.meta.env.VITE_API_BASE_URL }/organization/`;
 
 // Fetch all Organization
 export const getAllOrganization = async () => {

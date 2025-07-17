@@ -96,7 +96,7 @@ html, body {
     left: 0;
     width: 80mm; /* For thermal printer size */
     padding: 10px;
-    text-align: center;
+    text-align: start;
     background: white;
   }
 }
