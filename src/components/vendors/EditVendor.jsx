@@ -50,8 +50,6 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
     const fetchUser = async () => {
       try {
         if (data) {
-          console.log("edit user::", data);
-
           setFormData({
             first_name: data.first_name || "",
             last_name: data.last_name || "",
@@ -101,7 +99,6 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
         bankDetails,
       };
       const res = await updateUser(data._id, updatedUser);
-      console.log(res);
       
       if (res) {
         setSnackbarMessage("Vendor Updated successful!");

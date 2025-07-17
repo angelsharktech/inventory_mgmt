@@ -26,7 +26,6 @@ const style = {
 };
 
 const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
-  console.log("edit user::", data);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -51,8 +50,6 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
     const fetchUser = async () => {
       try {
         if (data) {
-          console.log("edit user::", data);
-
           setFormData({
             first_name: data.first_name || "",
             last_name: data.last_name || "",
@@ -102,7 +99,6 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
         bankDetails,
       };
       const res = await updateUser(data._id, updatedUser);
-      console.log(res);
       
       if (res) {
         setSnackbarMessage("Customer Updated successful!");

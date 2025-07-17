@@ -105,7 +105,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
   };
 
   const handleSave = async () => {
-    console.log("formData:", form);
     if (!form.name || !form.price || !form.hsnCode) {
       setSnackbarMessage("Enter Required fields!");
       setSnackbarOpen(true);
@@ -124,8 +123,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       variantOptions: hasVariant === "Yes" ? variants : [],
       createdBy: webuser._id,
     };
-    console.log("product::", product);
-
     try {
       const res = await addProducts(product);
       if (res) {

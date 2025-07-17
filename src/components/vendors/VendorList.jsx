@@ -116,7 +116,6 @@ const VendorList = () => {
           status: "inactive",
         };
         const res = await updateUser(id, updatedUser);
-        console.log(res);
 
         if (res) {
           setSnackbarMessage("Vendor Deleted!");

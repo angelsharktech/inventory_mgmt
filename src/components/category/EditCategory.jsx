@@ -27,7 +27,6 @@ const style = {
 };
 
 const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
-  console.log("edit Data:", data);
 
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({

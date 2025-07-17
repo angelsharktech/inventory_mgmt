@@ -12,8 +12,6 @@ const getAuthHeader = () => {
 // Register user
 export const registerUser = async (userData) => {
   try {
-    console.log('userData reg ::',userData);
-    
     const response = await axios.post(`${BASE_URL}/auth/register`, userData);
     return response.data;
   } catch (error) {

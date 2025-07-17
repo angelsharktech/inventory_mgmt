@@ -75,7 +75,6 @@ const CustomerList = () => {
 
         setFilteredCustomers(customersOnly);
       }
-      // console.log('filterCustomer::',filteredCustomer);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -118,7 +117,6 @@ const CustomerList = () => {
           status: "inactive",
         };
         const res = await updateUser(id, updatedUser);
-        console.log(res);
 
         if (res) {
           setSnackbarMessage("Customer Deleted!");

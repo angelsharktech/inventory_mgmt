@@ -29,7 +29,6 @@ const Login = () => {
     try {
       const res = await loginUser(credentials);
       if (res) {
-        // console.log("Login successful", res);
         loginData(res.user, res.token); 
         // localStorage.setItem("token", res.token); // store token if needed
         setSnackbarMessage("Login successful!");

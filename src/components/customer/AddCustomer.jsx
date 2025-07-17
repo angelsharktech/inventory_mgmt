@@ -104,8 +104,6 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
       role_id: customerRole._id,
       position_id: customerposition._id,
     };
-
-    console.log("Submitted Customer Data:", payload);
 try {
    const result = await registerUser(payload);
     if (result) {
