@@ -8,8 +8,11 @@ const BarcodePrinter = ({ product }) => {
     if (!product) return;
 
     const svg = printRef.current.querySelector("svg");
-
-    JsBarcode(svg, product?.hsnCode , {
+    console.log(product.name);
+    
+    console.log((product?.hsnCode || '000000' + " " + product.name));
+    
+    JsBarcode(svg, (product?.hsnCode || '000000' + " " +product.name)  , {
       format: "CODE128",
       lineColor: "#000",
       width: 2,

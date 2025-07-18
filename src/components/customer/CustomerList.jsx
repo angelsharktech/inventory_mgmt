@@ -23,8 +23,10 @@ import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import EditCustomer from "./EditCustomer";
 import PaginationComponent from "../shared/PaginationComponent";
+import { useAuth } from "../../context/AuthContext";
 
 const CustomerList = () => {
+  const {webuser} = useAuth();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState([]);
@@ -70,7 +72,7 @@ const CustomerList = () => {
       );
       if (customerRole) {
         const customersOnly = data.filter(
-          (u) => u.role_id._id === customerRole._id && u.status === "active"
+          (u) => u.role_id._id === customerRole._id && u.status === "active" && u.organization_id === webuser.organization_id
         );
 
         setFilteredCustomers(customersOnly);

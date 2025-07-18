@@ -35,10 +35,12 @@ const Login = () => {
         setShowSnackbar(true);
         setTimeout(() => {
           navigate("/dashboard");
-        }, 2000);
+        }, 500);
       }
     } catch (err) {
-      setSnackbarMessage(err.error);
+      console.log('**************',err);
+      
+      setSnackbarMessage(err.message);
       setShowSnackbar(true);
     }
   };

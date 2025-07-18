@@ -73,7 +73,7 @@ const Registration = () => {
     };
     fetchAll();
   }, []);
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -112,9 +112,9 @@ const Registration = () => {
     if (result) {
       setSnackbarMessage("Register successful!");
       setSnackbarOpen(true);
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      navigate("/login");
+      // setTimeout(() => {
+      // }, 2000);
     }
   };
 
@@ -175,7 +175,7 @@ const Registration = () => {
             maxWidth: "100%",
           }}
         >
-          {organizations?.map((org) => (
+          {(organizations|| []).map((org) => (
             <MenuItem key={org._id} value={org._id}>
               {org.name}
             </MenuItem>
@@ -195,7 +195,7 @@ const Registration = () => {
             maxWidth: "100%",
           }}
         >
-          {roles.map((role) => (
+          {(roles || []).map((role) => (
             <MenuItem key={role._id} value={role._id}>
               {role.name}
             </MenuItem>
@@ -215,7 +215,7 @@ const Registration = () => {
             maxWidth: "100%",
           }}
         >
-          {positions.map((pos) => (
+          {(positions || []).map((pos) => (
             <MenuItem key={pos._id} value={pos._id}>
               {pos.name}
             </MenuItem>

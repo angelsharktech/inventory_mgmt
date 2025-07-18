@@ -364,10 +364,10 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 ))}
                 <Box mt={1}>
                   <Button
-                    variant="outlined"
                     onClick={() =>
                       setVariants([...variants, { name: "", values: [""] }])
                     }
+                    variant="outlined"
                     color="#2F4F4F"
                   >
                     <AddCircleOutlineOutlinedIcon/>

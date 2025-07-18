@@ -21,9 +21,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Category from "../components/Category";
-import LogOut from "../components/LogOut";
 import Product from "../components/Product";
 import Customer from "../components/Customer";
+import SaleBill from "../components/SaleBill";
+import PurchaseBill from "../components/PurchaseBill";
 
 const Item = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -281,15 +282,18 @@ const Dashboard = () => {
         return <Category />;
 
       case "Product":
-        return <Product />
+        return <Product />;
 
       case "Purchase Bill":
+        return <PurchaseBill/>;
+
+      case "Sale Bill":
+        return <SaleBill />;
 
       case "Bill Reports":
 
       case "Income Tax Reports":
 
-        
       default:
         return <h2></h2>;
     }

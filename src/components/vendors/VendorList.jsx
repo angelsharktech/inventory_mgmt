@@ -23,8 +23,10 @@ import { getAllRoles } from "../../services/Role";
 import { getAllUser, updateUser } from "../../services/UserService";
 import EditVendor from "./EditVendor";
 import PaginationComponent from "../shared/PaginationComponent";
+import { useAuth } from "../../context/AuthContext";
 
 const VendorList = () => {
+  const {webuser} = useAuth();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [data, setData] = useState();
@@ -71,7 +73,7 @@ const VendorList = () => {
 
       if (vendorRole) {
         const vendorsOnly = data.filter(
-          (u) => u.role_id._id === vendorRole._id && u.status === "active"
+          (u) => u.role_id._id === vendorRole._id && u.status === "active" && u.organization_id === webuser.organization_id
         );
         setFilteredVendors(vendorsOnly);
       }

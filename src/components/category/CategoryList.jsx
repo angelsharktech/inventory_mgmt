@@ -54,7 +54,7 @@ const CategoryList = () => {
         const flattened = [];
 
         res.data
-          .filter((cat) => cat.parent) // ✅ Only include categories with a parent
+          .filter((cat) => cat.parent) 
           .forEach((cat) => {
             flattened.push({
               id: cat._id,

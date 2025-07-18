@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
   return {
@@ -16,7 +16,7 @@ export const registerUser = async (userData) => {
     return response.data;
   } catch (error) {
     console.error("Registration failed:", error);
-    throw error.response?.data || { message: "Registration error" };
+    throw error.response?.data.error || { message: "Registration error" };
   }
 };
 
@@ -26,8 +26,8 @@ export const loginUser = async (credentials) => {
     const response = await axios.post(`${BASE_URL}/auth/login`, credentials);
     return response.data;
   } catch (error) {
-    // console.error("Login failed:", error);
-    throw error.response?.data || { message: "Login error" };
+    console.error("Login failed:", error);
+    throw error.response?.data || { message: "Server error" };
   }
 };
 
