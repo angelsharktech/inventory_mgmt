@@ -36,13 +36,15 @@ const CreateSaleBill = () => {
     address: "",
     gstNumber: "",
     phone_number: "",
+    pincode: "",
   });
   const [isExistingCustomer, setIsExistingCustomer] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([
-    { productId: "", hsnCode: "", qty: 1, price: 0, discount: 0, gst: 0 },
+    { productId: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
   ]);
   const [billType, setBillType] = useState("non-gst");
+  const [gstPercent, setGstPercent] = useState(0);
   const [paymentType, setPaymentType] = useState("full");
   const [paymentDetails, setPaymentDetails] = useState({
     advance: 0,
@@ -61,6 +63,7 @@ const CreateSaleBill = () => {
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [state, setState] = useState();
   const [mainUser, setMainUser] = useState();
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
@@ -88,27 +91,48 @@ const CreateSaleBill = () => {
 
   //   calculating totals
   useEffect(() => {
-    let subtotal = 0;
-    let gstTotal = 0;
+  let subtotal = 0;
 
-    selectedProducts.forEach((item) => {
-      const qty = Number(item.qty);
-      const price = Number(item.price);
-      const discount = Number(item.discount);
-      const gst = Number(item.gst);
-      const taxable = qty * price - discount;
-      const gstAmt = (taxable * gst) / 100;
+  selectedProducts.forEach((item) => {
+    const qty = Number(item.qty);
+    const price = Number(item.price);
+    const discount = Number(item.discount);
+    const taxable = qty * price - discount;
+    subtotal += taxable;
+  });
 
-      subtotal += taxable;
-      gstTotal += gstAmt;
-    });
+  const isMaharashtra = state?.toLowerCase() === "maharashtra";
+  const isGST = billType === "gst";
 
-    setTotals({
-      subtotal,
-      gstTotal,
-      grandTotal: subtotal + gstTotal,
-    });
-  }, [selectedProducts]);
+  let gstTotal = 0;
+  let cgst = 0;
+  let sgst = 0;
+  let igst = 0;
+
+  if (isGST) {
+    gstTotal = (subtotal * gstPercent) / 100;
+
+    if (isMaharashtra) {
+      cgst = gstTotal / 2;
+      sgst = gstTotal / 2;
+    } else {
+      igst = gstTotal;
+    }
+  }
+
+  const grandTotal = subtotal + gstTotal;
+
+  setTotals({
+    subtotal,
+    gstTotal,
+    cgst,
+    sgst,
+    igst,
+    grandTotal,
+  });
+}, [selectedProducts, gstPercent, billType, state]);
+
+
   // End of total calculation
 
   // fetch product data
@@ -120,7 +144,6 @@ const CreateSaleBill = () => {
     try {
       const data = await getAllProducts();
       setProducts(data);
-      console.log("products:", data);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -143,7 +166,6 @@ const CreateSaleBill = () => {
 
   const handleMobile = async (phone) => {
     const phoneExists = users.find((u) => u.phone_number === phone);
-    console.log("mobile:", phoneExists);
 
     if (phoneExists) {
       setCustomer({
@@ -184,7 +206,30 @@ const CreateSaleBill = () => {
     const updated = selectedProducts.filter((_, i) => i !== index);
     setSelectedProducts(updated);
   };
+  // checking pincode form external api
+  const handlePincodeChange = async (e) => {
+    const pincode = e.target.value;
+    setCustomer({ ...customer, pincode });
 
+    if (pincode.length === 6) {
+      try {
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${pincode}`
+        );
+        const data = await res.json();
+        const stateFind = data[0]?.PostOffice?.[0]?.State || "Not Found";
+        if(stateFind === "Not Found"){
+          setSnackbarOpen(true)
+          setSnackbarMessage("State Not Found!");
+          return;
+        }
+        setState(stateFind);
+      } catch (error) {
+        console.error("Error fetching state from pincode", error);
+      }
+    }
+  };
+  // end of checking pincode form external api
   const handleSubmit = async () => {
     try {
       if (!customer.phone_number || !customer.first_name) {
@@ -216,7 +261,6 @@ const CreateSaleBill = () => {
           role_id: customerRole._id,
           position_id: customerposition._id,
         };
-        console.log("customer detail::", payload);
 
         const res = await registerUser(payload);
       }
@@ -227,6 +271,8 @@ const CreateSaleBill = () => {
         billType,
         paymentType,
         paymentDetails,
+        gstPercent, // Add this
+        totals,
       };
 
       // await createSaleBill(billData);
@@ -236,14 +282,29 @@ const CreateSaleBill = () => {
       setPrintData(billData);
       setShowPrint(true); // Show bill for printing
       setStep(1);
-      setCustomer({first_name: "",address: "",gstNumber: "",phone_number: "",})
-
+      setCustomer({
+        first_name: "",
+        address: "",
+        gstNumber: "",
+        phone_number: "",
+      });
+      setSelectedProducts([
+        { productId: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+      ]);
+      setPaymentDetails({
+        advance: 0,
+        balance: 0,
+        mode1: "",
+        mode2: "",
+        fullPaid: 0,
+        fullMode: "",
+      });
       setTimeout(() => {
         window.print(); // Native print
         setShowPrint(false); // Hide again after printing
       }, 1000);
     } catch (error) {
-      setSnackbarMessage('Customer '+error);
+      setSnackbarMessage("Customer " + error);
       setSnackbarOpen(true);
     }
   };
@@ -370,7 +431,7 @@ const CreateSaleBill = () => {
               }
             />
           </Grid> */}
-                <Grid item xs={12} sm={2}>
+                {/* <Grid item xs={12} sm={2}>
                   <TextField
                     label="GST %"
                     type="number"
@@ -380,7 +441,7 @@ const CreateSaleBill = () => {
                       handleProductChange(index, "gst", e.target.value)
                     }
                   />
-                </Grid>
+                </Grid> */}
                 <Grid item xs={12} sm={1}>
                   <IconButton onClick={() => handleRemoveProduct(index)}>
                     <Delete color="error" />
@@ -395,6 +456,100 @@ const CreateSaleBill = () => {
             >
               + Add Product
             </Button>
+          </Box>
+        )}
+
+        {/* Step 3: Bill Type */}
+        {step === 3 && (
+          <Box mt={3}>
+            <Typography variant="h6">Bill Type</Typography>
+            <Divider />
+            <FormControl>
+              {/* <FormLabel>Bill Type</FormLabel> */}
+              <RadioGroup
+                row
+                value={billType}
+                onChange={(e) => setBillType(e.target.value)}
+              >
+                <FormControlLabel value="gst" control={<Radio />} label="GST" />
+                <FormControlLabel
+                  value="non-gst"
+                  control={<Radio />}
+                  label="Non-GST"
+                />
+              </RadioGroup>
+            </FormControl>
+            <Grid>
+              {billType === "gst" && (
+                <TextField
+                  label="Enter Pincode "
+                  fullWidth
+                  sx={{ mt: 2, maxWidth: 300 }}
+                  value={customer.pincode || ""}
+                  onChange={handlePincodeChange}
+                />
+              )}
+            </Grid>
+            {billType === "gst" && state?.toLowerCase() === "maharashtra" && (
+              <Box mt={4}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      label="Select GST %"
+                      sx={{width:'200px'}}
+                      value={gstPercent}
+                      onChange={(e) => setGstPercent(e.target.value)}
+                    >
+                      {[3, 5, 9, 16, 18].map((rate) => (
+                        <MenuItem key={rate} value={rate}>
+                          {rate}%
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="CGST %"
+                      fullWidth
+                      value={(totals?.cgst || 0).toFixed(2)}
+                      disabled
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="SGST %"
+                      fullWidth
+                      value={(totals?.sgst || 0).toFixed(2)}
+                      disabled
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+            {state?.toLowerCase() !== "maharashtra" && billType === "gst" &&  (
+              <Box mt={4}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      label="Select IGST %"
+                      sx={{width:'200px'}}
+                      value={gstPercent}
+                      onChange={(e) => setGstPercent(e.target.value)}
+                    >
+                      {[3, 5, 9, 16, 18].map((rate) => (
+                        <MenuItem key={rate} value={rate}>
+                          {rate}%
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
             <Box mt={4}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
@@ -423,42 +578,6 @@ const CreateSaleBill = () => {
                 </Grid>
               </Grid>
             </Box>
-          </Box>
-        )}
-
-        {/* Step 3: Bill Type */}
-        {step === 3 && (
-          <Box mt={3}>
-            <Typography variant="h6">Bill Type</Typography>
-            <Divider />
-            <FormControl>
-              {/* <FormLabel>Bill Type</FormLabel> */}
-              <RadioGroup
-                row
-                value={billType}
-                onChange={(e) => setBillType(e.target.value)}
-              >
-                <FormControlLabel value="gst" control={<Radio />} label="GST" />
-                <FormControlLabel
-                  value="non-gst"
-                  control={<Radio />}
-                  label="Non-GST"
-                />
-              </RadioGroup>
-            </FormControl>
-            <Grid>
-              {billType === "gst" && (
-                <TextField
-                  label="GST Number"
-                  fullWidth
-                  sx={{ mt: 2, maxWidth: 300 }}
-                  value={customer.gstNumber || ""}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, gstNumber: e.target.value })
-                  }
-                />
-              )}
-            </Grid>
           </Box>
         )}
 
@@ -582,9 +701,9 @@ const CreateSaleBill = () => {
                       }
                       label="Pay Mode"
                     >
-                    <MenuItem value="cash">Cash</MenuItem>
-                    <MenuItem value="upi">UPI</MenuItem>
-                    <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="upi">UPI</MenuItem>
+                      <MenuItem value="card">Card</MenuItem>
                     </TextField>
                   </Grid>
                 </Grid>

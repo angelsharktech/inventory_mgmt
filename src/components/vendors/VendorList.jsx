@@ -20,13 +20,13 @@ import FilterData from "../shared/FilterData";
 import AddVendor from "./AddVendor";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { getAllUser, updateUser } from "../../services/UserService";
+import { getAllUser, getUserById, updateUser } from "../../services/UserService";
 import EditVendor from "./EditVendor";
 import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 
 const VendorList = () => {
-  const {webuser} = useAuth();
+  const { webuser } = useAuth();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [data, setData] = useState();
@@ -36,20 +36,23 @@ const VendorList = () => {
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [positions, setPositions] = useState([]);
   const [user, setUser] = useState([]);
+   const [mainUser, setMainUser] = useState();
   const [roles, setRoles] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
-
+  
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData] = await Promise.all([
+        const [posData, roleData,user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
+          getUserById(webuser.id)
         ]);
         setPositions(posData);
         setRoles(roleData);
+        setMainUser(user)
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -70,11 +73,14 @@ const VendorList = () => {
       setUser(data);
 
       const vendorRole = roles.find((r) => r.name.toLowerCase() === "vendor");
-
-      if (vendorRole) {
-        const vendorsOnly = data.filter(
-          (u) => u.role_id._id === vendorRole._id && u.status === "active" && u.organization_id === webuser.organization_id
-        );
+      // if (vendorRole) {
+      //   const vendorsOnly = data.filter(
+      //     (u) =>{console.log(u.role_id?._id +" " + vendorRole?._id + " "+u.status + " "+  u.organization_id?._id +" "+ mainUser.organization_id?._id)}
+      //   );
+        if (vendorRole) {
+          const vendorsOnly = data.filter(
+            (u) => u.role_id?._id === vendorRole?._id && u.status === "active" && u.organization_id?._id === mainUser.organization_id?._id
+          );
         setFilteredVendors(vendorsOnly);
       }
     } catch (error) {
@@ -165,12 +171,24 @@ const VendorList = () => {
           <Table sx={{ minWidth: 1000 }}>
             <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Phone</strong></TableCell>
-                <TableCell><strong>City</strong></TableCell>
-                <TableCell><strong>Address</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
+                <TableCell>
+                  <strong>Name</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Phone</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>City</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Address</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

@@ -18,7 +18,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterData from "../shared/FilterData";
 import AddCustomer from "./AddCustomer";
-import { getAllUser, updateUser } from "../../services/UserService";
+import { getAllUser, getUserById, updateUser } from "../../services/UserService";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import EditCustomer from "./EditCustomer";
@@ -26,7 +26,7 @@ import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 
 const CustomerList = () => {
-  const {webuser} = useAuth();
+  const { webuser } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState([]);
@@ -39,17 +39,20 @@ const CustomerList = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [mainUser, setMainUser] = useState();
   const pageSize = 6;
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData] = await Promise.all([
+        const [posData, roleData, user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
+          getUserById(webuser.id),
         ]);
         setPositions(posData);
         setRoles(roleData);
+        setMainUser(user);
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -70,9 +73,16 @@ const CustomerList = () => {
       const customerRole = roles.find(
         (r) => r.name.toLowerCase() === "customer"
       );
+      //  if (customerRole) {
+      //   const customersOnly = data.filter(
+      //     (u) =>{console.log(u.role_id?._id +" " + customerRole?._id + " "+u.status + " "+  u.organization_id?._id +" "+ mainUser.organization_id?._id)}
+      //   );
       if (customerRole) {
         const customersOnly = data.filter(
-          (u) => u.role_id._id === customerRole._id && u.status === "active" && u.organization_id === webuser.organization_id
+          (u) =>
+            u.role_id?._id === customerRole?._id &&
+            u.status === "active" &&
+            u.organization_id?._id === mainUser.organization_id?._id
         );
 
         setFilteredCustomers(customersOnly);
@@ -166,12 +176,24 @@ const CustomerList = () => {
           <Table sx={{ minWidth: 1000 }}>
             <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Phone</strong></TableCell>
-                <TableCell><strong>City</strong></TableCell>
-                <TableCell><strong>Address</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
+                <TableCell>
+                  <strong>Name</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Phone</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>City</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Address</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -232,7 +254,7 @@ const CustomerList = () => {
         refresh={fetchUsers}
       />
 
-       <PaginationComponent
+      <PaginationComponent
         totalPages={totalPages}
         currentPage={currentPage}
         onPageChange={(page) => setCurrentPage(page)}

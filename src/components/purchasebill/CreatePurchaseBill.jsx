@@ -40,7 +40,7 @@ const CreatePurchaseBill = () => {
   const [isExistingVendor, setIsExistingVendor] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([
-    { productId: "", hsnCode: "", qty: 1, price: 0, discount: 0, gst: 0 },
+    { productId: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
   ]);
   const [billType, setBillType] = useState("non-gst");
   const [paymentType, setPaymentType] = useState("full");
