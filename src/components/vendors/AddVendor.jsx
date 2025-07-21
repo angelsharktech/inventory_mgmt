@@ -32,7 +32,7 @@ const style = {
   overflowY: "auto",
 };
 
-const AddVendor = ({ open, handleClose }) => {
+const AddVendor = ({ open, handleClose, refresh }) => {
   const { webuser } = useAuth();
   const [formData, setFormData] = useState({
     first_name: "",
@@ -96,60 +96,66 @@ const AddVendor = ({ open, handleClose }) => {
   };
 
   const handleSubmit = async () => {
-    const vendorRole = roles.find(
-      (role) => role.name.toLowerCase() === "vendor"
-    );
-    const vendorposition = positions.find(
-      (pos) => pos.name.toLowerCase() === "vendor"
-    );
+    try {
+      const vendorRole = roles.find(
+        (role) => role.name.toLowerCase() === "vendor"
+      );
+      const vendorposition = positions.find(
+        (pos) => pos.name.toLowerCase() === "vendor"
+      );
 
-    const phoneExists = users.find(
-      (u) => u.phone_number === formData.phone_number
-    );
-    if (phoneExists) {
-      setSnackbarMessage("Phone number already exists!");
-      setSnackbarOpen(true);
-      return;
-    }
-    if (!formData.first_name) {
-      setSnackbarMessage("First Name is Required!");
-      setSnackbarOpen(true);
-      return;
-    }
-    const payload = {
-      ...formData,
-      bankDetails,
-      organization_id: mainUser.organization_id?._id,
-      email: formData.first_name + "@example.com",
-      password: formData.first_name + "@example.com",
-      role_id: vendorRole._id,
-      position_id: vendorposition._id,
-    };
+      const phoneExists = users.find(
+        (u) => u.phone_number === formData.phone_number
+      );
+      if (phoneExists) {
+        setSnackbarMessage("Phone number already exists!");
+        setSnackbarOpen(true);
+        return;
+      }
+      if (!formData.first_name) {
+        setSnackbarMessage("First Name is Required!");
+        setSnackbarOpen(true);
+        return;
+      }
+      const payload = {
+        ...formData,
+        bankDetails,
+        organization_id: mainUser.organization_id?._id,
+        email: formData.first_name + "@example.com",
+        password: formData.first_name + "@example.com",
+        role_id: vendorRole._id,
+        position_id: vendorposition._id,
+      };
 
-    const result = await registerUser(payload);
-    if (result) {
-      setSnackbarMessage("Vendor Added successful!");
-      setSnackbarOpen(true);
-      handleClose();
-    }
+      const result = await registerUser(payload);
+      if (result) {
+        setSnackbarMessage("Vendor Added successful!");
+        setSnackbarOpen(true);
+        refresh();
+        handleClose();
+      }
 
-    // Optionally reset
-    setFormData({
-      first_name: "",
-      last_name: "",
-      phone_number: "",
-      country: "",
-      address: "",
-      city: "",
-      // bio: "",
-    });
-    setBankDetails({
-      bankName: "",
-      accountNumber: "",
-      accountName: "",
-      ifscCode: "",
-      upiId: "",
-    });
+      // Optionally reset
+      setFormData({
+        first_name: "",
+        last_name: "",
+        phone_number: "",
+        country: "",
+        address: "",
+        city: "",
+        // bio: "",
+      });
+      setBankDetails({
+        bankName: "",
+        accountNumber: "",
+        accountName: "",
+        ifscCode: "",
+        upiId: "",
+      });
+    } catch (error) {
+      setSnackbarMessage(error);
+      setSnackbarOpen(true);
+    }
   };
   return (
     <>

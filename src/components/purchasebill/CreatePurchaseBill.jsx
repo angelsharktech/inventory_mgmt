@@ -36,21 +36,31 @@ const CreatePurchaseBill = () => {
     address: "",
     gstNumber: "",
     phone_number: "",
+    pincode: "",
   });
   const [isExistingVendor, setIsExistingVendor] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([
-    { productId: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+    { productName: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
   ]);
   const [billType, setBillType] = useState("non-gst");
+  const [gstPercent, setGstPercent] = useState(0);
   const [paymentType, setPaymentType] = useState("full");
   const [paymentDetails, setPaymentDetails] = useState({
     advance: 0,
     balance: 0,
     mode1: "",
+    transactionNumber: "",
+    bankName: "",
+    chequeNumber: "",
     mode2: "",
-    fullPaid: 0,
+    transactionNumber2: "",
+    bankName2: "",
+    chequeNumber2: "",
+    cardNumber: "",
+    cardNumber2: "",
     fullMode: "",
+    fullPaid: 0,
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -61,6 +71,7 @@ const CreatePurchaseBill = () => {
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [state, setState] = useState();
   const [mainUser, setMainUser] = useState();
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
@@ -89,26 +100,43 @@ const CreatePurchaseBill = () => {
   //   calculating totals
   useEffect(() => {
     let subtotal = 0;
-    let gstTotal = 0;
-
     selectedProducts.forEach((item) => {
       const qty = Number(item.qty);
       const price = Number(item.price);
       const discount = Number(item.discount);
-      const gst = Number(item.gst);
       const taxable = qty * price - discount;
-      const gstAmt = (taxable * gst) / 100;
-
       subtotal += taxable;
-      gstTotal += gstAmt;
     });
+    const isMaharashtra = state?.toLowerCase() === "maharashtra";
+    const isGST = billType === "gst";
+
+    let gstTotal = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+
+    if (isGST) {
+      gstTotal = (subtotal * gstPercent) / 100;
+
+      if (isMaharashtra) {
+        cgst = gstPercent / 2;
+        sgst = gstPercent / 2;
+      } else {
+        igst = gstTotal;
+      }
+    }
+
+    const grandTotal = subtotal + gstTotal;
 
     setTotals({
       subtotal,
       gstTotal,
-      grandTotal: subtotal + gstTotal,
+      cgst,
+      sgst,
+      igst,
+      grandTotal,
     });
-  }, [selectedProducts]);
+  }, [selectedProducts, gstPercent, billType, state]);
   // End of total calculation
 
   // fetch product data
@@ -120,7 +148,6 @@ const CreatePurchaseBill = () => {
     try {
       const data = await getAllProducts();
       setProducts(data);
-      console.log("products:", data);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -130,6 +157,8 @@ const CreatePurchaseBill = () => {
   //   calculations of advance payment
   useEffect(() => {
     if (paymentType === "advance") {
+      paymentDetails.fullMode = "";
+      paymentDetails.fullPaid = 0;
       const advance = Number(paymentDetails.advance) || 0;
       const balance = totals.grandTotal - advance;
 
@@ -142,8 +171,8 @@ const CreatePurchaseBill = () => {
   // End calculations of advance payment
 
   const handleMobile = async (phone) => {
-    const phoneExists = users.find((u) => u.phone_number === phone);
-    console.log("mobile:", phoneExists);
+    
+    const phoneExists = users.find((u) => u.phone_number === phone && u.role_id.name.toLowerCase() === 'vendor');
 
     if (phoneExists) {
       setVendor({
@@ -160,31 +189,70 @@ const CreatePurchaseBill = () => {
 
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
-    if (field === "productId") {
+
+    if (field === "productName") {
       const product = products.data.find((p) => p._id === value);
-      updated[index] = {
-        ...updated[index],
-        productId: value,
-        hsnCode: product?.hsnCode || "",
-        price: product?.price,
-      };
+
+      if (product) {
+        updated[index] = {
+          ...updated[index],
+          productName: product.name,
+          hsnCode: product.hsnCode || "",
+          price: product.price || 0,
+        };
+      }
+    } else if (field === "hsnCode") {
+      const product = products.data.find((p) => p.hsnCode === value);
+
+      if (product) {
+        updated[index] = {
+          ...updated[index],
+          productName: product.name,
+          hsnCode: product.hsnCode,
+          price: product.price || 0,
+        };
+      }
     } else {
       updated[index][field] = value;
     }
+
     setSelectedProducts(updated);
   };
 
   const handleAddProduct = () => {
     setSelectedProducts([
       ...selectedProducts,
-      { productId: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+      { productName: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
     ]);
   };
   const handleRemoveProduct = (index) => {
     const updated = selectedProducts.filter((_, i) => i !== index);
     setSelectedProducts(updated);
   };
+  // checking pincode form external api
+  const handlePincodeChange = async (e) => {
+    const pincode = e.target.value;
+    setVendor({ ...vendor, pincode });
 
+    if (pincode.length === 6) {
+      try {
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${pincode}`
+        );
+        const data = await res.json();
+        const stateFind = data[0]?.PostOffice?.[0]?.State || "Not Found";
+        if (stateFind === "Not Found") {
+          setSnackbarOpen(true);
+          setSnackbarMessage("State Not Found!");
+          return;
+        }
+        setState(stateFind);
+      } catch (error) {
+        console.error("Error fetching state from pincode", error);
+      }
+    }
+  };
+  // end of checking pincode form external api
   const handleSubmit = async () => {
     try {
       if (!vendor.phone_number || !vendor.first_name) {
@@ -194,7 +262,7 @@ const CreatePurchaseBill = () => {
       }
 
       for (let p of selectedProducts) {
-        if (!p.productId || p.qty <= 0 || p.price <= 0) {
+        if (!p.productName || p.qty <= 0 || p.price <= 0) {
           setSnackbarMessage("Please fill all product details correctly!");
           setSnackbarOpen(true);
           return;
@@ -216,17 +284,19 @@ const CreatePurchaseBill = () => {
           role_id: vendorRole._id,
           position_id: vendorposition._id,
         };
-        console.log("vendor detail::", payload);
 
         const res = await registerUser(payload);
       }
 
       const billData = {
-        vendor: vendor,
+        biller: vendor,
         products: selectedProducts,
         billType,
         paymentType,
         paymentDetails,
+        gstPercent,
+        totals,
+        org: mainUser.organization_id?.name,
       };
 
       // await createPurchaseBill(billData);
@@ -236,14 +306,29 @@ const CreatePurchaseBill = () => {
       setPrintData(billData);
       setShowPrint(true); // Show bill for printing
       setStep(1);
-      setVendor({first_name: "",address: "",gstNumber: "",phone_number: "",})
-      
+      setVendor({
+        first_name: "",
+        address: "",
+        gstNumber: "",
+        phone_number: "",
+      });
+      setSelectedProducts([
+        { productName: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+      ]);
+      setPaymentDetails({
+        advance: 0,
+        balance: 0,
+        mode1: "",
+        mode2: "",
+        fullPaid: 0,
+        fullMode: "",
+      });
       setTimeout(() => {
         window.print(); // Native print
         setShowPrint(false); // Hide again after printing
       }, 1000);
     } catch (error) {
-      setSnackbarMessage('Vendor '+error);
+      setSnackbarMessage("Vendor " + error);
       setSnackbarOpen(true);
     }
   };
@@ -315,9 +400,9 @@ const CreatePurchaseBill = () => {
                   <TextField
                     sx={{ width: "200px" }}
                     select
-                    value={item.productId}
+                    value={item.productName}
                     onChange={(e) =>
-                      handleProductChange(index, "productId", e.target.value)
+                      handleProductChange(index, "productName", e.target.value)
                     }
                     label="Select Product"
                   >
@@ -330,11 +415,22 @@ const CreatePurchaseBill = () => {
                 </Grid>
                 <Grid item xs={12} sm={1}>
                   <TextField
+                    select
                     label="HSN"
-                    sx={{ width: "120px" }}
                     value={item.hsnCode}
-                    fullWidth
-                  />
+                    onChange={(e) =>
+                      handleProductChange(index, "hsnCode", e.target.value)
+                    }
+                    sx={{ width: "200px" }}
+                  >
+                    {[
+                      ...new Set(products.data?.map((prod) => prod.hsnCode)),
+                    ].map((hsn) => (
+                      <MenuItem key={hsn} value={hsn}>
+                        {hsn}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Grid>
                 <Grid item xs={12} sm={1}>
                   <TextField
@@ -358,28 +454,6 @@ const CreatePurchaseBill = () => {
                     }
                   />
                 </Grid>
-                {/* <Grid item xs={12} sm={2}>
-            <TextField
-              label="Discount"
-              type="number"
-              sx={{width:'120px'}}
-              value={item.discount}
-              onChange={(e) =>
-                handleProductChange(index, "discount", e.target.value)
-              }
-            />
-          </Grid> */}
-                <Grid item xs={12} sm={2}>
-                  <TextField
-                    label="GST %"
-                    type="number"
-                    sx={{ width: "120px" }}
-                    value={item.gst}
-                    onChange={(e) =>
-                      handleProductChange(index, "gst", e.target.value)
-                    }
-                  />
-                </Grid>
                 <Grid item xs={12} sm={1}>
                   <IconButton onClick={() => handleRemoveProduct(index)}>
                     <Delete color="error" />
@@ -394,6 +468,103 @@ const CreatePurchaseBill = () => {
             >
               + Add Product
             </Button>
+          </Box>
+        )}
+
+        {/* Step 3: Bill Type */}
+        {step === 3 && (
+          <Box mt={3}>
+            <Typography variant="h6">Bill Type</Typography>
+            <Divider />
+            <FormControl>
+              {/* <FormLabel>Bill Type</FormLabel> */}
+              <RadioGroup
+                row
+                value={billType}
+                onChange={(e) => setBillType(e.target.value)}
+              >
+                <FormControlLabel value="gst" control={<Radio />} label="GST" />
+                <FormControlLabel
+                  value="non-gst"
+                  control={<Radio />}
+                  label="Non-GST"
+                />
+              </RadioGroup>
+            </FormControl>
+            <Grid>
+              {billType === "gst" && (
+                <TextField
+                  label="Enter Pincode "
+                  fullWidth
+                  sx={{ mt: 2, maxWidth: 300 }}
+                  value={vendor.pincode || ""}
+                  onChange={handlePincodeChange}
+                />
+              )}
+            </Grid>
+            {billType === "gst" && state?.toLowerCase() === "maharashtra" && (
+              <Box mt={4}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      label="Select GST %"
+                      sx={{ width: "200px" }}
+                      value={gstPercent}
+                      onChange={(e) => setGstPercent(e.target.value)}
+                    >
+                      {[3, 5, 9, 16, 18].map((rate) => (
+                        <MenuItem key={rate} value={rate}>
+                          {rate}%
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="CGST %"
+                      fullWidth
+                      value={(totals?.cgst || 0).toFixed(2)}
+                      disabled
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="SGST %"
+                      fullWidth
+                      value={(totals?.sgst || 0).toFixed(2)}
+                      disabled
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+            {state &&
+              state.toLowerCase() !== "maharashtra" &&
+              billType === "gst" && (
+                <Box mt={4}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        select
+                        label="Select IGST %"
+                        sx={{ width: "200px" }}
+                        value={gstPercent}
+                        onChange={(e) => setGstPercent(e.target.value)}
+                      >
+                        {[3, 5, 9, 16, 18].map((rate) => (
+                          <MenuItem key={rate} value={rate}>
+                            {rate}%
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+
             <Box mt={4}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
@@ -422,42 +593,6 @@ const CreatePurchaseBill = () => {
                 </Grid>
               </Grid>
             </Box>
-          </Box>
-        )}
-
-        {/* Step 3: Bill Type */}
-        {step === 3 && (
-          <Box mt={3}>
-            <Typography variant="h6">Bill Type</Typography>
-            <Divider />
-            <FormControl>
-              {/* <FormLabel>Bill Type</FormLabel> */}
-              <RadioGroup
-                row
-                value={billType}
-                onChange={(e) => setBillType(e.target.value)}
-              >
-                <FormControlLabel value="gst" control={<Radio />} label="GST" />
-                <FormControlLabel
-                  value="non-gst"
-                  control={<Radio />}
-                  label="Non-GST"
-                />
-              </RadioGroup>
-            </FormControl>
-            <Grid>
-              {billType === "gst" && (
-                <TextField
-                  label="GST Number"
-                  fullWidth
-                  sx={{ mt: 2, maxWidth: 300 }}
-                  value={vendor.gstNumber || ""}
-                  onChange={(e) =>
-                    setVendor({ ...vendor, gstNumber: e.target.value })
-                  }
-                />
-              )}
-            </Grid>
           </Box>
         )}
 
@@ -491,69 +626,210 @@ const CreatePurchaseBill = () => {
             <Box mt={2}>
               {paymentType === "advance" ? (
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={3}>
-                    <TextField
-                      label="Advance Paid"
-                      type="number"
-                      fullWidth
-                      value={paymentDetails.advance}
-                      onChange={(e) => {
-                        const adv = Number(e.target.value) || 0;
-                        const balance = Math.max(totals.grandTotal - adv, 0);
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          advance: adv,
-                          balance,
-                        });
-                      }}
-                    />
+                  {/* Row 1 - Advance */}
+                  <Grid item xs={12}>
+                    <Grid container spacing={2} alignItems="flex-start">
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Advance Paid"
+                          type="number"
+                          fullWidth
+                          value={paymentDetails.advance}
+                          onChange={(e) => {
+                            const adv = Number(e.target.value) || 0;
+                            const balance = Math.max(
+                              totals.grandTotal - adv,
+                              0
+                            );
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              advance: adv,
+                              balance,
+                            });
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          select
+                          sx={{ width: "200px" }}
+                          label="Advance Pay Mode"
+                          value={paymentDetails.mode1}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              mode1: e.target.value,
+                            })
+                          }
+                        >
+                          <MenuItem value=""></MenuItem>
+                          <MenuItem value="cash">Cash</MenuItem>
+                          <MenuItem value="upi">UPI</MenuItem>
+                          <MenuItem value="card">Card</MenuItem>
+                          <MenuItem value="cheque">Cheque</MenuItem>
+                        </TextField>
+                      </Grid>
+
+                      {paymentDetails.mode1 === "upi" && (
+                        <Grid item xs={12} sm={3}>
+                          <TextField
+                            label="UPI Transaction No."
+                            fullWidth
+                            value={paymentDetails.transactionNumber || ""}
+                            onChange={(e) =>
+                              setPaymentDetails({
+                                ...paymentDetails,
+                                transactionNumber: e.target.value,
+                              })
+                            }
+                          />
+                        </Grid>
+                      )}
+                      {paymentDetails.mode1 === "card" && (
+                        <Grid item xs={12} sm={3}>
+                          <TextField
+                            label="Card No."
+                            fullWidth
+                            value={paymentDetails.cardNumber || ""}
+                            onChange={(e) =>
+                              setPaymentDetails({
+                                ...paymentDetails,
+                                cardNumber: e.target.value,
+                              })
+                            }
+                          />
+                        </Grid>
+                      )}
+
+                      {paymentDetails.mode1 === "cheque" && (
+                        <>
+                          <Grid item xs={12} sm={3}>
+                            <TextField
+                              label="Bank Name"
+                              fullWidth
+                              value={paymentDetails.bankName || ""}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  bankName: e.target.value,
+                                })
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <TextField
+                              label="Cheque Number"
+                              fullWidth
+                              value={paymentDetails.chequeNumber || ""}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  chequeNumber: e.target.value,
+                                })
+                              }
+                            />
+                          </Grid>
+                        </>
+                      )}
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <TextField
-                      sx={{ width: "200px" }}
-                      select
-                      value={paymentDetails.mode1}
-                      onChange={(e) =>
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          mode1: e.target.value,
-                        })
-                      }
-                      label="Advance Pay Mode"
-                    >
-                      <MenuItem value=""></MenuItem>
-                      <MenuItem value="cash">Cash</MenuItem>
-                      <MenuItem value="upi">UPI</MenuItem>
-                      <MenuItem value="card">Card</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <TextField
-                      label="Balance"
-                      type="number"
-                      fullWidth
-                      value={paymentDetails.balance}
-                      disabled
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <TextField
-                      sx={{ width: "200px" }}
-                      select
-                      value={paymentDetails.mode2}
-                      onChange={(e) =>
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          mode2: e.target.value,
-                        })
-                      }
-                      label="Balance Pay Mode"
-                    >
-                      <MenuItem value=""></MenuItem>
-                      <MenuItem value="cash">Cash</MenuItem>
-                      <MenuItem value="upi">UPI</MenuItem>
-                      <MenuItem value="card">Card</MenuItem>
-                    </TextField>
+
+                  {/* Row 2 - Balance */}
+                  <Grid item xs={12}>
+                    <Grid container spacing={2} alignItems="flex-start">
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Balance"
+                          type="number"
+                          fullWidth
+                          value={paymentDetails.balance}
+                          disabled
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          select
+                          sx={{ width: "200px" }}
+                          label="Balance Pay Mode"
+                          value={paymentDetails.mode2}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              mode2: e.target.value,
+                            })
+                          }
+                        >
+                          <MenuItem value=""></MenuItem>
+                          <MenuItem value="cash">Cash</MenuItem>
+                          <MenuItem value="upi">UPI</MenuItem>
+                          <MenuItem value="card">Card</MenuItem>
+                          <MenuItem value="cheque">Cheque</MenuItem>
+                        </TextField>
+                      </Grid>
+
+                      {paymentDetails.mode2 === "upi" && (
+                        <Grid item xs={12} sm={3}>
+                          <TextField
+                            label="UPI Transaction No."
+                            fullWidth
+                            value={paymentDetails.transactionNumber2 || ""}
+                            onChange={(e) =>
+                              setPaymentDetails({
+                                ...paymentDetails,
+                                transactionNumber2: e.target.value,
+                              })
+                            }
+                          />
+                        </Grid>
+                      )}
+                      {paymentDetails.mode2 === "card" && (
+                        <Grid item xs={12} sm={3}>
+                          <TextField
+                            label="Card No."
+                            fullWidth
+                            value={paymentDetails.cardNumber2 || ""}
+                            onChange={(e) =>
+                              setPaymentDetails({
+                                ...paymentDetails,
+                                cardNumber2: e.target.value,
+                              })
+                            }
+                          />
+                        </Grid>
+                      )}
+                      {paymentDetails.mode2 === "cheque" && (
+                        <>
+                          <Grid item xs={12} sm={3}>
+                            <TextField
+                              label="Bank Name"
+                              fullWidth
+                              value={paymentDetails.bankName2 || ""}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  bankName2: e.target.value,
+                                })
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <TextField
+                              label="Cheque Number"
+                              fullWidth
+                              value={paymentDetails.chequeNumber2 || ""}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  chequeNumber2: e.target.value,
+                                })
+                              }
+                            />
+                          </Grid>
+                        </>
+                      )}
+                    </Grid>
                   </Grid>
                 </Grid>
               ) : (
@@ -581,11 +857,74 @@ const CreatePurchaseBill = () => {
                       }
                       label="Pay Mode"
                     >
-                    <MenuItem value="cash">Cash</MenuItem>
-                    <MenuItem value="upi">UPI</MenuItem>
-                    <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value=""></MenuItem>
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="upi">UPI</MenuItem>
+                      <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value="cheque">Cheque</MenuItem>
                     </TextField>
                   </Grid>
+                  {paymentDetails.fullMode === "upi" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="UPI Transaction No."
+                        fullWidth
+                        value={paymentDetails.transactionNumber || ""}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            transactionNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.fullMode === "card" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Card No."
+                        fullWidth
+                        value={paymentDetails.cardNumber || ""}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {paymentDetails.fullMode === "cheque" && (
+                    <>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Bank Name"
+                          fullWidth
+                          value={paymentDetails.bankName || ""}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              bankName: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Cheque Number"
+                          fullWidth
+                          value={paymentDetails.chequeNumber || ""}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              chequeNumber: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                    </>
+                  )}
                 </Grid>
               )}
             </Box>
@@ -640,11 +979,10 @@ const CreatePurchaseBill = () => {
 
       {showPrint && printData && (
         <div className="print-only">
-          <GenerateBill bill={printData} />
+          <GenerateBill bill={printData} billName={'PURCHASE'}/>
         </div>
       )}
     </>
   );
 };
-
 export default CreatePurchaseBill;

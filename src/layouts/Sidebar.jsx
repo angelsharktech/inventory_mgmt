@@ -11,9 +11,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Toolbar,
+  Collapse,
 } from "@mui/material";
-
 import {
   Dashboard as DashboardIcon,
   Store as StoreIcon,
@@ -25,8 +24,9 @@ import {
   Logout as LogoutIcon,
   People as PeopleIcon,
   Menu as MenuIcon,
+  ExpandLess,
+  ExpandMore,
 } from "@mui/icons-material";
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -38,10 +38,11 @@ const navItems = [
   { label: "Product", icon: <Inventory2Icon /> },
   { label: "Purchase Bill", icon: <AccountBalanceWalletIcon /> },
   { label: "Sale Bill", icon: <ReceiptLongIcon /> },
-  { label: "Bill Reports", icon: <AssessmentIcon /> },
-  // { label: "Income Tax Reports", icon: <RequestQuoteIcon /> },
+  { label: "Bill Reports", icon: <AssessmentIcon />, hasDropdown: true },
   { label: "Logout", icon: <LogoutIcon /> },
 ];
+
+const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report"];
 
 const selectedStyle = {
   background: "#fff !important",
@@ -62,87 +63,16 @@ const unselectedStyle = {
   },
 };
 
-// const Sidebar = ({ selectedTab, setSelectedTab }) => {
-//     const {webuser, logoutUser } = useAuth();
-//    const navigate = useNavigate();
-
-//   const handleNavClick = (label) => {
-//     if (label === "Logout") {
-//      logoutUser();
-//       navigate("/login");
-//     } else {
-//       setSelectedTab(label);
-//     }
-//   };
-//   return (
-//     <Box
-//       sx={{
-//         width: 200,
-//         backgroundColor: "#2F4F4F",
-//         color: "white",
-//         height: "100vh",
-//         borderTopRightRadius: 40,
-//         borderBottomRightRadius: 40,
-//         px: 2,
-//         pt: 3,
-//         display: "flex",
-//         flexDirection: "column",
-//         justifyContent: "space-between",
-//       }}
-//     >
-//       <Box textAlign="center" mt={4}>
-//         <Avatar
-//           src=""
-//           sx={{ width: 60, height: 60, mx: "auto", mb: 1 }}
-//         />
-//         <Typography fontWeight="bold" fontSize={14}>
-//           {webuser.first_name }
-//           {/* {webuser.first_name +" "+ webuser.last_name} */}
-//         </Typography>
-//         <Typography fontSize={12} color="gray">
-//          {webuser.email}
-//         </Typography>
-//       </Box>
-
-//       <Box >
-//         <List>
-//           {navItems.map((item) => (
-//             <ListItemButton
-//               key={item.label}
-//               selected={selectedTab === item.label}
-//               onClick={() => handleNavClick(item.label)}
-//               sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
-//             >
-//               <ListItemIcon
-//                 sx={{
-//                   color: selectedTab === item.label ? selectedStyle : unselectedStyle,
-//                 }}
-//               >
-//                 {item.icon}
-//               </ListItemIcon>
-//               <ListItemText primary={item.label} />
-//             </ListItemButton>
-//           ))}
-//         </List>
-//       </Box>
-//       <Box mb={6}></Box>
-//     </Box>
-//   );
-// };
-
-// export default Sidebar;
-
 const Sidebar = ({ selectedTab, setSelectedTab }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openReports, setOpenReports] = useState(false);
   const { webuser, logoutUser } = useAuth();
   const navigate = useNavigate();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const toggleDrawer = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
   const handleNavClick = (label) => {
     if (label === "Logout") {
@@ -182,23 +112,53 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
 
       <Box>
         <List>
-          {navItems.map((item) => (
-            <ListItemButton
-              key={item.label}
-              selected={selectedTab === item.label}
-              onClick={() => handleNavClick(item.label)}
-              sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
-            >
-              <ListItemIcon
-                sx={{
-                  color: selectedTab === item.label ? "#2F4F4F" : "white",
-                }}
+          {navItems.map((item) =>
+            item.hasDropdown ? (
+              <Box key={item.label}>
+                <ListItemButton
+                  onClick={() => setOpenReports(!openReports)}
+                  sx={selectedTab.startsWith("Report") ? selectedStyle : unselectedStyle}
+                >
+                  <ListItemIcon sx={{ color: selectedTab.startsWith("Report") ? "#2F4F4F" : "white" }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                  {openReports ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+                <Collapse in={openReports} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {billReportsSubItems.map((subLabel) => (
+                      <ListItemButton
+                        key={subLabel}
+                        onClick={() => handleNavClick(subLabel)}
+                        sx={{
+                          ...(
+                            selectedTab === subLabel
+                              ? selectedStyle
+                              : { pl: 4, ...unselectedStyle }
+                          ),
+                        }}
+                      >
+                        <ListItemText primary={subLabel} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              </Box>
+            ) : (
+              <ListItemButton
+                key={item.label}
+                selected={selectedTab === item.label}
+                onClick={() => handleNavClick(item.label)}
+                sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
+                <ListItemIcon sx={{ color: selectedTab === item.label ? "#2F4F4F" : "white" }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            )
+          )}
         </List>
       </Box>
 
@@ -216,26 +176,12 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
         </Box>
       )}
 
-      {/* Drawer for mobile */}
-      <Drawer
-        anchor="left"
-        open={mobileOpen}
-        onClose={toggleDrawer}
-        ModalProps={{ keepMounted: true }}
-      >
+      <Drawer anchor="left" open={mobileOpen} onClose={toggleDrawer} ModalProps={{ keepMounted: true }}>
         {renderSidebarContent()}
       </Drawer>
 
-      {/* Static sidebar for desktop */}
       {!isMobile && (
-        <Box
-          sx={{
-            // width: 200,
-            height: "100vh",
-            // position: "fixed",
-            zIndex: 1100,
-          }}
-        >
+        <Box sx={{ height: "100vh", zIndex: 1100 }}>
           {renderSidebarContent()}
         </Box>
       )}

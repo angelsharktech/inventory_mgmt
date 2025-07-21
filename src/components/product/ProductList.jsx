@@ -182,12 +182,12 @@ const ProductList = () => {
           <Table sx={{ minWidth: 1000 }}>
             <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
+                <TableCell><strong>HSN Code</strong></TableCell>
                 <TableCell><strong>Name</strong></TableCell>
                 <TableCell><strong>Short Description</strong></TableCell>
                 <TableCell><strong>Price ($)</strong></TableCell>
                 <TableCell><strong>Compare Price ($)</strong></TableCell>
                 <TableCell><strong>Discount (%)</strong></TableCell>
-                <TableCell><strong>SKU</strong></TableCell>
                 <TableCell><strong>Quantity</strong></TableCell>
                 <TableCell><strong>Status</strong></TableCell>
                 <TableCell><strong>Tags</strong></TableCell>
@@ -199,12 +199,12 @@ const ProductList = () => {
             <TableBody>
               {paginatedProducts?.map((prod) => (
                 <TableRow key={prod._id}>
+                  <TableCell>{prod.hsnCode}</TableCell>
                   <TableCell>{prod.name}</TableCell>
                   <TableCell>{prod.shortDescription}</TableCell>
                   <TableCell>{prod.price}</TableCell>
                   <TableCell>{prod.compareAtPrice}</TableCell>
                   <TableCell>{prod.discountPercentage}%</TableCell>
-                  <TableCell>{prod.sku}</TableCell>
                   <TableCell>{prod.quantity}</TableCell>
                   <TableCell>
                     <Chip

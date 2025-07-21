@@ -97,7 +97,6 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
     }
     const payload = {
       ...formData,
-      bankDetails,
       organization_id: mainUser.organization_id?._id,
       email: formData.first_name +"@example.com",
       password: formData.first_name +"@example.com",

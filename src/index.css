@@ -74,29 +74,45 @@ html, body {
 }
 
 /* Hide from screen, but show on print */
-.barcode-print {
+/* By default hide barcode and bill print containers */
+.barcode-print,
+.print-only {
   display: none;
 }
 
-/* Only show the barcode when printing */
+/* Show only specific sections while printing */
 @media print {
   body * {
     visibility: hidden !important;
   }
 
   .barcode-print,
-  .barcode-print * {
-    display: block !important;
+  .barcode-print *,
+  .print-only,
+  .print-only * {
     visibility: visible !important;
+    display: block !important;
   }
 
+  /* Barcode print styles (for thermal printer) */
   .barcode-print {
     position: absolute;
     top: 0;
     left: 0;
-    width: 80mm; /* For thermal printer size */
+    width: 80mm; /* Thermal printer width */
     padding: 10px;
     text-align: start;
     background: white;
   }
+
+  /* Sale bill print styles */
+  .print-only {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; /* Full page width */
+    background: white;
+    padding: 20px;
+  }
 }
+
