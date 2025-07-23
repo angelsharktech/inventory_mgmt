@@ -12,7 +12,11 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { getAllUser, getUserById, registerUser } from "../../services/UserService";
+import {
+  getAllUser,
+  getUserById,
+  registerUser,
+} from "../../services/UserService";
 
 const style = {
   position: "absolute",
@@ -28,7 +32,7 @@ const style = {
   overflowY: "auto",
 };
 
-const AddCustomer = ({ open, handleClose ,refresh }) => {
+const AddCustomer = ({ open, handleClose, refresh }) => {
   const { webuser } = useAuth();
   const [formData, setFormData] = useState({
     first_name: "",
@@ -38,27 +42,34 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
     address: "",
     city: "",
   });
-
+  const [gstDetails, setGstDetails] = useState({
+    gstNumber: "",
+    legalName: "",
+    state: "",
+    stateCode: "",
+  });
+  const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
   const [mainUser, setMainUser] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+   const [errors, setErrors] = useState({phone_number: ""});
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData, userData , user] = await Promise.all([
+        const [posData, roleData, userData, user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
           getAllUser(),
-          getUserById(webuser.id)
+          getUserById(webuser.id),
         ]);
         setPositions(posData);
         setRoles(roleData);
         setUsers(userData);
-        setMainUser(user)
+        setMainUser(user);
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
@@ -68,6 +79,17 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "phone_number") {
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          phone_number: "Invalid mobile number",
+        }));
+      }else {
+        setErrors((prev) => ({ ...prev, phone_number: "" }));
+      }
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -90,6 +112,11 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
       setSnackbarOpen(true);
       return;
     }
+     if (errors.phone_number) {
+        setSnackbarMessage(errors.phone_number);
+        setSnackbarOpen(true);
+        return;
+      }
     if (!formData.first_name) {
       setSnackbarMessage("First Name is Required!");
       setSnackbarOpen(true);
@@ -98,36 +125,42 @@ const AddCustomer = ({ open, handleClose ,refresh }) => {
     const payload = {
       ...formData,
       organization_id: mainUser.organization_id?._id,
-      email: formData.first_name +"@example.com",
-      password: formData.first_name +"@example.com",
+      email: formData.first_name + "@example.com",
+      password: formData.first_name + "@example.com",
       role_id: customerRole._id,
       position_id: customerposition._id,
+      ...(isGstApplicable && { gst: gstDetails }),
     };
-try {
-   const result = await registerUser(payload);
-    if (result) {
-      setSnackbarMessage("Customer Added successful!");
-      setSnackbarOpen(true);
-      refresh();
-      handleClose();
-    }
+    try {
+      const result = await registerUser(payload);
+      if (result) {
+        setSnackbarMessage("Customer Added successful!");
+        setSnackbarOpen(true);
+        refresh();
+        handleClose();
+      }
 
-    // Optionally reset
-    setFormData({
-      first_name: "",
-      last_name: "",
-      phone_number: "",
-      country: "",
-      address: "",
-      city: "",
-     
-    });
-   
-} catch (error) {
-  setSnackbarMessage(error);
+      // Optionally reset
+      setFormData({
+        first_name: "",
+        last_name: "",
+        phone_number: "",
+        country: "",
+        address: "",
+        city: "",
+      });
+      setIsGstApplicable(false);
+      setGstDetails({
+        gstNumber: "",
+        legalName: "",
+        state: "",
+        stateCode: "",
+      });
+      setErrors({phone_number: ""})
+    } catch (error) {
+      setSnackbarMessage(error);
       setSnackbarOpen(true);
-}
-   
+    }
   };
   return (
     <>
@@ -149,10 +182,46 @@ try {
                   value={value}
                   onChange={handleChange}
                   required={key === "first_name"}
+                  error={Boolean(errors[key])}
+                  helperText={errors[key]}
                 />
               </Grid>
             ))}
           </Grid>
+          <Box mt={2}>
+            <label>
+              <input
+                type="checkbox"
+                checked={isGstApplicable}
+                onChange={(e) => setIsGstApplicable(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Is GST Applicable?
+            </label>
+          </Box>
+
+          {isGstApplicable && (
+            <Grid container spacing={2} mt={1}>
+              {Object.entries(gstDetails).map(([key, value]) => (
+                <Grid item xs={12} sm={6} key={key}>
+                  <TextField
+                    fullWidth
+                    label={key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase())}
+                    name={key}
+                    value={value}
+                    onChange={(e) =>
+                      setGstDetails((prev) => ({
+                        ...prev,
+                        [key]: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
             <Button onClick={handleClose} sx={{ mr: 2, color: "#2F4F4F" }}>
@@ -166,27 +235,26 @@ try {
               Save
             </Button>
           </Box>
-
         </Box>
       </Modal>
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={3000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <Alert
-              severity={
-                snackbarMessage === "Customer Added successful!"
-                  ? "success"
-                  : "error"
-              }
-              variant="filled"
-              onClose={() => setSnackbarOpen(false)}
-            >
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Customer Added successful!"
+              ? "success"
+              : "error"
+          }
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

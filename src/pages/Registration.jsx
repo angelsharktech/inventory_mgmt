@@ -51,6 +51,10 @@ const Registration = () => {
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [errors, setErrors] = useState({
+    email: "",
+    phone_number: "",
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,7 +77,7 @@ const Registration = () => {
     };
     fetchAll();
   }, []);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -81,12 +85,30 @@ const Registration = () => {
       const emailExists = users?.some(
         (u) => u.email.toLowerCase() === value.toLowerCase()
       );
-      if (emailExists) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailRegex.test(value)) {
+        setErrors((prev) => ({ ...prev, email: "Invalid email format" }));
+      } else if (emailExists) {
+        setErrors((prev) => ({ ...prev, email: "Email already exists" }));
         setSnackbarMessage("Email already exists!");
         setSnackbarOpen(true);
+      } else {
+        setErrors((prev) => ({ ...prev, email: "" }));
       }
     }
 
+    if (name === "phone_number") {
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          phone_number: "Invalid mobile number",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, phone_number: "" }));
+      }
+    }
     setFormData({ ...formData, [name]: value });
   };
 
@@ -98,6 +120,11 @@ const Registration = () => {
   const prevStep = () => setStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
+    if (errors.email || errors.phone_number) {
+      setSnackbarMessage("Please fix validation errors.");
+      setSnackbarOpen(true);
+      return;
+    }
     const emailExists = users?.some(
       (u) => u.email.toLowerCase() === formData.email.toLowerCase()
     );
@@ -140,6 +167,8 @@ const Registration = () => {
             name={key}
             value={formData[key]}
             type={key === "password" ? "password" : "text"}
+            error={Boolean(errors[key])}
+            helperText={errors[key]}
             onChange={handleChange}
           />
         </Grid>
@@ -175,7 +204,7 @@ const Registration = () => {
             maxWidth: "100%",
           }}
         >
-          {(organizations|| []).map((org) => (
+          {(organizations || []).map((org) => (
             <MenuItem key={org._id} value={org._id}>
               {org.name}
             </MenuItem>

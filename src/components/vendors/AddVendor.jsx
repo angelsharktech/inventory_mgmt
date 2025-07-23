@@ -51,13 +51,20 @@ const AddVendor = ({ open, handleClose, refresh }) => {
     ifscCode: "",
     upiId: "",
   });
-
+  const [gstDetails, setGstDetails] = useState({
+    gstNumber: "",
+    legalName: "",
+    state: "",
+    stateCode: "",
+  });
+  const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
   const [mainUser, setMainUser] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [errors, setErrors] = useState({phone_number: ""});
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -81,6 +88,17 @@ const AddVendor = ({ open, handleClose, refresh }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "phone_number") {
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          phone_number: "Invalid mobile number",
+        }));
+      }else {
+        setErrors((prev) => ({ ...prev, phone_number: "" }));
+      }
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -112,6 +130,11 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         setSnackbarOpen(true);
         return;
       }
+      if (errors.phone_number) {
+        setSnackbarMessage(errors.phone_number);
+        setSnackbarOpen(true);
+        return;
+      }
       if (!formData.first_name) {
         setSnackbarMessage("First Name is Required!");
         setSnackbarOpen(true);
@@ -125,6 +148,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         password: formData.first_name + "@example.com",
         role_id: vendorRole._id,
         position_id: vendorposition._id,
+        ...(isGstApplicable && { gst: gstDetails }),
       };
 
       const result = await registerUser(payload);
@@ -152,6 +176,14 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         ifscCode: "",
         upiId: "",
       });
+      setIsGstApplicable(false);
+      setGstDetails({
+        gstNumber: "",
+        legalName: "",
+        state: "",
+        stateCode: "",
+      });
+      setErrors({phone_number: ""})
     } catch (error) {
       setSnackbarMessage(error);
       setSnackbarOpen(true);
@@ -177,11 +209,46 @@ const AddVendor = ({ open, handleClose, refresh }) => {
                   value={value}
                   onChange={handleChange}
                   required={key === "first_name"}
+                  error={Boolean(errors[key])}
+                  helperText={errors[key]}
                 />
               </Grid>
             ))}
           </Grid>
+          <Box mt={2}>
+            <label>
+              <input
+                type="checkbox"
+                checked={isGstApplicable}
+                onChange={(e) => setIsGstApplicable(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Is GST Applicable?
+            </label>
+          </Box>
 
+          {isGstApplicable && (
+            <Grid container spacing={2} mt={1}>
+              {Object.entries(gstDetails).map(([key, value]) => (
+                <Grid item xs={12} sm={6} key={key}>
+                  <TextField
+                    fullWidth
+                    label={key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase())}
+                    name={key}
+                    value={value}
+                    onChange={(e) =>
+                      setGstDetails((prev) => ({
+                        ...prev,
+                        [key]: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
           <Typography variant="h6" mt={2} mb={2}>
             Bank Details
           </Typography>

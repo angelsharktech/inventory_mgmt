@@ -41,7 +41,15 @@ const CreatePurchaseBill = () => {
   const [isExistingVendor, setIsExistingVendor] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([
-    { productName: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+    {
+      productName: "",
+      hsnCode: "",
+      qty: 0,
+      price: 0,
+      gst: 0,
+      discountPercentage: 0,
+      discountedPrice: 0,
+    },
   ]);
   const [billType, setBillType] = useState("non-gst");
   const [gstPercent, setGstPercent] = useState(0);
@@ -102,9 +110,7 @@ const CreatePurchaseBill = () => {
     let subtotal = 0;
     selectedProducts.forEach((item) => {
       const qty = Number(item.qty);
-      const price = Number(item.price);
-      const discount = Number(item.discount);
-      const taxable = qty * price - discount;
+      const taxable = qty * item.discountedPrice;
       subtotal += taxable;
     });
     const isMaharashtra = state?.toLowerCase() === "maharashtra";
@@ -159,7 +165,7 @@ const CreatePurchaseBill = () => {
     if (paymentType === "advance") {
       paymentDetails.fullMode = "";
       paymentDetails.fullPaid = 0;
-      const advance = Number(paymentDetails.advance) || 0;
+      const advance = Number(paymentDetails.advance) ;
       const balance = totals.grandTotal - advance;
 
       setPaymentDetails((prev) => ({
@@ -171,8 +177,10 @@ const CreatePurchaseBill = () => {
   // End calculations of advance payment
 
   const handleMobile = async (phone) => {
-    
-    const phoneExists = users.find((u) => u.phone_number === phone && u.role_id.name.toLowerCase() === 'vendor');
+    const phoneExists = users.find(
+      (u) =>
+        u.phone_number === phone && u.role_id.name.toLowerCase() === "vendor"
+    );
 
     if (phoneExists) {
       setVendor({
@@ -189,40 +197,80 @@ const CreatePurchaseBill = () => {
 
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
+    const item = updated[index];
 
     if (field === "productName") {
-      const product = products.data.find((p) => p._id === value);
+      const product = products.data.find((p) => p.name === value);
 
       if (product) {
+        const price = product.compareAtPrice || 0;
+        const discountPrice = product.price;
+        // const discountPercentage = ((price - discountPrice) / price) * 100;
+
         updated[index] = {
-          ...updated[index],
+          ...item,
           productName: product.name,
           hsnCode: product.hsnCode || "",
-          price: product.price || 0,
+          price,
+          discountPercentage: product.discountPercentage,
+          discountedPrice: discountPrice,
         };
       }
     } else if (field === "hsnCode") {
       const product = products.data.find((p) => p.hsnCode === value);
 
       if (product) {
+        const price = product.compareAtPrice || 0;
+        const discountPrice = product.price;
+        const discountPercentage = ((price - discountPrice) / price) * 100;
         updated[index] = {
-          ...updated[index],
+          ...item,
           productName: product.name,
           hsnCode: product.hsnCode,
-          price: product.price || 0,
+          price,
+          discountPercentage: discountPercentage,
+          discountedPrice: discountPrice,
         };
       }
+    } else if (field === "discountPercentage") {
+      const discount = parseFloat(value) || 0;
+      const price = parseFloat(item.price) || 0;
+      const discountPrice = price - (price * discount) / 100;
+
+      updated[index] = {
+        ...item,
+        discountPercentage: discount.toFixed(0),
+        discountedPrice: discountPrice,
+      };
+    } else if (field === "discountedPrice") {
+      const discountedPrice = parseFloat(value) || 0;
+      const price = parseFloat(item.price) || 0;
+      const discountPercentage =
+        price > 0 ? ((price - discountedPrice) / price) * 100 : 0;
+
+      updated[index] = {
+        ...item,
+        discountedPrice,
+        discountPercentage: discountPercentage.toFixed(0),
+      };
     } else {
       updated[index][field] = value;
     }
-
     setSelectedProducts(updated);
   };
 
   const handleAddProduct = () => {
     setSelectedProducts([
       ...selectedProducts,
-      { productName: "", hsnCode: "", qty: 0, price: 0, discount: 0, gst: 0 },
+      {
+        productName: "",
+        hsnCode: "",
+        qty: 0,
+        price: 0,
+        gst: 0,
+        discountPercentage: 0,
+        discountedPrice: 0,
+      },
     ]);
   };
   const handleRemoveProduct = (index) => {
@@ -407,7 +455,7 @@ const CreatePurchaseBill = () => {
                     label="Select Product"
                   >
                     {products.data?.map((prod) => (
-                      <MenuItem key={prod._id} value={prod._id}>
+                      <MenuItem key={prod._id} value={prod.name}>
                         {prod.name}
                       </MenuItem>
                     ))}
@@ -445,12 +493,42 @@ const CreatePurchaseBill = () => {
                 </Grid>
                 <Grid item xs={12} sm={2}>
                   <TextField
-                    label="Price"
+                    label="Unit Price"
                     type="number"
                     sx={{ width: "120px" }}
                     value={item.price}
                     onChange={(e) =>
                       handleProductChange(index, "price", e.target.value)
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    label="discount %"
+                    type="number"
+                    sx={{ width: "120px" }}
+                    value={item.discountPercentage}
+                    onChange={(e) =>
+                      handleProductChange(
+                        index,
+                        "discountPercentage",
+                        e.target.value
+                      )
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    label="Selling Price"
+                    type="number"
+                    sx={{ width: "120px" }}
+                    value={item.discountedPrice}
+                    onChange={(e) =>
+                      handleProductChange(
+                        index,
+                        "discountedPrice",
+                        e.target.value
+                      )
                     }
                   />
                 </Grid>
@@ -636,7 +714,7 @@ const CreatePurchaseBill = () => {
                           fullWidth
                           value={paymentDetails.advance}
                           onChange={(e) => {
-                            const adv = Number(e.target.value) || 0;
+                            const adv = e.target.value;
                             const balance = Math.max(
                               totals.grandTotal - adv,
                               0
@@ -979,7 +1057,7 @@ const CreatePurchaseBill = () => {
 
       {showPrint && printData && (
         <div className="print-only">
-          <GenerateBill bill={printData} billName={'PURCHASE'}/>
+          <GenerateBill bill={printData} billName={"PURCHASE"} />
         </div>
       )}
     </>

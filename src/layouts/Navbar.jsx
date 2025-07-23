@@ -29,26 +29,22 @@ const Navbar = () => {
       
     </Box>
   );
-
+const drawerWidth = 100;
   return (
     <>
-      <AppBar position="static" color="primary">
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Typography variant="h6" component={Link} to="/" sx={{ color: "#fff", textDecoration: "none" }}>
-            BillingApp
+         <AppBar
+        position="fixed"
+        sx={{
+          // ml: { sm: `${drawerWidth}px` },
+          // width: { sm: `calc(100% - ${drawerWidth}px)` },
+          backgroundColor: "#2F4F4F",
+         borderBottomRightRadius: 40,
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "flex-end" }}>
+          <Typography variant="h4" noWrap component="div" mr={5}>
+            Billing Desk
           </Typography>
-
-          
-
-          <IconButton
-            color="inherit"
-            aria-label="menu"
-            edge="end"
-            onClick={handleDrawerToggle}
-            sx={{ display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
         </Toolbar>
       </AppBar>
 

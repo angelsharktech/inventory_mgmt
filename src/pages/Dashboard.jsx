@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Box, Toolbar, Grid, Paper, Typography, Stack } from "@mui/material";
 import Sidebar from "../layouts/Sidebar";
+import Navbar from "../layouts/Navbar";
 import Vendors from "../components/Vendors";
 
 import { styled } from "@mui/material/styles";
@@ -301,6 +302,7 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ display: "flex" }}>
+      <Navbar/>
       <Sidebar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
       <Box
         component="main"

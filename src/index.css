@@ -66,7 +66,8 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -75,8 +76,7 @@ html, body {
 
 /* Hide from screen, but show on print */
 /* By default hide barcode and bill print containers */
-.barcode-print,
-.print-only {
+.barcode-print {
   display: none;
 }
 
@@ -87,9 +87,7 @@ html, body {
   }
 
   .barcode-print,
-  .barcode-print *,
-  .print-only,
-  .print-only * {
+  .barcode-print * {
     visibility: visible !important;
     display: block !important;
   }
@@ -106,13 +104,17 @@ html, body {
   }
 
   /* Sale bill print styles */
+  .print-only,
+  .print-only * {
+    visibility: visible !important;
+  }
   .print-only {
     position: absolute;
-    top: 0;
     left: 0;
-    width: 100%; /* Full page width */
+    top: 0;
+    width: 100%;
     background: white;
     padding: 20px;
+    box-sizing: border-box;
   }
 }
-

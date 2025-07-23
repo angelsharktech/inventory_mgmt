@@ -97,7 +97,7 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
         flexDirection: "column",
         justifyContent: "space-between",
         borderTopRightRadius: 40,
-        borderBottomRightRadius: 40,
+        borderBottomRightRadius: 60,
       }}
     >
       <Box textAlign="center" mt={4}>

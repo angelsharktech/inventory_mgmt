@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { updateUser } from "../../services/UserService";
+import { useNavigate } from "react-router-dom";
 
 const style = {
   position: "absolute",
@@ -26,6 +27,7 @@ const style = {
 };
 
 const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -34,8 +36,16 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
     address: "",
     city: "",
     bio: "",
+    gstRegistered: "",
   });
 
+  const [gstDetails, setGstDetails] = useState({
+    gstNumber: "",
+    legalName: "",
+    state: "",
+    stateCode: "",
+  });
+  const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [bankDetails, setBankDetails] = useState({
     bankName: "",
     accountNumber: "",
@@ -58,6 +68,13 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
             address: data.address || "",
             city: data.city || "",
             bio: data.bio || "",
+          });
+          setIsGstApplicable(data.gstRegistered ? true : false);
+          setGstDetails({
+            gstNumber: data.gstDetails?.gstNumber || "",
+            legalName: data.gstDetails?.legalName || "",
+            state: data.gstDetails?.state || "",
+            stateCode: data.gstDetails?.stateCode || "",
           });
 
           setBankDetails({
@@ -97,18 +114,30 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
       const updatedUser = {
         ...formData,
         bankDetails,
+        gstRegistered: isGstApplicable,
+        gstDetails: isGstApplicable ? gstDetails : null,
       };
       const res = await updateUser(data._id, updatedUser);
-      
+
+      if (res === 401) {
+        setSnackbarMessage("Your Session is expired. Please login again!");
+        setSnackbarOpen(true);
+        refresh();
+        handleCloseEdit();
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+        return;
+      }
       if (res) {
         setSnackbarMessage("Vendor Updated successful!");
         setSnackbarOpen(true);
-        refresh(); 
-        handleCloseEdit(); 
-      } 
+        refresh();
+        handleCloseEdit();
+      }
     } catch (error) {
       setSnackbarMessage("Failed to update Vendor! ");
-        setSnackbarOpen(true);
+      setSnackbarOpen(true);
     }
   };
 
@@ -135,8 +164,45 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
                 />
               </Grid>
             ))}
+            <Box mt={2}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isGstApplicable}
+                  onChange={(e) => setIsGstApplicable(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Is GST Applicable?
+              </label>
+            </Box>
           </Grid>
-
+          {isGstApplicable && (
+            <Box mt={2}>
+              <Typography variant="h6" mb={2}>
+                GST Details
+              </Typography>
+              <Grid container spacing={2}>
+                {Object.entries(gstDetails).map(([key, value]) => (
+                  <Grid item xs={12} sm={6} key={key}>
+                    <TextField
+                      fullWidth
+                      label={key
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (s) => s.toUpperCase())}
+                      name={key}
+                      value={value}
+                      onChange={(e) =>
+                        setGstDetails((prev) => ({
+                          ...prev,
+                          [key]: e.target.value,
+                        }))
+                      }
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
           <Typography variant="h6" mt={2} mb={2}>
             Bank Details
           </Typography>
@@ -169,27 +235,26 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
               Update
             </Button>
           </Box>
-
         </Box>
       </Modal>
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={3000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <Alert
-              severity={
-                snackbarMessage === "Vendor Updated successful!"
-                  ? "success"
-                  : "error"
-              }
-              variant="filled"
-              onClose={() => setSnackbarOpen(false)}
-            >
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Vendor Updated successful!"
+              ? "success"
+              : "error"
+          }
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
