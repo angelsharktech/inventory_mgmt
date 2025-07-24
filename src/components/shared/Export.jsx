@@ -4,18 +4,8 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 // Export columns (you can import and reuse these anywhere)
-export const exportColumns = [
-  { label: "Name", key: "name" },
-  { label: "Short Description", key: "shortDescription" },
-  { label: "Price", key: "price" },
-  { label: "Compare Price", key: "compareAtPrice" },
-  { label: "Discount (%)", key: "discountPercentage" },
-  { label: "SKU", key: "sku" },
-  { label: "Quantity", key: "quantity" },
-];
-
 // Export to PDF
-export const exportToPDF = (data, columns = exportColumns, title = "Exported Data") => {
+export const exportToPDF = (data, columns, title = "Exported Data") => {
   const doc = new jsPDF();
   doc.text(title, 14, 10);
 

@@ -344,7 +344,8 @@ const CreateSaleBill = () => {
         totals,
         org: mainUser.organization_id?.name,
       };
-
+      console.log(billData);
+      
       // await createSaleBill(billData);
 
       setSnackbarMessage("Sale bill created successfully!");

@@ -26,8 +26,25 @@ import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
 import BarcodePrinter from "./BarcodePrinter";
 import PaginationComponent from "../shared/PaginationComponent";
-import { exportColumns, exportToExcel, exportToPDF } from "../shared/Export";
+import { exportToExcel, exportToPDF } from "../shared/Export";
 import FilterData from "../shared/FilterData";
+
+const exportColumns = [
+  { label: "HSN Code", key: "hsnCode" },
+  { label: "Name", key: "name" },
+  { label: "Short Description", key: "shortDescription" },
+  { label: "Price", key: "price" },
+  { label: "Compare Price", key: "compareAtPrice" },
+  { label: "Discount (%)", key: "discountPercentage" },
+  { label: "Quantity", key: "quantity" },
+  { label: "Status", key: "status" },
+  {
+    label: "Tags",
+    key: "tags",
+    render: (rowData) => rowData.tags?.join(", "),
+  },
+];
+
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -96,14 +113,14 @@ const ProductList = () => {
   const filteredProducts = products.data?.filter(
     (prod) =>
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prod.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+      prod.hsnCode?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   useEffect(() => {
     if (filteredProducts) {
       setTotalPages(Math.ceil(filteredProducts.length / pageSize));
     }
   }, [filteredProducts]);
-  const paginatedProducts = filteredProducts?.slice(
+   const paginatedProducts = filteredProducts?.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -182,18 +199,42 @@ const ProductList = () => {
           <Table sx={{ minWidth: 1000 }}>
             <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>
-                <TableCell><strong>HSN Code</strong></TableCell>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Short Description</strong></TableCell>
-                <TableCell><strong>Price ($)</strong></TableCell>
-                <TableCell><strong>Compare Price ($)</strong></TableCell>
-                <TableCell><strong>Discount (%)</strong></TableCell>
-                <TableCell><strong>Quantity</strong></TableCell>
-                <TableCell><strong>Status</strong></TableCell>
-                <TableCell><strong>Tags</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-                <TableCell><strong>Barcode</strong></TableCell>
+                <TableCell>
+                  <strong>HSN Code</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Name</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Short Description</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Price ($)</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Compare Price ($)</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Discount (%)</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Quantity</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Status</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Tags</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Barcode</strong>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
