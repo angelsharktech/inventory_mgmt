@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
+import moment from "moment";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -39,7 +40,7 @@ const getAllSaleBills = async () => {
         address: "Some address",
         phone_number: "1234567890",
       },
-      billDate: "2020-08-04",
+      billDate: "07-25-2025",
       dueDate: "2020-08-19",
       totals: { grandTotal: 3770 },
       paymentType: "full Paid",
@@ -161,34 +162,45 @@ const SaleBillReport = () => {
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
 
+      // Zero time so the comparison is accurate
+      if (start) {
+        start.setHours(0, 0, 0, 0);
+        billDate.setHours(0, 0, 0, 0);
+      }
+      if (end) {
+        end.setHours(23, 59, 59, 999);
+      }
       if (start && billDate < start) return false;
       if (end && billDate > end) return false;
       return true;
     });
   }, [bills, startDate, endDate]);
 
-  const mappedBills = useMemo(() =>
-  filteredBills.map((bill, index) => ({
-    index: index + 1,
-    customerName: `${bill.biller?.first_name || ""}`,
-    invoiceNo: bill.invoiceNo || "",
-    billDate: bill.billDate || "",
-    billTotal: bill.totals?.grandTotal || 0,
-    paymentType: bill.paymentType || "",
-    paidAmount:
-      Number(bill.paymentDetails?.advance || 0) +
-      Number(bill.paymentDetails?.full || 0),
-    balanceAmount: bill.paymentDetails?.balance,
-    paymentMode: [bill.paymentDetails?.mode1, bill.paymentDetails?.mode2]
-      .filter(Boolean)
-      .join(" / "),
-    transactionNumber: [
-      bill.paymentDetails?.transactionNumber,
-      bill.paymentDetails?.transactionNumber2,
-    ]
-      .filter(Boolean)
-      .join(" / "),
-  })), [filteredBills]);
+  const mappedBills = useMemo(
+    () =>
+      filteredBills.map((bill, index) => ({
+        index: index + 1,
+        customerName: `${bill.biller?.first_name || ""}`,
+        invoiceNo: bill.invoiceNo || "",
+        billDate: bill.billDate || "",
+        billTotal: bill.totals?.grandTotal || 0,
+        paymentType: bill.paymentType || "",
+        paidAmount:
+          Number(bill.paymentDetails?.advance || 0) +
+          Number(bill.paymentDetails?.full || 0),
+        balanceAmount: bill.paymentDetails?.balance,
+        paymentMode: [bill.paymentDetails?.mode1, bill.paymentDetails?.mode2]
+          .filter(Boolean)
+          .join(" / "),
+        transactionNumber: [
+          bill.paymentDetails?.transactionNumber,
+          bill.paymentDetails?.transactionNumber2,
+        ]
+          .filter(Boolean)
+          .join(" / "),
+      })),
+    [filteredBills]
+  );
 
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -328,7 +340,21 @@ const SaleBillReport = () => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{bill.biller?.first_name || "N/A"}</TableCell>
                   <TableCell>{10 - index}</TableCell>
-                  <TableCell>{bill.billDate || "--"}</TableCell>
+                  <TableCell>
+                    {bill.billDate
+                      ? moment(bill.billDate, [
+                          "YYYY-MM-DD",
+                          "MM-DD-YYYY",
+                          "DD-MM-YYYY",
+                        ]).isValid()
+                        ? moment(bill.billDate, [
+                            "YYYY-MM-DD",
+                            "MM-DD-YYYY",
+                            "DD-MM-YYYY",
+                          ]).format("DD/MM/YYYY")
+                        : "--"
+                      : "--"}
+                  </TableCell>
                   <TableCell align="center">
                     {bill.totals?.grandTotal.toFixed(2)}
                   </TableCell>
