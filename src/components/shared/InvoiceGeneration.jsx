@@ -1,7 +1,6 @@
 export const generateNextInvoiceNumber = (lastNumber) => {
   const currentYear = new Date().getFullYear();
-console.log('*************',lastNumber);
-
+  
   // If no previous invoice, start with INVYYYY001
   if (!lastNumber) {
     return `INV${currentYear}001`;
@@ -9,17 +8,15 @@ console.log('*************',lastNumber);
 
   // Extract parts from the last invoice number (e.g., "INV2024005")
   const regex = /^INV(\d{4})(\d{3})$/;
-  console.log('regex:',regex);
   
   const match = lastNumber.match(regex);
-console.log(match);
 
   // Handle invalid formats (reset counter)
   if (!match) {
     return `INV${currentYear}001`;
   }
 
-  const [lastYear, lastCounter] = match;
+  const [lastnumber,lastYear, lastCounter] = match;
   let nextCounter;
 
   // Reset counter if year changed
@@ -28,6 +25,7 @@ console.log(match);
   } else {
     nextCounter = parseInt(lastCounter) + 1;
   }
+console.log(`INV${currentYear}${nextCounter.toString().padStart(3, '0')}`);
 
   // Format with leading zeros
   return `INV${currentYear}${nextCounter.toString().padStart(3, '0')}`;

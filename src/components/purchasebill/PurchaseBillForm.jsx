@@ -14,24 +14,20 @@ import {
   Divider,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
-import { getAllProducts } from "../../services/ProductService";
-import {
-  getAllUser,
-  getUserById,
-  registerUser,
-} from "../../services/UserService";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { useAuth } from "../../context/AuthContext";
-import PaymentDetails from "./PaymentDetails";
-import { addSaleBill } from "../../services/SaleBillService";
+import { getAllUser, getUserById, registerUser } from "../../services/UserService";
+import { getAllProducts } from "../../services/ProductService";
+import { addPayment } from "../../services/PaymentModeService";
 import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
-import CustomerDetails from "./CustomerDetails";
-import { addPayment } from "../../services/PaymentModeService";
-import { useNavigate } from "react-router-dom";
+import PaymentDetails from "./PaymentDetails";
+import VendorDetails from "./VendorDetails";
 
-const SaleBillForm = ({
+
+const PurchaseBillForm = ({
   setShowPrint,
   setPrintData,
   setSnackbarOpen,
@@ -40,14 +36,14 @@ const SaleBillForm = ({
 }) => {
   const { webuser } = useAuth();
   const navigate = useNavigate();
-  const [customer, setCustomer] = useState({
+  const [vendor, setVendor] = useState({
     _id: "",
     first_name: "",
     address: "",
     phone_number: "",
     pincode: "",
   });
-  const [isExistingCustomer, setIsExistingCustomer] = useState(false);
+  const [isExistingVendor, setIsExistingVendor] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([
     {
@@ -164,25 +160,25 @@ const SaleBillForm = ({
   const handleMobile = async (phone) => {
     const phoneExists = users.find(
       (u) =>
-        u.phone_number === phone && u.role_id.name.toLowerCase() === "customer"
+        u.phone_number === phone && u.role_id.name.toLowerCase() === "vendor"
     );
 
     if (phoneExists) {
-      setCustomer({
+      setVendor({
         _id: phoneExists._id,
         first_name: phoneExists.first_name,
         address: phoneExists.address,
         phone_number: phone,
       });
-      setIsExistingCustomer(true);
+      setIsExistingVendor(true);
     } else {
-      setCustomer({
+      setVendor({
         _id: "",
         first_name: "",
         address: "",
         phone_number: phone,
       });
-      setIsExistingCustomer(false);
+      setIsExistingVendor(false);
     }
   };
 
@@ -271,7 +267,7 @@ const SaleBillForm = ({
 
   const handlePincodeChange = async (e) => {
     const pincode = e.target.value;
-    setCustomer({ ...customer, pincode });
+    setVendor({ ...vendor, pincode });
 
     if (pincode.length === 6) {
       try {
@@ -299,12 +295,12 @@ const SaleBillForm = ({
 
   const handleSubmit = async () => {
     try {
-      let finalCustomer = { ...customer };
+      let finalVendor = { ...vendor };
       let advancePaymentId = null;
       let fullPaymentId = null;
 
-      if (!customer.phone_number || !customer.first_name) {
-        setSnackbarMessage("Please fill customer details!");
+      if (!vendor.phone_number || !vendor.first_name) {
+        setSnackbarMessage("Please fill vendor details!");
         setSnackbarOpen(true);
         return;
       }
@@ -316,23 +312,23 @@ const SaleBillForm = ({
         }
       }
 
-      if (!isExistingCustomer) {
-        const customerRole = roles.find(
-          (role) => role.name.toLowerCase() === "customer"
+      if (!isExistingVendor) {
+        const vendorRole = roles.find(
+          (role) => role.name.toLowerCase() === "vendor"
         );
-        const customerposition = positions.find(
-          (pos) => pos.name.toLowerCase() === "customer"
+        const vendorposition = positions.find(
+          (pos) => pos.name.toLowerCase() === "vendor"
         );
         const payload = {
-          ...customer,
+          ...vendor,
           organization_id: mainUser.organization_id?._id,
-          email: customer.first_name + "@example.com",
-          password: customer.first_name + "@example.com",
-          role_id: customerRole._id,
-          position_id: customerposition._id,
+          email: vendor.first_name + "@example.com",
+          password: vendor.first_name + "@example.com",
+          role_id: vendorRole._id,
+          position_id: vendorposition._id,
         };
         const res = await registerUser(payload);
-        finalCustomer = { ...customer, _id: res.user.id };
+        finalVendor = { ...vendor, _id: res.user.id };
       }
       if (paymentType === "advance" || paymentType === "full") {
         // Base payload with common fields
@@ -345,7 +341,7 @@ const SaleBillForm = ({
             paymentType === "advance"
               ? paymentDetails.advance
               : paymentDetails.fullPaid,
-          client_id: finalCustomer._id,
+          client_id: finalVendor._id,
           organization: mainUser.organization_id?._id,
         };
 
@@ -390,7 +386,7 @@ const SaleBillForm = ({
 
       const billPayload = {
         // bill_number: setInvoiceNumber,
-        bill_to: finalCustomer._id,
+        bill_to: finalVendor._id,
         products: productIds,
         billType: billType,
         qty: selectedProducts.length,
@@ -414,73 +410,73 @@ const SaleBillForm = ({
         createdBy: mainUser._id,
       };
       console.log("billPayload::", billPayload);
-      const res = await addSaleBill(billPayload);
-      console.log("response:", res);
-      if (res.status === 401) {
-        setSnackbarMessage("Your session is expired Please login again!");
-        setSnackbarOpen(true);
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-        return;
-      }
-      if (res.success === true) {
-        setSnackbarMessage("Sale bill created successfully!");
-        setSnackbarOpen(true);
-        const billData = {
-          biller: finalCustomer,
-          products: selectedProducts,
-          billType,
-          paymentType,
-          paymentDetails,
-          gstPercent,
-          totals,
-          org: mainUser.organization_id?.name,
-        };
-        setPrintData(billData);
-        setShowPrint(true); // Show bill for printing
-        setTimeout(() => {
-          window.print();
-          setShowPrint(false); // Optional
-        }, 500);
+    //   const res = await addSaleBill(billPayload);
+    //   console.log("response:", res);
+    //   if (res.status === 401) {
+    //     setSnackbarMessage("Your session is expired Please login again!");
+    //     setSnackbarOpen(true);
+    //     setTimeout(() => {
+    //       navigate("/login");
+    //     }, 2000);
+    //     return;
+    //   }
+    //   if (res.success === true) {
+    //     setSnackbarMessage("Sale bill created successfully!");
+    //     setSnackbarOpen(true);
+    //     const billData = {
+    //       biller: finalVendor,
+    //       products: selectedProducts,
+    //       billType,
+    //       paymentType,
+    //       paymentDetails,
+    //       gstPercent,
+    //       totals,
+    //       org: mainUser.organization_id?.name,
+    //     };
+    //     setPrintData(billData);
+    //     setShowPrint(true); // Show bill for printing
+    //     setTimeout(() => {
+    //       window.print();
+    //       setShowPrint(false); // Optional
+    //     }, 500);
 
-        setStep(1);
-        setCustomer({
-          first_name: "",
-          address: "",
-          phone_number: "",
-        });
-        setSelectedProducts([
-          {
-            productName: "",
-            hsnCode: "",
-            qty: 0,
-            price: 0,
-            discountPercentage: 0,
-            gst: 0,
-            discountedPrice: 0,
-          },
-        ]);
-        setPaymentDetails({
-          advance: 0,
-          balance: 0,
-          advpaymode: "",
-          transactionNumber: "",
-          bankName: "",
-          chequeNumber: "",
-          balpaymode: "",
-          transactionNumber2: "",
-          bankName2: "",
-          chequeNumber2: "",
-          cardNumber: "",
-          cardNumber2: "",
-          fullMode: "",
-          fullPaid: 0,
-          dueDate: "",
-        });
-      }
+    //     setStep(1);
+    //     setVendor({
+    //       first_name: "",
+    //       address: "",
+    //       phone_number: "",
+    //     });
+    //     setSelectedProducts([
+    //       {
+    //         productName: "",
+    //         hsnCode: "",
+    //         qty: 0,
+    //         price: 0,
+    //         discountPercentage: 0,
+    //         gst: 0,
+    //         discountedPrice: 0,
+    //       },
+    //     ]);
+    //     setPaymentDetails({
+    //       advance: 0,
+    //       balance: 0,
+    //       advpaymode: "",
+    //       transactionNumber: "",
+    //       bankName: "",
+    //       chequeNumber: "",
+    //       balpaymode: "",
+    //       transactionNumber2: "",
+    //       bankName2: "",
+    //       chequeNumber2: "",
+    //       cardNumber: "",
+    //       cardNumber2: "",
+    //       fullMode: "",
+    //       fullPaid: 0,
+    //       dueDate: "",
+    //     });
+    //   }
     } catch (error) {
-      setSnackbarMessage("Customer " + error);
+      setSnackbarMessage("Vendor " + error);
       setSnackbarOpen(true);
     }
   };
@@ -488,16 +484,16 @@ const SaleBillForm = ({
   return (
     <>
       <Typography variant="h5" gutterBottom>
-        Create Sale Bill
+        Create purchase Bill
       </Typography>
 
-      {/* Step 1: Customer Info */}
+      {/* Step 1: vendor Info */}
       {step === 1 && (
-        <CustomerDetails
-          customer={customer}
-          isExistingCustomer={isExistingCustomer}
+        <VendorDetails
+          vendor={vendor}
+          isExistingVendor={isExistingVendor}
           handleMobile={handleMobile}
-          setCustomer={setCustomer}
+          setVendor={setVendor}
         />
       )}
 
@@ -519,7 +515,7 @@ const SaleBillForm = ({
           setBillType={setBillType}
           gstPercent={gstPercent}
           setGstPercent={setGstPercent}
-          customer={customer}
+          vendor={vendor}
           handlePincodeChange={handlePincodeChange}
           state={state}
           totals={totals}
@@ -568,4 +564,4 @@ const SaleBillForm = ({
   );
 };
 
-export default SaleBillForm;
+export default PurchaseBillForm;

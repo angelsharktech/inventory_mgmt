@@ -16,12 +16,21 @@ export const addSaleBill = async (billData) => {
     return response.data;
   } catch (error) {
     console.error('Error adding sale bill:', error);
-    return response.data;
+    return error;
   }
 };
 export const getAllSaleBills = async()=>{
      try {
     const response = await axios.get(BASE_URL,getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error getting sale bill:', error);
+    return response.data;
+  }
+}
+export const getSaleBillById = async(id)=>{
+     try {
+    const response = await axios.get(`${BASE_URL}/${id}`,getAuthHeader());
     return response.data;
   } catch (error) {
     console.error('Error getting sale bill:', error);

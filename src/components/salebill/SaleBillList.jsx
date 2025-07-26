@@ -13,61 +13,52 @@ import {
   Menu,
   Box,
   TextField,
+  IconButton,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import moment from "moment";
 import { getAllSaleBills } from "../../services/SaleBillService";
+import CreateSaleBill from "./CreateSaleBill";
+import { Visibility } from "@mui/icons-material";
+import ViewBill from "./ViewBill";
 
-const exportColumns = [
-  { label: "#", key: "index" },
-  { label: "Customer Name", key: "customerName" },
-  { label: "Invoice No.", key: "invoiceNo" },
-  { label: "Bill Date", key: "billDate" },
-  { label: "Bill Total ", key: "billTotal" },
-  { label: "Payment Type", key: "paymentType" },
-  { label: "Paid Amount ", key: "paidAmount" },
-  { label: "Balance Amount ", key: "balanceAmount" },
-  { label: "Payment Mode", key: "paymentMode" },
-  { label: "Transaction Number", key: "transactionNumber" },
-];
-
-const SaleBillReport = () => {
+const SaleBillList = () => {
   const [bills, setBills] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [data, setData] = useState();
+  const [view, setView] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [anchorEl, setAnchorEl] = useState(null);
 
-  const openExportMenu = Boolean(anchorEl);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const handleCloseview = () => setView(false);
 
   useEffect(() => {
-    const fetchBills = async () => {
-      try {
-        const data = await getAllSaleBills();
-        console.log("Raw bills response:", data);
-
-        // Normalization
-        if (Array.isArray(data)) {
-          setBills(data); // already an array
-        } else if (data?.data?.docs) {
-          setBills(data.data.docs); // paginated format
-        } else if (data?._id) {
-          setBills([data]); // single object
-        } else {
-          setBills([]); // fallback
-        }
-      } catch (err) {
-        console.error("Failed to fetch sale bills:", err);
-        setError("Failed to load sale bills");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBills();
   }, []);
+
+  const fetchBills = async () => {
+    try {
+      const data = await getAllSaleBills();
+      console.log("Raw bills response:", data);
+
+      // Normalization
+      if (Array.isArray(data)) {
+        setBills(data); // already an array
+      } else if (data?.data?.docs) {
+        setBills(data.data.docs); // paginated format
+      } else if (data?._id) {
+        setBills([data]); // single object
+      } else {
+        setBills([]); // fallback
+      }
+    } catch (err) {
+      console.error("Failed to fetch sale bills:", err);
+      setError("Failed to load sale bills");
+    } 
+  };
 
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
@@ -88,36 +79,6 @@ const SaleBillReport = () => {
   console.log("BILLS:", bills);
   console.log("FILTERED BILLS:", filteredBills);
 
-  const mappedBills = useMemo(
-    () =>
-      filteredBills.map((bill, index) => ({
-        index: index + 1,
-        customerName: `${bill.bill_to?.first_name || ""}`,
-        invoiceNo: bill.bill_number || "",
-        billDate: bill.createdAt || "",
-        billTotal: bill.grandTotal || 0,
-        paymentType: bill.paymentType || "",
-        paidAmount: Number(bill.advance || 0) + Number(bill.fullPaid || 0),
-        balanceAmount: bill.balance || 0,
-        paymentMode:
-          bill.paymentType === "advance"
-            ? "Advance"
-            : bill.paymentType === "full"
-            ? "Full"
-            : "",
-        transactionNumber: "", // You'll need to add transaction data from payment details if available
-      })),
-    [filteredBills]
-  );
-
-  const handleExportClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleExportClose = () => {
-    setAnchorEl(null);
-  };
-
   const totalBill = filteredBills.reduce(
     (acc, bill) => acc + (bill.grandTotal || 0),
     0
@@ -131,8 +92,10 @@ const SaleBillReport = () => {
     0
   );
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+   const handleView = (rowData) => {
+    setData(rowData);
+    setView(true);
+  };
 
   return (
     <>
@@ -152,8 +115,11 @@ const SaleBillReport = () => {
               type="date"
               InputLabelProps={{ shrink: true }}
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {setStartDate(e.target.value);}}
               size="small"
+              inputProps={{
+                max: moment().format("YYYY-MM-DD"), // Disable future dates
+              }}
             />
             <TextField
               label="End Date"
@@ -162,41 +128,22 @@ const SaleBillReport = () => {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               size="small"
+              disabled={!startDate} // Disable until start date is selected
+              inputProps={{
+                min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
+               
+              }}
             />
 
             <Button
-              variant="outlined"
-              sx={{ ml: 2 }}
-              onClick={handleExportClick}
-              endIcon={<MoreVertIcon />}
+              variant="contained"
+              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              onClick={handleOpen}
             >
-              Export As
+              Create Sale bill
             </Button>
           </Box>
         </Box>
-
-        <Menu
-          anchorEl={anchorEl}
-          open={openExportMenu}
-          onClose={handleExportClose}
-        >
-          <MenuItem
-            onClick={() => {
-              exportToPDF(mappedBills, exportColumns, "Sale Summary Report");
-              handleExportClose();
-            }}
-          >
-            PDF
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              exportToExcel(mappedBills, exportColumns, "Sale Summary Report");
-              handleExportClose();
-            }}
-          >
-            Excel
-          </MenuItem>
-        </Menu>
 
         <TableContainer
           component={Paper}
@@ -240,6 +187,9 @@ const SaleBillReport = () => {
                 <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
+                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>action</strong>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -278,6 +228,16 @@ const SaleBillReport = () => {
                     {/* You'll need to add transaction number logic based on your payment data */}
                     {bill.referenceId || "N/A"}
                   </TableCell>
+                  <TableCell align="center">
+                      <IconButton
+                      color="inherit"
+                      onClick={() => handleView(bill._id)}
+                    >
+                     <Visibility />
+                    </IconButton>
+                  </TableCell>
+                  {/* <TableCell align="center">
+                  </TableCell> */}
                 </TableRow>
               ))}
 
@@ -291,7 +251,7 @@ const SaleBillReport = () => {
                   fontWeight: "bold",
                 }}
               >
-                <TableCell colSpan={3}>
+                <TableCell colSpan={5}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
                 <TableCell align="right" colSpan={2}>
@@ -308,8 +268,19 @@ const SaleBillReport = () => {
           </Table>
         </TableContainer>
       </Box>
+
+      <CreateSaleBill
+        open={open}
+        handleClose={handleClose}
+        refresh={fetchBills}
+      />
+      <ViewBill
+        open={view}
+        data={data}
+        handleCloseview={handleCloseview}
+      />
     </>
   );
 };
 
-export default SaleBillReport;
+export default SaleBillList;
