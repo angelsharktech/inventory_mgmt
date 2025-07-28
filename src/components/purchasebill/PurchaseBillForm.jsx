@@ -25,6 +25,7 @@ import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
 import PaymentDetails from "./PaymentDetails";
 import VendorDetails from "./VendorDetails";
+import { addPurchaseBill } from "../../services/PurchaseBillService";
 
 
 const PurchaseBillForm = ({
@@ -33,6 +34,7 @@ const PurchaseBillForm = ({
   setSnackbarOpen,
   setSnackbarMessage,
   // setInvoiceNumber,
+  close,refresh
 }) => {
   const { webuser } = useAuth();
   const navigate = useNavigate();
@@ -50,7 +52,7 @@ const PurchaseBillForm = ({
       _id: "",
       productName: "",
       hsnCode: "",
-      qty: 0,
+      qty: 1,
       price: 0,
       gst: 0,
       discountPercentage: 0,
@@ -330,7 +332,103 @@ const PurchaseBillForm = ({
         const res = await registerUser(payload);
         finalVendor = { ...vendor, _id: res.user.id };
       }
-      if (paymentType === "advance" || paymentType === "full") {
+     
+      const productIds = selectedProducts.map((product) => product._id);
+
+      const billPayload = {
+        // bill_number: setInvoiceNumber,
+        bill_to: finalVendor._id,
+        products: productIds,
+        billType: billType,
+        qty: selectedProducts.length,
+        paymentType: paymentType,
+        advance: paymentDetails.advance,
+        balance: paymentDetails.balance,
+        fullPaid: paymentDetails.fullPaid,
+        fullPayment: fullPaymentId,
+        advancePayments: advancePaymentId,
+        subtotal: totals.subtotal,
+        discount: 0,
+        gstPercent: gstPercent,
+        gstTotal: totals.gstTotal,
+        cgst: totals.cgst,
+        sgst: totals.sgst,
+        igst: totals.igst,
+        grandTotal: totals.grandTotal,
+        org: mainUser.organization_id?._id,
+        dueDate: paymentDetails.dueDate,
+        notes: notes,
+        createdBy: mainUser._id,
+        status: paymentDetails.balance === 0 ? 'issued': 'draft'
+      };
+      console.log("billPayload::", billPayload);
+      // message: "PurchaseBill validation failed: advancePayments: Advance payment mode is required for advance payments"
+      const res = await addPurchaseBill(billPayload);
+      console.log("response:", res);
+      if (res.status === 401) {
+        setSnackbarMessage("Your session is expired Please login again!");
+        setSnackbarOpen(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+        return;
+      }
+      if (res.success === true) {
+        setSnackbarMessage("Purchase bill created successfully!");
+        setSnackbarOpen(true);
+        const billData = {
+          biller: finalVendor,
+          products: selectedProducts,
+          billType,
+          paymentType,
+          paymentDetails,
+          gstPercent,
+          totals,
+          org: mainUser.organization_id?.name,
+        };
+        setPrintData(billData);
+        setShowPrint(true); // Show bill for printing
+        setTimeout(() => {
+          window.print();
+          setShowPrint(false); // Optional
+        }, 500);
+         refresh();
+        setStep(1);
+        setVendor({
+          first_name: "",
+          address: "",
+          phone_number: "",
+        });
+        setSelectedProducts([
+          {
+            productName: "",
+            hsnCode: "",
+            qty: 0,
+            price: 0,
+            discountPercentage: 0,
+            gst: 0,
+            discountedPrice: 0,
+          },
+        ]);
+        setPaymentDetails({
+          advance: 0,
+          balance: 0,
+          advpaymode: "",
+          transactionNumber: "",
+          bankName: "",
+          chequeNumber: "",
+          balpaymode: "",
+          transactionNumber2: "",
+          bankName2: "",
+          chequeNumber2: "",
+          cardNumber: "",
+          cardNumber2: "",
+          fullMode: "",
+          fullPaid: 0,
+          dueDate: "",
+        });
+        close();
+         if (paymentType === "advance" || paymentType === "full") {
         // Base payload with common fields
         let paymentPayload = {
           paymentType:
@@ -343,6 +441,7 @@ const PurchaseBillForm = ({
               : paymentDetails.fullPaid,
           client_id: finalVendor._id,
           organization: mainUser.organization_id?._id,
+          work_id: res?._id
         };
 
         // Add mode-specific fields
@@ -371,110 +470,13 @@ const PurchaseBillForm = ({
             } payment for Bill`,
           };
         }
-
+        console.log('Add paymentPayload:',paymentPayload);
+        
         const paymentResult = await addPayment(paymentPayload);
         if (paymentResult.success) {
-          console.log("payment result : ", paymentResult);
-          if (paymentType === "advance") {
-            advancePaymentId = paymentResult.data._id; // Set advance payment ID
-          } else {
-            fullPaymentId = paymentResult.data._id; // Set full payment ID
-          }
         }
       }
-      const productIds = selectedProducts.map((product) => product._id);
-
-      const billPayload = {
-        // bill_number: setInvoiceNumber,
-        bill_to: finalVendor._id,
-        products: productIds,
-        billType: billType,
-        qty: selectedProducts.length,
-        paymentType: paymentType,
-        advance: paymentDetails.advance,
-        balance: paymentDetails.balance,
-        fullPaid: paymentDetails.fullPaid,
-        fullPayment: fullPaymentId,
-        advancePayments: advancePaymentId,
-        subtotal: totals.subtotal,
-        discount: 0,
-        gstPercent: gstPercent,
-        gstTotal: totals.gstTotal,
-        cgst: totals.cgst,
-        sgst: totals.sgst,
-        igst: totals.igst,
-        grandTotal: totals.grandTotal,
-        org: mainUser.organization_id?._id,
-        dueDate: paymentDetails.dueDate,
-        notes: notes,
-        createdBy: mainUser._id,
-      };
-      console.log("billPayload::", billPayload);
-    //   const res = await addSaleBill(billPayload);
-    //   console.log("response:", res);
-    //   if (res.status === 401) {
-    //     setSnackbarMessage("Your session is expired Please login again!");
-    //     setSnackbarOpen(true);
-    //     setTimeout(() => {
-    //       navigate("/login");
-    //     }, 2000);
-    //     return;
-    //   }
-    //   if (res.success === true) {
-    //     setSnackbarMessage("Sale bill created successfully!");
-    //     setSnackbarOpen(true);
-    //     const billData = {
-    //       biller: finalVendor,
-    //       products: selectedProducts,
-    //       billType,
-    //       paymentType,
-    //       paymentDetails,
-    //       gstPercent,
-    //       totals,
-    //       org: mainUser.organization_id?.name,
-    //     };
-    //     setPrintData(billData);
-    //     setShowPrint(true); // Show bill for printing
-    //     setTimeout(() => {
-    //       window.print();
-    //       setShowPrint(false); // Optional
-    //     }, 500);
-
-    //     setStep(1);
-    //     setVendor({
-    //       first_name: "",
-    //       address: "",
-    //       phone_number: "",
-    //     });
-    //     setSelectedProducts([
-    //       {
-    //         productName: "",
-    //         hsnCode: "",
-    //         qty: 0,
-    //         price: 0,
-    //         discountPercentage: 0,
-    //         gst: 0,
-    //         discountedPrice: 0,
-    //       },
-    //     ]);
-    //     setPaymentDetails({
-    //       advance: 0,
-    //       balance: 0,
-    //       advpaymode: "",
-    //       transactionNumber: "",
-    //       bankName: "",
-    //       chequeNumber: "",
-    //       balpaymode: "",
-    //       transactionNumber2: "",
-    //       bankName2: "",
-    //       chequeNumber2: "",
-    //       cardNumber: "",
-    //       cardNumber2: "",
-    //       fullMode: "",
-    //       fullPaid: 0,
-    //       dueDate: "",
-    //     });
-    //   }
+      }
     } catch (error) {
       setSnackbarMessage("Vendor " + error);
       setSnackbarOpen(true);

@@ -9,28 +9,27 @@ import {
   Paper,
   Typography,
   Button,
-  MenuItem,
-  Menu,
   Box,
   TextField,
   IconButton,
 } from "@mui/material";
 import moment from "moment";
-import { getAllSaleBills } from "../../services/SaleBillService";
-import CreateSaleBill from "./CreateSaleBill";
 import { Visibility } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
+import { getAllPurchaseBills } from "../../services/PurchaseBillService";
+import CreatePurchaseBill from "./CreatePurchaseBill";
 import ViewBill from "./ViewBill";
 import EditBill from "./EditBill";
-import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
+import PaginationComponent from "../shared/PaginationComponent";
 
-const SaleBillList = () => {
+const PurchaseBillList = () => {
   const { webuser } = useAuth();
-  const [mainUser, setMainUser] = useState(null);
+  const [mainUser, setMainUser] = useState();
   const [bills, setBills] = useState([]);
   const [data, setData] = useState();
+  const [editData, setEditData] = useState();
   const [view, setView] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -38,7 +37,6 @@ const SaleBillList = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [open, setOpen] = useState(false);
-  const [editData, setEditData] = useState();
   const [edit, setEdit] = useState(false);
 
   const handleCloseEdit = () => setEdit(false);
@@ -46,34 +44,34 @@ const SaleBillList = () => {
   const handleClose = () => setOpen(false);
   const handleCloseView = () => setView(false);
 
-useEffect(() => {
-  const fetchUser = async () => {
-    const user = await getUserById(webuser?.id);
-    setMainUser(user);
-  };
-  fetchUser();
-}, [])
- useEffect(() => {
-  if (mainUser) {
-    fetchBills(currentPage);
-  }
-}, [currentPage, mainUser]);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getUserById(webuser?.id);
+      setMainUser(user);
+    };
+    fetchUser();
+  }, []);
+  useEffect(() => {
+    if (mainUser) {
+      fetchBills(currentPage);
+    }
+  }, [currentPage, mainUser]);
 
   const fetchBills = async (page = 1) => {
-  if (!mainUser) return;
+    if (!mainUser) return;
 
-  const data = await getAllSaleBills(page);
-  const allBills = data.data.docs || [];
+    const data = await getAllPurchaseBills(page);
+    const allBills = data.data.docs || [];
 
-  const filteredBills = allBills.filter(
-    (bill) => bill.org?._id === mainUser.organization_id?._id
-  );
+    const filteredBills = allBills.filter(
+      (bill) => bill.org?._id === mainUser.organization_id?._id
+    );
 
-  setBills(filteredBills);
-  setTotalPages(data.data.totalPages || 1);
-  setCurrentPage(data.data.page || page);
-};
-  
+    setBills(filteredBills);
+    setTotalPages(data.data.totalPages || 1);
+    setCurrentPage(data.data.page || page);
+  };
+
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
       if (!bill.createdAt) return false;
@@ -122,7 +120,7 @@ useEffect(() => {
           mb={2}
         >
           <Typography variant="h5" fontWeight={600}>
-            Sale Bill Summary
+            Purchase Bill Summary
           </Typography>
           <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
             <TextField
@@ -156,7 +154,7 @@ useEffect(() => {
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}
             >
-              Create Sale bill
+              Create Purchase bill
             </Button>
           </Box>
         </Box>
@@ -166,7 +164,7 @@ useEffect(() => {
           sx={{
             maxWidth: 1100,
             margin: "5px auto",
-            maxHeight: 500,
+            maxHeight: 600,
             overflowY: "auto",
           }}
         >
@@ -262,6 +260,8 @@ useEffect(() => {
                       <EditIcon />
                     </IconButton>
                   </TableCell>
+                  {/* <TableCell align="center">
+                  </TableCell> */}
                 </TableRow>
               ))}
 
@@ -293,7 +293,7 @@ useEffect(() => {
         </TableContainer>
       </Box>
 
-      <CreateSaleBill
+      <CreatePurchaseBill
         open={open}
         handleClose={handleClose}
         refresh={fetchBills}
@@ -305,7 +305,6 @@ useEffect(() => {
         refresh={fetchBills}
       />
       <ViewBill open={view} data={data} handleCloseView={handleCloseView} />
-
       <PaginationComponent
         totalPages={totalPages}
         currentPage={currentPage}
@@ -315,4 +314,4 @@ useEffect(() => {
   );
 };
 
-export default SaleBillList;
+export default PurchaseBillList;

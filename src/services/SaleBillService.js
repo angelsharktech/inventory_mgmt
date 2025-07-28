@@ -19,9 +19,9 @@ export const addSaleBill = async (billData) => {
     return error;
   }
 };
-export const getAllSaleBills = async()=>{
+export const getAllSaleBills = async(page = 1, limit = 10)=>{
      try {
-    const response = await axios.get(BASE_URL,getAuthHeader());
+    const response = await axios.get(`${BASE_URL}?page=${page}&limit=${limit}`,getAuthHeader());
     return response.data;
   } catch (error) {
     console.error('Error getting sale bill:', error);
@@ -30,10 +30,19 @@ export const getAllSaleBills = async()=>{
 }
 export const getSaleBillById = async(id)=>{
      try {
-    const response = await axios.get(`${BASE_URL}/${id}`,getAuthHeader());
+    const response = await axios.get(`${BASE_URL}${id}`,getAuthHeader());
     return response.data;
   } catch (error) {
     console.error('Error getting sale bill:', error);
-    return response.data;
+    return error;
   }
 }
+export const updateSaleBill = async (id, data) => {
+  try {
+    const response = await axios.put(`${BASE_URL}${id}`, data,getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error("Error updating sale bill:", error);
+    return error;
+  }
+};

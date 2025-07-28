@@ -144,7 +144,7 @@ const SaleBillReport = () => {
           mb={2}
         >
           <Typography variant="h5" fontWeight={600}>
-            Sale Bill Summary
+            Sale Bill Report
           </Typography>
           <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
             <TextField
@@ -162,6 +162,9 @@ const SaleBillReport = () => {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               size="small"
+              inputProps={{
+                min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
+              }}
             />
 
             <Button

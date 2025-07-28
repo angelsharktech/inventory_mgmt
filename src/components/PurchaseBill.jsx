@@ -1,10 +1,10 @@
 import React from 'react'
-import CreatePurchaseBill from './purchasebill/CreatePurchaseBill'
+import PurchaseBillList from './purchasebill/PurchaseBillList'
 
 const PurchaseBill = () => {
   return (
     <>
-    <CreatePurchaseBill/>
+    <PurchaseBillList/>
     </>
   )
 }

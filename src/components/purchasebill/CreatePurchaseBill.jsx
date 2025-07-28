@@ -1,27 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { Box, Snackbar, Alert } from "@mui/material";
+import { Box, Snackbar, Alert, Modal, IconButton } from "@mui/material";
 import GenerateBill from "../shared/GenerateBill";
 import PurchaseBillForm from "./PurchaseBillForm";
+import CloseIcon from '@mui/icons-material/Close';
 
-const CreatePurchaseBill = () => {
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  borderRadius: 2,
+  p: 3,
+  minWidth: 1020,
+  maxHeight: "90vh",
+  overflowY: "auto",
+};
+
+const CreatePurchaseBill = ({ open, handleClose, refresh }) => {
   const [showPrint, setShowPrint] = useState(false);
   const [printData, setPrintData] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
  
-
   return (
     <>
-      <Box
-        sx={{
-          maxHeight: "calc(100vh - 100px)",
-          overflowY: "auto",
-          p: 3,
-          bgcolor: "#f9f9f9",
-          borderRadius: 2,
-          boxShadow: 2,
-        }}
-      >
+    <Modal open={open} onClose={handleClose}>
+        <Box sx={style}>
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+    
         <PurchaseBillForm
           setShowPrint={setShowPrint}
           setPrintData={setPrintData}
@@ -30,7 +49,7 @@ const CreatePurchaseBill = () => {
           // setInvoiceNumber={newInvoiceNumber}
         />
       </Box>
-
+      </Modal>
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -39,7 +58,7 @@ const CreatePurchaseBill = () => {
       >
         <Alert
           severity={
-            snackbarMessage === "Sale bill created successfully!"
+            snackbarMessage === "Purchase bill created successfully!"
               ? "success"
               : "error"
           }

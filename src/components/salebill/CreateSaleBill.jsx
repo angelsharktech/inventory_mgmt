@@ -75,6 +75,8 @@ const CreateSaleBill = ({ open, handleClose, refresh }) => {
             setSnackbarOpen={setSnackbarOpen}
             setSnackbarMessage={setSnackbarMessage}
             // setInvoiceNumber={newInvoiceNumber}
+            close = {handleClose}
+            refresh={refresh}
           />
         </Box>
       </Modal>

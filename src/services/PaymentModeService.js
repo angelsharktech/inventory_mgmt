@@ -11,3 +11,12 @@ export const addPayment = async (data) => {
     throw error;
   }
 };
+export const updatePayment = async (id, data) => {
+  try {
+    const response = await axios.patch(`${API_URL}${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating payment bill:", error);
+    return error;
+  }
+};

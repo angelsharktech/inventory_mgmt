@@ -13,8 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { getSaleBillById } from "../../services/SaleBillService";
 import CloseIcon from "@mui/icons-material/Close";
+import { getPurchaseBillById } from "../../services/PurchaseBillService";
 
 const style = {
   position: "absolute",
@@ -34,7 +34,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
   useEffect(() => {
     const fetchBill = async () => {
       try {
-        const res = await getSaleBillById(data);
+        const res = await getPurchaseBillById(data);
         setBill(res.data);
       } catch (err) {
         console.error("Error loading bill by ID", err);

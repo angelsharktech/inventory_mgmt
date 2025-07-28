@@ -109,6 +109,7 @@ const CustomerList = () => {
       setTotalPages(Math.ceil(filteredCustomer.length / pageSize));
     }
   }, [filteredCustomer]);
+  
   const paginatedCustomers = filteredCustomer?.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize

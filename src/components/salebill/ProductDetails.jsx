@@ -1,22 +1,22 @@
-import React from 'react';
-import { 
-  Box, 
-  Grid, 
-  TextField, 
-  MenuItem, 
-  IconButton, 
-  Typography, 
-  Divider, 
-  Button 
-} from '@mui/material';
-import { Delete } from '@mui/icons-material';
+import React from "react";
+import {
+  Box,
+  Grid,
+  TextField,
+  MenuItem,
+  IconButton,
+  Typography,
+  Divider,
+  Button,
+} from "@mui/material";
+import { Delete } from "@mui/icons-material";
 
 const ProductDetails = ({
   products,
   selectedProducts,
   handleProductChange,
   handleAddProduct,
-  handleRemoveProduct
+  handleRemoveProduct,
 }) => {
   return (
     <Box mt={3}>
@@ -49,22 +49,22 @@ const ProductDetails = ({
               onChange={(e) =>
                 handleProductChange(index, "hsnCode", e.target.value)
               }
-              sx={{ width: "200px" }}
+              sx={{ width: "150px" }}
             >
-              {[
-                ...new Set(products.data?.map((prod) => prod.hsnCode)),
-              ].map((hsn) => (
-                <MenuItem key={hsn} value={hsn}>
-                  {hsn}
-                </MenuItem>
-              ))}
+              {[...new Set(products.data?.map((prod) => prod.hsnCode))].map(
+                (hsn) => (
+                  <MenuItem key={hsn} value={hsn}>
+                    {hsn}
+                  </MenuItem>
+                )
+              )}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={1}>
             <TextField
               label="Qty"
               type="number"
-              sx={{ width: "120px" }}
+              sx={{ width: "80px" }}
               value={item.qty}
               onChange={(e) =>
                 handleProductChange(index, "qty", e.target.value)
@@ -75,7 +75,7 @@ const ProductDetails = ({
             <TextField
               label="Unit Price"
               type="number"
-              sx={{ width: "120px" }}
+              sx={{ width: "90px" }}
               value={item.price}
               onChange={(e) =>
                 handleProductChange(index, "price", e.target.value)
@@ -86,14 +86,10 @@ const ProductDetails = ({
             <TextField
               label="discount %"
               type="number"
-              sx={{ width: "120px" }}
+              sx={{ width: "100px" }}
               value={item.discountPercentage}
               onChange={(e) =>
-                handleProductChange(
-                  index,
-                  "discountPercentage",
-                  e.target.value
-                )
+                handleProductChange(index, "discountPercentage", e.target.value)
               }
             />
           </Grid>
@@ -101,15 +97,19 @@ const ProductDetails = ({
             <TextField
               label="Selling Price"
               type="number"
-              sx={{ width: "120px" }}
+              sx={{ width: "100px" }}
               value={item.discountedPrice}
               onChange={(e) =>
-                handleProductChange(
-                  index,
-                  "discountedPrice",
-                  e.target.value
-                )
+                handleProductChange(index, "discountedPrice", e.target.value)
               }
+            />
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <TextField
+              label="Total"
+              type="number"
+              sx={{ width: "100px" }}
+              value={item.discountedPrice * item.qty}
             />
           </Grid>
           <Grid item xs={12} sm={1}>

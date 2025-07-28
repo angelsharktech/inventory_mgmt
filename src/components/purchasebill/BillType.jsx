@@ -18,7 +18,7 @@ const BillType = ({
   setBillType,
   gstPercent,
   setGstPercent,
-  customer,
+  vendor,
   handlePincodeChange,
   state,
   totals
@@ -47,7 +47,7 @@ const BillType = ({
             label="Enter Pincode "
             fullWidth
             sx={{ mt: 2, maxWidth: 300 }}
-            value={customer.pincode || ""}
+            value={vendor?.pincode || ""}
             onChange={handlePincodeChange}
           />
         )}
