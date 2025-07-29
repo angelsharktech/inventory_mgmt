@@ -150,9 +150,6 @@ const filteredCategory = rows?.filter(
                 <TableCell align="center">
                   <strong>Actions</strong>
                 </TableCell>
-                <TableCell align="center">
-                  <strong>Actions</strong>
-                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -169,9 +166,7 @@ const filteredCategory = rows?.filter(
                     <IconButton color="primary" onClick={() => handleEdit(row)}>
                       <EditIcon />
                     </IconButton>
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
+                     <IconButton
                       color="error"
                       onClick={() => handleDelete(row.id)}
                     >

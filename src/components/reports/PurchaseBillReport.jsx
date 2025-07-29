@@ -17,11 +17,17 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import moment from "moment";
-import { getAllPurchaseBills } from "../../services/PurchaseBillService";
+import {
+  getAllPurchaseBills,
+  getPurchaseBillByOrganization,
+} from "../../services/PurchaseBillService";
+import { useAuth } from "../../context/AuthContext";
+import PaginationComponent from "../shared/PaginationComponent";
+import { getUserById } from "../../services/UserService";
 
 const exportColumns = [
   { label: "#", key: "index" },
-  { label: "Customer Name", key: "customerName" },
+  { label: "Vendor Name", key: "vendorName" },
   { label: "Invoice No.", key: "invoiceNo" },
   { label: "Bill Date", key: "billDate" },
   { label: "Bill Total ", key: "billTotal" },
@@ -33,41 +39,48 @@ const exportColumns = [
 ];
 
 const PurchaseBillReport = () => {
+  const { webuser } = useAuth();
+  const [mainUser, setMainUser] = useState();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const openExportMenu = Boolean(anchorEl);
-
   useEffect(() => {
-    const fetchBills = async () => {
-      try {
-        const data = await getAllPurchaseBills();
-        console.log("Raw bills response:", data);
-
-        // Normalization
-        if (Array.isArray(data)) {
-          setBills(data); // already an array
-        } else if (data?.data?.docs) {
-          setBills(data.data.docs); // paginated format
-        } else if (data?._id) {
-          setBills([data]); // single object
-        } else {
-          setBills([]); // fallback
-        }
-      } catch (err) {
-        console.error("Failed to fetch purchase bills:", err);
-        setError("Failed to load purchase bills");
-      } finally {
-        setLoading(false);
-      }
+    const fetchUser = async () => {
+      const user = await getUserById(webuser?.id);
+      setMainUser(user);
     };
-
-    fetchBills();
+    fetchUser();
   }, []);
+  useEffect(() => {
+    if (mainUser) {
+      fetchBills(currentPage);
+    }
+  }, [currentPage, mainUser]);
+
+  const fetchBills = async (page = 1) => {
+    try {
+      // const data = await getAllPurchaseBills();
+      const data = await getPurchaseBillByOrganization(mainUser?.organization_id?._id,page);
+      const allBills = data.data.docs || [];
+      console.log(allBills);
+
+      setBills(allBills);
+      setTotalPages(data.data.totalPages || 1);
+      setCurrentPage(data.data.page || page);
+    } catch (err) {
+      console.error("Failed to fetch purchase bills:", err);
+      setError("Failed to load purchase bills");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
@@ -92,7 +105,7 @@ const PurchaseBillReport = () => {
     () =>
       filteredBills.map((bill, index) => ({
         index: index + 1,
-        customerName: `${bill.bill_to?.first_name || ""}`,
+        vendorName: `${bill.bill_to?.first_name || ""}`,
         invoiceNo: bill.bill_number || "",
         billDate: bill.createdAt || "",
         billTotal: bill.grandTotal || 0,
@@ -225,7 +238,7 @@ const PurchaseBillReport = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Customer Name</strong>
+                  <strong>Vendor Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>
@@ -319,6 +332,12 @@ const PurchaseBillReport = () => {
           </Table>
         </TableContainer>
       </Box>
+
+      <PaginationComponent
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
     </>
   );
 };

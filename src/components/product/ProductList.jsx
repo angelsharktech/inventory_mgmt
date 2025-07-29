@@ -209,10 +209,10 @@ const ProductList = () => {
                   <strong>Short Description</strong>
                 </TableCell>
                 <TableCell>
-                  <strong>Price ($)</strong>
+                  <strong>Price (₹)</strong>
                 </TableCell>
                 <TableCell>
-                  <strong>Compare Price ($)</strong>
+                  <strong>Compare Price (₹)</strong>
                 </TableCell>
                 <TableCell>
                   <strong>Discount (%)</strong>
@@ -226,10 +226,7 @@ const ProductList = () => {
                 <TableCell>
                   <strong>Tags</strong>
                 </TableCell>
-                <TableCell>
-                  <strong>Actions</strong>
-                </TableCell>
-                <TableCell>
+                <TableCell width={80}>
                   <strong>Actions</strong>
                 </TableCell>
                 <TableCell>
@@ -271,8 +268,6 @@ const ProductList = () => {
                     >
                       <EditIcon />
                     </IconButton>
-                  </TableCell>
-                  <TableCell align="center">
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(prod._id)}

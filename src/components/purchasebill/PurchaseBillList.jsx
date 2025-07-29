@@ -12,29 +12,37 @@ import {
   Box,
   TextField,
   IconButton,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import moment from "moment";
 import { Visibility } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
-import { getAllPurchaseBills } from "../../services/PurchaseBillService";
+import {
+  getAllPurchaseBills,
+  getPurchaseBillByOrganization,
+} from "../../services/PurchaseBillService";
 import CreatePurchaseBill from "./CreatePurchaseBill";
 import ViewBill from "./ViewBill";
 import EditBill from "./EditBill";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import PaginationComponent from "../shared/PaginationComponent";
+import { useNavigate } from "react-router-dom";
 
 const PurchaseBillList = () => {
   const { webuser } = useAuth();
+  const navigate = useNavigate();
   const [mainUser, setMainUser] = useState();
   const [bills, setBills] = useState([]);
   const [data, setData] = useState();
   const [editData, setEditData] = useState();
   const [view, setView] = useState(false);
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
@@ -60,33 +68,41 @@ const PurchaseBillList = () => {
   const fetchBills = async (page = 1) => {
     if (!mainUser) return;
 
-    const data = await getAllPurchaseBills(page);
-    const allBills = data.data.docs || [];
-
-    const filteredBills = allBills.filter(
-      (bill) => bill.org?._id === mainUser.organization_id?._id
+    const data = await getPurchaseBillByOrganization(
+      mainUser?.organization_id?._id,
+      page
     );
-
-    setBills(filteredBills);
-    setTotalPages(data.data.totalPages || 1);
-    setCurrentPage(data.data.page || page);
+    if (data.status === 401) {
+      setSnackbarMessage("Your Session is expired. Please login again!");
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+    if (data.success === true) {
+      const allBills = data.data.docs || [];
+      setBills(allBills);
+      setTotalPages(data.data.totalPages || 1);
+      setCurrentPage(data.data.page || page);
+    }
   };
 
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
       if (!bill.createdAt) return false;
       const billDate = new Date(bill.createdAt);
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
+      const selectedDate = startDate ? new Date(startDate) : null;
 
-      if (start) start.setHours(0, 0, 0, 0);
-      if (end) end.setHours(23, 59, 59, 999);
+      if (!selectedDate) return true;
 
-      if (start && billDate < start) return false;
-      if (end && billDate > end) return false;
-      return true;
+      // Normalize both to remove time portion
+      billDate.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // Return only bills matching that exact date
+      return billDate.getTime() === selectedDate.getTime();
     });
-  }, [bills, startDate, endDate]);
+  }, [bills, startDate]);
 
   const totalBill = filteredBills.reduce(
     (acc, bill) => acc + (bill.grandTotal || 0),
@@ -124,7 +140,7 @@ const PurchaseBillList = () => {
           </Typography>
           <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
             <TextField
-              label="Start Date"
+              label="Date"
               type="date"
               InputLabelProps={{ shrink: true }}
               value={startDate}
@@ -132,11 +148,8 @@ const PurchaseBillList = () => {
                 setStartDate(e.target.value);
               }}
               size="small"
-              inputProps={{
-                max: moment().format("YYYY-MM-DD"), // Disable future dates
-              }}
             />
-            <TextField
+            {/* <TextField
               label="End Date"
               type="date"
               InputLabelProps={{ shrink: true }}
@@ -147,7 +160,7 @@ const PurchaseBillList = () => {
               inputProps={{
                 min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
               }}
-            />
+            /> */}
 
             <Button
               variant="contained"
@@ -164,7 +177,7 @@ const PurchaseBillList = () => {
           sx={{
             maxWidth: 1100,
             margin: "5px auto",
-            maxHeight: 600,
+            maxHeight: 550,
             overflowY: "auto",
           }}
         >
@@ -175,7 +188,7 @@ const PurchaseBillList = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Customer Name</strong>
+                  <strong>Vendor Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>
@@ -201,11 +214,8 @@ const PurchaseBillList = () => {
                 <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell> */}
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>action</strong>
-                </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>action</strong>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Action</strong>
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -249,15 +259,13 @@ const PurchaseBillList = () => {
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility />
+                      <Visibility color="primary" />
                     </IconButton>
-                  </TableCell>
-                  <TableCell align="center">
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon />
+                      <EditIcon color="primary" />
                     </IconButton>
                   </TableCell>
                   {/* <TableCell align="center">
@@ -292,7 +300,20 @@ const PurchaseBillList = () => {
           </Table>
         </TableContainer>
       </Box>
-
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbarMessage === " " ? "success" : "error"}
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       <CreatePurchaseBill
         open={open}
         handleClose={handleClose}

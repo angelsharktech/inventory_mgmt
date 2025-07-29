@@ -34,7 +34,7 @@ const PurchaseBillForm = ({
   setSnackbarOpen,
   setSnackbarMessage,
   // setInvoiceNumber,
-  close,refresh
+  close, refresh
 }) => {
   const { webuser } = useAuth();
   const navigate = useNavigate();
@@ -253,7 +253,7 @@ const PurchaseBillForm = ({
       {
         productName: "",
         hsnCode: "",
-        qty: 0,
+        qty: 1,
         price: 0,
         gst: 0,
         discountPercentage: 0,
@@ -361,10 +361,9 @@ const PurchaseBillForm = ({
         createdBy: mainUser._id,
         status: paymentDetails.balance === 0 ? 'issued': 'draft'
       };
-      console.log("billPayload::", billPayload);
-      // message: "PurchaseBill validation failed: advancePayments: Advance payment mode is required for advance payments"
+      
       const res = await addPurchaseBill(billPayload);
-      console.log("response:", res);
+      
       if (res.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
         setSnackbarOpen(true);
@@ -393,6 +392,59 @@ const PurchaseBillForm = ({
           setShowPrint(false); // Optional
         }, 500);
          refresh();
+
+          if (paymentType === "advance" || paymentType === "full") {           
+            
+          // Base payload with common fields
+          let paymentPayload = {
+            paymentType:
+              paymentType === "advance"
+                ? paymentDetails.advpaymode
+                : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
+            amount:
+              paymentType === "advance"
+                ? paymentDetails.advance
+                : paymentDetails.fullPaid,
+            client_id: finalVendor._id,    //customer_id
+            work_id: res?.data?._id,   //sale_bill_id
+            organization: mainUser.organization_id?._id,
+          };
+
+          // Add mode-specific fields
+          if (
+            paymentDetails.advpaymode.toLowerCase() === "upi" ||
+            paymentDetails.fullMode.toLowerCase() === "upi"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              utrId: paymentDetails.transactionNumber,
+            };
+          } else if (
+            paymentDetails.advpaymode.toLowerCase() === "cheque" ||
+            paymentDetails.fullMode.toLowerCase() === "cheque"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              bankName: paymentDetails.bankName,
+              chequeNumber: paymentDetails.chequeNumber,
+            };
+          } else {
+            paymentPayload = {
+              ...paymentPayload,
+              description: `${
+                paymentType === "advance" ? "Advance" : "Full"
+              } payment for Bill`,
+            };
+          }          
+          
+          const paymentResult = await addPayment(paymentPayload);
+          if(paymentResult.success === false){
+            console.log("error in payment adding");
+            
+          }          
+         
+        }
+
         setStep(1);
         setVendor({
           first_name: "",
@@ -428,56 +480,11 @@ const PurchaseBillForm = ({
           dueDate: "",
         });
         close();
-         if (paymentType === "advance" || paymentType === "full") {
-        // Base payload with common fields
-        let paymentPayload = {
-          paymentType:
-            paymentType === "advance"
-              ? paymentDetails.advpaymode
-              : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
-          amount:
-            paymentType === "advance"
-              ? paymentDetails.advance
-              : paymentDetails.fullPaid,
-          client_id: finalVendor._id,
-          organization: mainUser.organization_id?._id,
-          work_id: res?._id
-        };
-
-        // Add mode-specific fields
-        if (
-          paymentDetails.advpaymode.toLowerCase() === "upi" ||
-          paymentDetails.fullMode.toLowerCase() === "upi"
-        ) {
-          paymentPayload = {
-            ...paymentPayload,
-            referenceId: paymentDetails.transactionNumber,
-          };
-        } else if (
-          paymentDetails.advpaymode.toLowerCase() === "cheque" ||
-          paymentDetails.fullMode.toLowerCase() === "cheque"
-        ) {
-          paymentPayload = {
-            ...paymentPayload,
-            bankName: paymentDetails.bankName,
-            chequeNumber: paymentDetails.chequeNumber,
-          };
-        } else {
-          paymentPayload = {
-            ...paymentPayload,
-            description: `${
-              paymentType === "advance" ? "Advance" : "Full"
-            } payment for Bill`,
-          };
-        }
-        console.log('Add paymentPayload:',paymentPayload);
         
-        const paymentResult = await addPayment(paymentPayload);
-        if (paymentResult.success) {
-        }
-      }
       }
     } catch (error) {
+      console.log(error);
+      
       setSnackbarMessage("Vendor " + error);
       setSnackbarOpen(true);
     }

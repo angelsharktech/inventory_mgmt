@@ -7,6 +7,9 @@ import {
   Grid,
   Typography,
   Button,
+  MenuItem,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -36,6 +39,16 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
   const [advance, setAdvance] = useState(0);
   const [balance, setBalance] = useState(0);
   const [fullPay, setFullPay] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState({
+    advpaymode: "",
+    transactionNumber: "",
+    cardNumber: "",
+    bankName: "",
+    chequeNumber: "",
+    fullMode: "", // for full payment if needed
+  });
 
   useEffect(() => {
     const fetchBill = async () => {
@@ -67,210 +80,421 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
     const newAdvance = parseFloat(e.target.value || "0");
     setAdvance(newAdvance);
 
-    const newBalance =
-      (bill?.grandTotal || 0) - (bill?.fullPaid || 0) - newAdvance;
+    const newBalance = (bill?.grandTotal || 0) - (bill?.advance + newAdvance);
     setBalance(newBalance);
   };
 
   const updateBill = async () => {
     try {
       const updatedData = {
-        advance: advance,
+        advance: advance + bill.advance,
         balance: balance,
         paymentType: balance > 0 ? "advance" : "full",
         fullpaid: fullPay,
       };
 
       const res = await updateSaleBill(bill._id, updatedData);
-      refresh();
-      handleCloseEdit();
-      if (bill.advancePayments || bill.fullPayment) {
-        const isAdvance = !!bill.advancePayments;
-        const mode = isAdvance
-          ? paymentDetails.advpaymode
-          : paymentDetails.fullMode;
-        const amount = isAdvance
-          ? paymentDetails.advance
-          : paymentDetails.fullPaid;
+      if (res.success === true) {
+        setSnackbarMessage("Sale bill Updated !");
+        setSnackbarOpen(true);
 
+        const paymentType = balance > 0 ? "advance" : "full";
+
+        // Build base payment payload
         let paymentPayload = {
-          paymentType: mode,
-          amount: amount,
-          client_id: data.bill_to?._id,
-          work_id: data._id,
-          organization: data.org?._id,
+          paymentType:
+            paymentType === "advance"
+              ? paymentDetails.advpaymode
+              : paymentDetails.fullMode,
+          amount: paymentType === "advance" ? advance : bill?.grandTotal || 0,
+          client_id: bill?.bill_to?._id, // customer_id
+          work_id: bill?._id, // sale_bill_id
+          organization: bill?.org?._id || bill?.organization?._id, // fallback if org is saved in different path
         };
 
-        const modeLower = (mode || "").toLowerCase();
+        // Add payment mode-specific fields
+        const selectedMode = paymentPayload.paymentType?.toLowerCase();
 
-        if (modeLower === "upi") {
-          paymentPayload.referenceId = paymentDetails.transactionNumber;
-        } else if (modeLower === "cheque") {
+        if (selectedMode === "upi") {
+          paymentPayload.utrId = paymentDetails.transactionNumber;
+        } else if (selectedMode === "cheque") {
           paymentPayload.bankName = paymentDetails.bankName;
           paymentPayload.chequeNumber = paymentDetails.chequeNumber;
         } else {
           paymentPayload.description = `${
-            isAdvance ? "Advance" : "Full"
+            paymentType === "advance" ? "Advance" : "Full"
           } payment for Bill`;
         }
 
+        // Optional: Send payment data to server
         try {
-          const paymentResult = await addPayment( paymentPayload);
-          if (paymentResult.success) {
-            console.log("Payment updated successfully");
+          const paymentResult = await addPayment(paymentPayload);
+          if (paymentResult?.success) {
+            console.log("Payment added successfully");
           }
         } catch (error) {
-          console.error("Failed to update payment:", error);
+          console.error("Failed to add payment:", error);
+          setSnackbarMessage("Customer " + error);
+          setSnackbarOpen(true);
         }
+        refresh();
+        handleCloseEdit();
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+       setSnackbarMessage(error);
+        setSnackbarOpen(true);
+    }
   };
   return (
-    <Modal open={open} onClose={handleCloseEdit}>
-      <Box sx={style}>
-        <IconButton
-          aria-label="close"
-          onClick={handleCloseEdit}
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
+    <>
+      <Modal open={open} onClose={handleCloseEdit}>
+        <Box sx={style}>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseEdit}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Typography variant="h6" gutterBottom>
+            Purchase Bill Details
+          </Typography>
+
+          {bill && (
+            <Grid container spacing={2} mt={1}>
+              <Grid item xs={6}>
+                <TextField
+                  label="Bill Number"
+                  value={bill.bill_number || ""}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Bill Date"
+                  value={moment(bill.createdAt).format("YYYY-MM-DD")}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Customer Name"
+                  value={bill.bill_to?.first_name || ""}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Phone Number"
+                  value={bill.bill_to?.phone_number || ""}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Payment Type"
+                  value={bill.paymentType}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Bill Type"
+                  value={bill.billType}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Sub Total"
+                  value={bill.subtotal?.toFixed(2)}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="GST Total"
+                  value={bill.gstTotal?.toFixed(2)}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Grand Total"
+                  value={bill.grandTotal?.toFixed(2)}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+
+              <Grid item xs={6}>
+                <TextField
+                  label="Advance"
+                  type="number"
+                  value={bill?.advance}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+              {bill?.balance > 0 && (
+                <>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Remaining amount"
+                      type="number"
+                      // value={advance}
+                      onChange={handleAdvanceChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Balance"
+                      value={balance.toFixed(2)}
+                      fullWidth
+                      disabled
+                    />
+                  </Grid>
+                </>
+              )}
+              {/* Advance Pay Mode Fields */}
+              {advance < bill?.grandTotal && (
+                <>
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      select
+                      label="Advance Pay Mode"
+                      sx={{ width: "225px" }}
+                      value={paymentDetails.advpaymode}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          advpaymode: e.target.value,
+                        })
+                      }
+                    >
+                      <MenuItem value="">Select Mode</MenuItem>
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="upi">UPI</MenuItem>
+                      <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value="cheque">Cheque</MenuItem>
+                    </TextField>
+                  </Grid>
+
+                  {paymentDetails.advpaymode === "upi" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="UPI Transaction No."
+                        fullWidth
+                        value={paymentDetails.transactionNumber}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            transactionNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.advpaymode === "card" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Card No."
+                        fullWidth
+                        value={paymentDetails.cardNumber}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.advpaymode === "cheque" && (
+                    <>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Bank Name"
+                          fullWidth
+                          value={paymentDetails.bankName}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              bankName: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Cheque Number"
+                          fullWidth
+                          value={paymentDetails.chequeNumber}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              chequeNumber: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                    </>
+                  )}
+                </>
+              )}
+
+              <Grid item xs={6}>
+                <TextField
+                  label="Full Paid"
+                  value={bill.fullPaid ? bill.fullPaid : fullPay?.toFixed(2)}
+                  fullWidth
+                  disabled
+                />
+              </Grid>
+
+              {/* Full Pay Mode (Optional) */}
+              {advance === bill?.grandTotal && (
+                <>
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      select
+                      label="Full Payment Mode"
+                      value={paymentDetails.fullMode}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          fullMode: e.target.value,
+                        })
+                      }
+                      sx={{ width: "225px" }}
+                    >
+                      <MenuItem value="">Select Mode</MenuItem>
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="upi">UPI</MenuItem>
+                      <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value="cheque">Cheque</MenuItem>
+                    </TextField>
+                  </Grid>
+                  {paymentDetails.fullMode === "upi" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="UPI Transaction No."
+                        fullWidth
+                        value={paymentDetails.transactionNumber}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            transactionNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.fullMode === "card" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Card No."
+                        fullWidth
+                        value={paymentDetails.cardNumber}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardNumber: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.fullMode === "cheque" && (
+                    <>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Bank Name"
+                          fullWidth
+                          value={paymentDetails.bankName}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              bankName: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Cheque Number"
+                          fullWidth
+                          value={paymentDetails.chequeNumber}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              chequeNumber: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                    </>
+                  )}
+                </>
+              )}
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Notes"
+                  value={bill.notes || ""}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button
+                  variant="contained"
+                  sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+                  onClick={updateBill}
+                >
+                  Update
+                </Button>
+              </Grid>
+            </Grid>
+          )}
+        </Box>
+      </Modal>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            snackbarMessage === "Sale bill Updated !" ? "success" : "error"
+          }
+          onClose={() => setSnackbarOpen(false)}
+          variant="filled"
         >
-          <CloseIcon />
-        </IconButton>
-
-        <Typography variant="h6" gutterBottom>
-          Purchase Bill Details
-        </Typography>
-
-        {bill && (
-          <Grid container spacing={2} mt={1}>
-            <Grid item xs={6}>
-              <TextField
-                label="Bill Number"
-                value={bill.bill_number || ""}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Bill Date"
-                value={moment(bill.createdAt).format("YYYY-MM-DD")}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Customer Name"
-                value={bill.bill_to?.first_name || ""}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Phone Number"
-                value={bill.bill_to?.phone_number || ""}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Payment Type"
-                value={bill.paymentType}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Bill Type"
-                value={bill.billType}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Sub Total"
-                value={bill.subtotal?.toFixed(2)}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="GST Total"
-                value={bill.gstTotal?.toFixed(2)}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Grand Total"
-                value={bill.grandTotal?.toFixed(2)}
-                fullWidth
-                disabled
-              />
-            </Grid>
-
-            <Grid item xs={6}>
-              <TextField
-                label="Advance"
-                type="number"
-                value={advance}
-                onChange={handleAdvanceChange}
-                fullWidth
-                disabled={Number(bill.advance) === 0}
-              />
-            </Grid>
-
-            <Grid item xs={6}>
-              <TextField
-                label="Full Paid"
-                value={fullPay?.toFixed(2)}
-                fullWidth
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Balance"
-                value={balance.toFixed(2)}
-                fullWidth
-                disabled
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                label="Notes"
-                value={bill.notes || ""}
-                fullWidth
-                multiline
-                rows={3}
-                disabled
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
-                onClick={updateBill}
-              >
-                Update
-              </Button>
-            </Grid>
-          </Grid>
-        )}
-      </Box>
-    </Modal>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

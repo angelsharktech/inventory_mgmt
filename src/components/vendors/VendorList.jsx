@@ -175,20 +175,18 @@ const VendorList = () => {
                   <strong>Name</strong>
                 </TableCell>
                 <TableCell>
-                  <strong>Phone</strong>
+                  <strong>Contact Number</strong>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <strong>City</strong>
-                </TableCell>
+                </TableCell> */}
                 <TableCell>
                   <strong>Address</strong>
                 </TableCell>
                 <TableCell>
                   <strong>Actions</strong>
                 </TableCell>
-                <TableCell>
-                  <strong>Actions</strong>
-                </TableCell>
+                
               </TableRow>
             </TableHead>
             <TableBody>
@@ -198,8 +196,8 @@ const VendorList = () => {
                     {vendor.first_name} {vendor.last_name}
                   </TableCell>
                   <TableCell>{vendor.phone_number}</TableCell>
-                  <TableCell>{vendor.city}</TableCell>
-                  <TableCell>{vendor.address}</TableCell>
+                  <TableCell>{vendor.address}{vendor.city}</TableCell>
+                  {/* <TableCell></TableCell> */}
                   <TableCell>
                     <IconButton
                       color="primary"
@@ -207,8 +205,6 @@ const VendorList = () => {
                     >
                       <EditIcon />
                     </IconButton>
-                  </TableCell>
-                  <TableCell>
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(vendor._id)}
@@ -216,6 +212,7 @@ const VendorList = () => {
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
+                 
                 </TableRow>
               ))}
             </TableBody>

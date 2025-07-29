@@ -181,16 +181,10 @@ const CustomerList = () => {
                   <strong>Name</strong>
                 </TableCell>
                 <TableCell>
-                  <strong>Phone</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>City</strong>
+                  <strong>Contact Number</strong>
                 </TableCell>
                 <TableCell>
                   <strong>Address</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Actions</strong>
                 </TableCell>
                 <TableCell>
                   <strong>Actions</strong>
@@ -204,8 +198,7 @@ const CustomerList = () => {
                     {customer.first_name} {customer.last_name}
                   </TableCell>
                   <TableCell>{customer.phone_number}</TableCell>
-                  <TableCell>{customer.city}</TableCell>
-                  <TableCell>{customer.address}</TableCell>
+                  <TableCell>{customer.address}{customer.city}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"
@@ -213,15 +206,14 @@ const CustomerList = () => {
                     >
                       <EditIcon />
                     </IconButton>
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
+                     <IconButton
                       color="error"
                       onClick={() => handleDelete(customer._id)}
                     >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
+                 
                 </TableRow>
               ))}
             </TableBody>

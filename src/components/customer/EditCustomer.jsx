@@ -132,7 +132,9 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
                   fullWidth
-                  label={key
+                  label={key === "phone_number"
+                      ? "Contact Number"
+                      : key
                     .replace(/_/g, " ")
                     .replace(/\b\w/g, (l) => l.toUpperCase())}
                   name={key}

@@ -49,6 +49,14 @@ export const getUserById = async(id) =>{
     throw error.response?.data || { message: "error geting all users" };
   }
 }
+export const getUserByOrganizastionId = async(id) =>{
+  try{
+    const response = await axios.get(`${BASE_URL}/user/organization/${id}`)
+    return response.data;
+  }catch(error) {
+    throw error.response?.data || { message: "error geting all users sorted by organizations" };
+  }
+}
 
 export const updateUser = async (id, userData) => {
   try {

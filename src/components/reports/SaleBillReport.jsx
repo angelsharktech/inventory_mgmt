@@ -17,7 +17,10 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import moment from "moment";
-import { getAllSaleBills } from "../../services/SaleBillService";
+import { getAllSaleBills, getSaleBillByOrganization } from "../../services/SaleBillService";
+import { useAuth } from "../../context/AuthContext";
+import PaginationComponent from "../shared/PaginationComponent";
+import { getUserById } from "../../services/UserService";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -33,41 +36,51 @@ const exportColumns = [
 ];
 
 const SaleBillReport = () => {
+  const { webuser } = useAuth();
+  const [mainUser, setMainUser] = useState(null);
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const openExportMenu = Boolean(anchorEl);
-
-  useEffect(() => {
-    const fetchBills = async () => {
-      try {
-        const data = await getAllSaleBills();
-        console.log("Raw bills response:", data);
-
-        // Normalization
-        if (Array.isArray(data)) {
-          setBills(data); // already an array
-        } else if (data?.data?.docs) {
-          setBills(data.data.docs); // paginated format
-        } else if (data?._id) {
-          setBills([data]); // single object
-        } else {
-          setBills([]); // fallback
-        }
-      } catch (err) {
-        console.error("Failed to fetch sale bills:", err);
-        setError("Failed to load sale bills");
-      } finally {
-        setLoading(false);
-      }
+ useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getUserById(webuser?.id);
+      setMainUser(user);
     };
-
-    fetchBills();
+    fetchUser();
   }, []);
+  useEffect(() => {
+    if (mainUser) {
+      fetchBills(currentPage);
+    }
+  }, [currentPage, mainUser]);
+
+  const fetchBills = async (page = 1) => {
+    try {
+      const data = await getSaleBillByOrganization(
+            mainUser?.organization_id?._id,
+            page
+          );
+       const allBills = data.data.docs || [];
+    console.log(allBills);
+
+    setBills(allBills);
+    setTotalPages(data.data.totalPages || 1);
+    setCurrentPage(data.data.page || page);
+    } catch (err) {
+      console.error("Failed to fetch sale bills:", err);
+      setError("Failed to load sale bills");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
@@ -205,8 +218,8 @@ const SaleBillReport = () => {
           component={Paper}
           sx={{
             maxWidth: 1100,
-            margin: "5px auto",
-            maxHeight: 600,
+            margin: "2px auto",
+            maxHeight: 550,
             overflowY: "auto",
           }}
         >
@@ -225,22 +238,22 @@ const SaleBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Date</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Paid Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell  sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
               </TableRow>
@@ -256,18 +269,18 @@ const SaleBillReport = () => {
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell >
                     {bill.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell >
                     {(
                       Number(bill.advance || 0) + Number(bill.fullPaid || 0)
                     ).toFixed(2)}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell >
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell align="center">
@@ -311,6 +324,12 @@ const SaleBillReport = () => {
           </Table>
         </TableContainer>
       </Box>
+
+      <PaginationComponent
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
     </>
   );
 };

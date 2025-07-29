@@ -14,9 +14,14 @@ import {
   Box,
   TextField,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import moment from "moment";
-import { getAllSaleBills } from "../../services/SaleBillService";
+import {
+  getAllSaleBills,
+  getSaleBillByOrganization,
+} from "../../services/SaleBillService";
 import CreateSaleBill from "./CreateSaleBill";
 import { Visibility } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -25,17 +30,20 @@ import EditBill from "./EditBill";
 import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
+import { useNavigate } from "react-router-dom";
 
 const SaleBillList = () => {
   const { webuser } = useAuth();
+  const navigate = useNavigate();
   const [mainUser, setMainUser] = useState(null);
   const [bills, setBills] = useState([]);
   const [data, setData] = useState();
   const [view, setView] = useState(false);
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState();
@@ -46,49 +54,58 @@ const SaleBillList = () => {
   const handleClose = () => setOpen(false);
   const handleCloseView = () => setView(false);
 
-useEffect(() => {
-  const fetchUser = async () => {
-    const user = await getUserById(webuser?.id);
-    setMainUser(user);
-  };
-  fetchUser();
-}, [])
- useEffect(() => {
-  if (mainUser) {
-    fetchBills(currentPage);
-  }
-}, [currentPage, mainUser]);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getUserById(webuser?.id);
+      setMainUser(user);
+    };
+    fetchUser();
+  }, []);
+  useEffect(() => {
+    if (mainUser) {
+      fetchBills(currentPage);
+    }
+  }, [currentPage, mainUser]);
 
   const fetchBills = async (page = 1) => {
-  if (!mainUser) return;
+    if (!mainUser) return;
 
-  const data = await getAllSaleBills(page);
-  const allBills = data.data.docs || [];
+    const data = await getSaleBillByOrganization(
+      mainUser?.organization_id?._id,
+      page
+    );
+    if (data.status === 401) {
+      setSnackbarMessage("Your Session is expired. Please login again!");
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+    if (data.success === true) {
+      const allBills = data.data.docs || [];
 
-  const filteredBills = allBills.filter(
-    (bill) => bill.org?._id === mainUser.organization_id?._id
-  );
+      setBills(allBills);
+      setTotalPages(data.data.totalPages || 1);
+      setCurrentPage(data.data.page || page);
+    }
+  };
 
-  setBills(filteredBills);
-  setTotalPages(data.data.totalPages || 1);
-  setCurrentPage(data.data.page || page);
-};
-  
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
       if (!bill.createdAt) return false;
       const billDate = new Date(bill.createdAt);
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
+      const selectedDate = startDate ? new Date(startDate) : null;
 
-      if (start) start.setHours(0, 0, 0, 0);
-      if (end) end.setHours(23, 59, 59, 999);
+      if (!selectedDate) return true;
 
-      if (start && billDate < start) return false;
-      if (end && billDate > end) return false;
-      return true;
+      // Normalize both to remove time portion
+      billDate.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // Return only bills matching that exact date
+      return billDate.getTime() === selectedDate.getTime();
     });
-  }, [bills, startDate, endDate]);
+  }, [bills, startDate]);
 
   const totalBill = filteredBills.reduce(
     (acc, bill) => acc + (bill.grandTotal || 0),
@@ -138,18 +155,6 @@ useEffect(() => {
                 max: moment().format("YYYY-MM-DD"), // Disable future dates
               }}
             />
-            <TextField
-              label="End Date"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              size="small"
-              disabled={!startDate} // Disable until start date is selected
-              inputProps={{
-                min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
-              }}
-            />
 
             <Button
               variant="contained"
@@ -166,7 +171,7 @@ useEffect(() => {
           sx={{
             maxWidth: 1100,
             margin: "5px auto",
-            maxHeight: 500,
+            maxHeight: 550,
             overflowY: "auto",
           }}
         >
@@ -203,11 +208,8 @@ useEffect(() => {
                 <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell> */}
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>action</strong>
-                </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>action</strong>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Action</strong>
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -251,15 +253,13 @@ useEffect(() => {
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility />
+                      <Visibility color="primary" />
                     </IconButton>
-                  </TableCell>
-                  <TableCell align="center">
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon />
+                      <EditIcon color="primary" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -292,6 +292,21 @@ useEffect(() => {
           </Table>
         </TableContainer>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbarMessage === " " ? "success" : "error"}
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       <CreateSaleBill
         open={open}

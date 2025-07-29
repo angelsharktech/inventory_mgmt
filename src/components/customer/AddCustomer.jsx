@@ -38,7 +38,7 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
     first_name: "",
     last_name: "",
     phone_number: "",
-    country: "",
+    // country: "",
     address: "",
     city: "",
   });
@@ -175,7 +175,9 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
                   fullWidth
-                  label={key
+                  label={key === "phone_number"
+                      ? "Contact Number"
+                      : key
                     .replace(/_/g, " ")
                     .replace(/\b\w/g, (l) => l.toUpperCase())}
                   name={key}

@@ -302,8 +302,6 @@ const SaleBillForm = ({
   const handleSubmit = async () => {
     try {
       let finalCustomer = { ...customer };
-      let advancePaymentId = null;
-      let fullPaymentId = null;
 
       if (!customer.phone_number || !customer.first_name) {
         setSnackbarMessage("Please fill customer details!");
@@ -364,6 +362,7 @@ const SaleBillForm = ({
         status: paymentDetails.balance === 0 ? "issued" : "draft",
       };
       const res = await addSaleBill(billPayload);
+      
       if (res.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
         setSnackbarOpen(true);
@@ -371,7 +370,8 @@ const SaleBillForm = ({
           navigate("/login");
         }, 2000);
         return;
-      }
+       }
+
       if (res.success === true) {
         setSnackbarMessage("Sale bill created successfully!");
         setSnackbarOpen(true);
@@ -393,6 +393,57 @@ const SaleBillForm = ({
           setShowPrint(false); // Optional
         }, 500);
         refresh();
+
+        if (paymentType === "advance" || paymentType === "full") {
+          // Base payload with common fields
+          let paymentPayload = {
+            paymentType:
+              paymentType === "advance"
+                ? paymentDetails.advpaymode
+                : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
+            amount:
+              paymentType === "advance"
+                ? paymentDetails.advance
+                : paymentDetails.fullPaid,
+            client_id: finalCustomer._id,    //customer_id
+            work_id: res.data._id,   //sale_bill_id
+            organization: mainUser.organization_id?._id,
+          };
+
+          // Add mode-specific fields
+          if (
+            paymentDetails.advpaymode.toLowerCase() === "upi" ||
+            paymentDetails.fullMode.toLowerCase() === "upi"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              utrId: paymentDetails.transactionNumber,
+            };
+          } else if (
+            paymentDetails.advpaymode.toLowerCase() === "cheque" ||
+            paymentDetails.fullMode.toLowerCase() === "cheque"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              bankName: paymentDetails.bankName,
+              chequeNumber: paymentDetails.chequeNumber,
+            };
+          } else {
+            paymentPayload = {
+              ...paymentPayload,
+              description: `${
+                paymentType === "advance" ? "Advance" : "Full"
+              } payment for Bill`,
+            };
+          }         
+          
+          const paymentResult = await addPayment(paymentPayload);
+         if(paymentResult.success === false){
+            console.log("error in payment adding");
+            
+          } 
+        }
+
         setStep(1);
         setCustomer({
           first_name: "",
@@ -430,53 +481,7 @@ const SaleBillForm = ({
 
         close();
 
-        if (paymentType === "advance" || paymentType === "full") {
-          // Base payload with common fields
-          let paymentPayload = {
-            paymentType:
-              paymentType === "advance"
-                ? paymentDetails.advpaymode
-                : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
-            amount:
-              paymentType === "advance"
-                ? paymentDetails.advance
-                : paymentDetails.fullPaid,
-            client_id: finalCustomer._id,
-            work_id: res._id,
-            organization: mainUser.organization_id?._id,
-          };
-
-          // Add mode-specific fields
-          if (
-            paymentDetails.advpaymode.toLowerCase() === "upi" ||
-            paymentDetails.fullMode.toLowerCase() === "upi"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              referenceId: paymentDetails.transactionNumber,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "cheque" ||
-            paymentDetails.fullMode.toLowerCase() === "cheque"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              bankName: paymentDetails.bankName,
-              chequeNumber: paymentDetails.chequeNumber,
-            };
-          } else {
-            paymentPayload = {
-              ...paymentPayload,
-              description: `${
-                paymentType === "advance" ? "Advance" : "Full"
-              } payment for Bill`,
-            };
-          }
-
-          const paymentResult = await addPayment(paymentPayload);
-          if (paymentResult.success) {
-          }
-        }
+        
       }
     } catch (error) {
       setSnackbarMessage("Customer " + error);

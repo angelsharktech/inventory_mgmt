@@ -37,6 +37,15 @@ export const getPurchaseBillById = async (id) => {
     return error;
   }
 };
+export const getPurchaseBillByOrganization = async (id,page = 1, limit = 10) => {
+  try {
+    const response = await axios.get(`${BASE_URL}organization/${id}?page=${page}&limit=${limit}`, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error("Error getting purchase bill:", error);
+    return error;
+  }
+};
 
 export const updatePurchaseBill = async (id, data) => {
   try {

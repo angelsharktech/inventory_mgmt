@@ -38,7 +38,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
     first_name: "",
     last_name: "",
     phone_number: "",
-    country: "",
+    // country: "",
     address: "",
     city: "",
     // bio: "",
@@ -64,7 +64,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
   const [mainUser, setMainUser] = useState();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [errors, setErrors] = useState({phone_number: ""});
+  const [errors, setErrors] = useState({ phone_number: "" });
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -95,7 +95,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
           ...prev,
           phone_number: "Invalid mobile number",
         }));
-      }else {
+      } else {
         setErrors((prev) => ({ ...prev, phone_number: "" }));
       }
     }
@@ -126,7 +126,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         (u) => u.phone_number === formData.phone_number
       );
       if (phoneExists) {
-        setSnackbarMessage("Phone number already exists!");
+        setSnackbarMessage("Contact number already exists!");
         setSnackbarOpen(true);
         return;
       }
@@ -183,7 +183,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         state: "",
         stateCode: "",
       });
-      setErrors({phone_number: ""})
+      setErrors({ phone_number: "" });
     } catch (error) {
       setSnackbarMessage(error);
       setSnackbarOpen(true);
@@ -202,9 +202,13 @@ const AddVendor = ({ open, handleClose, refresh }) => {
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
                   fullWidth
-                  label={key
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                  label={
+                    key === "phone_number"
+                      ? "Contact Number"
+                      : key
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                  }
                   name={key}
                   value={value}
                   onChange={handleChange}
@@ -258,9 +262,16 @@ const AddVendor = ({ open, handleClose, refresh }) => {
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
                   fullWidth
-                  label={key
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())}
+                  label={
+                    key === "ifscCode"
+                      ? "IFSC Code"
+                      : key === "upiId"
+                      ? "UPI Id"
+                      : key
+                          .replace(/_/g, " ")
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())
+                  }
                   name={key}
                   value={value}
                   onChange={handleBankChange}

@@ -230,7 +230,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
-                label="Price ($)"
+                label="Price (₹)"
                 name="price"
                 type="number"
                 value={form.price}
@@ -241,7 +241,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
-                label="Compare at Price ($)"
+                label="Compare at Price (₹)"
                 name="compareAtPrice"
                 type="number"
                 value={form.compareAtPrice}

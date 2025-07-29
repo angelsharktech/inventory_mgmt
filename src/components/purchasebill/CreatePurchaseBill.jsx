@@ -47,6 +47,8 @@ const CreatePurchaseBill = ({ open, handleClose, refresh }) => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarMessage={setSnackbarMessage}
           // setInvoiceNumber={newInvoiceNumber}
+          refresh ={refresh}
+          close={handleClose}
         />
       </Box>
       </Modal>
