@@ -392,7 +392,9 @@ const SaleBillForm = ({
           window.print();
           setShowPrint(false); // Optional
         }, 500);
-        refresh();
+        if(refresh){
+          refresh();
+        }
 
         if (paymentType === "advance" || paymentType === "full") {
           // Base payload with common fields

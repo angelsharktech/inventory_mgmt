@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Divider,
   Grid,
   IconButton,
@@ -15,6 +16,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { getSaleBillById } from "../../services/SaleBillService";
 import CloseIcon from "@mui/icons-material/Close";
+import GenerateBill from "../shared/GenerateBill";
 
 const style = {
   position: "absolute",
@@ -31,6 +33,9 @@ const style = {
 
 const ViewBill = ({ open, data, handleCloseView }) => {
   const [bill, setBill] = useState();
+  const [printData, setPrintData] = useState();
+  const [showPrint, setShowPrint] = useState(false);
+
   useEffect(() => {
     const fetchBill = async () => {
       try {
@@ -48,12 +53,25 @@ const ViewBill = ({ open, data, handleCloseView }) => {
     }
   }, [data]);
 
+  const handlePrint = () => {
+    try {
+      console.log("print bill::", bill);
+
+      setPrintData(bill);
+      setShowPrint(true); // Show bill for printing
+      setTimeout(() => {
+        window.print();
+        setShowPrint(false); // Optional
+      }, 500);
+    } catch (error) {}
+  };
+
   if (!open) return null;
   return (
     <>
       <Modal open={open} onClose={handleCloseView}>
         <Box sx={style}>
-         <IconButton
+          <IconButton
             aria-label="close"
             onClick={handleCloseView}
             sx={{
@@ -236,8 +254,19 @@ const ViewBill = ({ open, data, handleCloseView }) => {
               </Grid>
             </Grid>
           </Box>
+          <Box mt={3} display="flex" justifyContent="flex-end">
+            <Button variant="contained" onClick={handlePrint}>
+              Print
+            </Button>
+          </Box>
         </Box>
       </Modal>
+
+      {/* {showPrint && printData && (
+              <div className="print-only">
+                <GenerateBill bill={printData} billName={"SALE"} />
+              </div>
+            )} */}
     </>
   );
 };

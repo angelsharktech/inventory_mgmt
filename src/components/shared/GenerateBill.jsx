@@ -14,7 +14,8 @@ import {
 } from "@mui/material";
 
 const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
-
+  console.log('generate bill:',bill);
+  
   return (
     <Box sx={{ p: 4, minHeight: "100vh" }}>
       <Paper
@@ -184,9 +185,9 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                     Advance Paid : {bill.paymentDetails.advance}
                   </Typography>
                   <Typography variant="body2">
-                    Advance Pay Mode : {bill.paymentDetails.mode1}
+                    Advance Pay Mode : {bill.paymentDetails.advpaymode}
                   </Typography>
-                  {bill.paymentDetails.mode1 === "upi" && (
+                  {bill.paymentDetails.advpaymode === "upi" && (
                     <Typography variant="body2">
                       Transaction Number :{" "}
                       {bill.paymentDetails.transactionNumber}
@@ -197,12 +198,12 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                   </Typography>
                 </>
               )}
-              {bill.paymentDetails.mode1 === "card" && (
+              {bill.paymentDetails.advpaymode === "card" && (
                 <Typography variant="body2">
                   Card Number : {bill.paymentDetails.cardNumber}
                 </Typography>
               )}
-              {bill.paymentDetails.mode1 === "cheque" && (
+              {bill.paymentDetails.advpaymode === "cheque" && (
                 <Typography variant="body2">
                   Cheque Number : {bill.paymentDetails.chequeNumber}
                 </Typography>

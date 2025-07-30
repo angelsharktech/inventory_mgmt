@@ -11,6 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { updateUser } from "../../services/UserService";
 import { useNavigate } from "react-router-dom";
+import { createGstDetails, getGstDetails } from "../../services/GstService";
 
 const style = {
   position: "absolute",
@@ -27,7 +28,7 @@ const style = {
 };
 
 const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -36,7 +37,7 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
     address: "",
     city: "",
     bio: "",
-    gstRegistered:''
+    gstRegistered: "",
   });
 
   const [gstDetails, setGstDetails] = useState({
@@ -53,7 +54,6 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
     const fetchUser = async () => {
       try {
         if (data) {
-          
           setFormData({
             first_name: data.first_name || "",
             last_name: data.last_name || "",
@@ -64,12 +64,18 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
             bio: data.bio || "",
           });
           setIsGstApplicable(data.gstRegistered ? true : false);
-          setGstDetails({
-            gstNumber: data.gstDetails?.gstNumber || "",
-            legalName: data.gstDetails?.legalName || "",
-            state: data.gstDetails?.state || "",
-            stateCode: data.gstDetails?.stateCode || "",
-          });
+          if(isGstApplicable === true) {
+            const gst = await getGstDetails(data._id)
+            console.log('gst:',gst);
+            
+            setGstDetails({
+              gstNumber: gst?.gstNumber || "",
+              legalName: gst?.legalName || "",
+              state: gst?.state || "",
+              stateCode: gst?.stateCode || "",
+            });
+
+          }
         }
       } catch (err) {
         console.error("Error loading user", err);
@@ -91,21 +97,32 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
     try {
       const updatedUser = {
         ...formData,
-        gstRegistered : isGstApplicable,
-        gstDetails: isGstApplicable ? gstDetails : null,
+        gstRegistered: isGstApplicable,
+        // gstDetails: isGstApplicable ? gstDetails : null,
       };
-      
+
       const res = await updateUser(data._id, updatedUser);
-  if (res === 401) {
+      if (res === 401) {
         setSnackbarMessage("Your Session is expired. Please login again!");
         setSnackbarOpen(true);
         refresh();
         handleCloseEdit();
         setTimeout(() => {
-        navigate('/login')
-      }, 2000);
-        
+          navigate("/login");
+        }, 2000);
+
         return;
+      }
+      if (res && isGstApplicable) {
+        if(gstDetails.gstNumber === "" ){
+          const r = await createGstDetails(data._id, gstDetails); // Call your API here
+          console.log("******", r);
+          if (r) {
+            setSnackbarMessage("Enter Valid GST Details!");
+            setSnackbarOpen(true);
+            return;
+          }
+      }
       }
       if (res) {
         setSnackbarMessage("Customer Updated successful!");
@@ -132,11 +149,13 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
                   fullWidth
-                  label={key === "phone_number"
+                  label={
+                    key === "phone_number"
                       ? "Contact Number"
                       : key
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                  }
                   name={key}
                   value={value}
                   onChange={handleChange}
@@ -145,17 +164,17 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
               </Grid>
             ))}
 
-          <Box mt={2}>
-            <label>
-              <input
-                type="checkbox"
-                checked={isGstApplicable}
-                onChange={(e) => setIsGstApplicable(e.target.checked)}
-                style={{ marginRight: 8 }}
-              />
-              Is GST Applicable?
-            </label>
-          </Box>
+            <Box mt={2}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isGstApplicable}
+                  onChange={(e) => setIsGstApplicable(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Is GST Applicable?
+              </label>
+            </Box>
           </Grid>
 
           {isGstApplicable && (

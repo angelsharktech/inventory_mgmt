@@ -16,8 +16,9 @@ export const createGstDetails = async (id,data)=>{
     console.log('***',response);
     return response.data; 
     } catch (error) {
+        console.log('error::',error.response.data.error);
         
-       return error; 
+       return error.response.data.error; 
     }
 }
 export const getGstDetails = async (id)=>{

@@ -53,6 +53,7 @@ const SaleBillList = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleCloseView = () => setView(false);
+  
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -157,11 +158,12 @@ const SaleBillList = () => {
             />
 
             <Button
+              accessKey="s"
               variant="contained"
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}
             >
-              Create Sale bill
+              Create Sale bill (Alt + S)
             </Button>
           </Box>
         </Box>

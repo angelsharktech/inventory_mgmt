@@ -22,9 +22,9 @@ const Dashboard = () => {
     switch (selectedTab) {
 
       case "Dashboard":       
-        return <Home/>;
+        return <Home setSelectedTab={setSelectedTab}/>;
 
-      case "Vendors":
+      case "Suppliers":
         return <Vendors />;
 
       case "Customer":

@@ -13,13 +13,19 @@ import invoice from "../assets/invoice.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../services/UserService";
 import { useAuth } from "../context/AuthContext";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 
 const Login = () => {
   const { loginData } = useAuth();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-    const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -29,7 +35,7 @@ const Login = () => {
     try {
       const res = await loginUser(credentials);
       if (res) {
-        loginData(res.user, res.token); 
+        loginData(res.user, res.token);
         // localStorage.setItem("token", res.token); // store token if needed
         setSnackbarMessage("Login successful!");
         setShowSnackbar(true);
@@ -38,10 +44,15 @@ const Login = () => {
         }, 500);
       }
     } catch (err) {
-      console.log('**************',err);
-      
-      setSnackbarMessage(err.message);
-      setShowSnackbar(true);
+      console.log("**************", err);
+      if(err.error){
+        setSnackbarMessage(err.error);
+        setShowSnackbar(true);
+      }
+      if(err.message){
+        setSnackbarMessage(err.message);
+        setShowSnackbar(true);
+      }
     }
   };
 
@@ -92,9 +103,21 @@ const Login = () => {
               fullWidth
               label="Password"
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={credentials.password}
               onChange={handleChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
         </Grid>

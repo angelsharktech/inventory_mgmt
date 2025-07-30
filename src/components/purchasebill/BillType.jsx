@@ -1,17 +1,17 @@
 //Step 3
-import React from 'react';
-import { 
-  Box, 
-  Grid, 
-  TextField, 
-  MenuItem, 
-  RadioGroup, 
-  Radio, 
-  FormControlLabel, 
-  FormControl, 
-  Typography, 
-  Divider 
-} from '@mui/material';
+import React from "react";
+import {
+  Box,
+  Grid,
+  TextField,
+  MenuItem,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  FormControl,
+  Typography,
+  Divider,
+} from "@mui/material";
 
 const BillType = ({
   billType,
@@ -21,7 +21,7 @@ const BillType = ({
   vendor,
   handlePincodeChange,
   state,
-  totals
+  totals,
 }) => {
   return (
     <Box mt={3}>
@@ -76,7 +76,9 @@ const BillType = ({
                 label="CGST %"
                 fullWidth
                 value={(totals?.cgst || 0).toFixed(2)}
-                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
 
@@ -85,35 +87,35 @@ const BillType = ({
                 label="SGST %"
                 fullWidth
                 value={(totals?.sgst || 0).toFixed(2)}
-                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
           </Grid>
         </Box>
       )}
-      {state &&
-        state.toLowerCase() !== "maharashtra" &&
-        billType === "gst" && (
-          <Box mt={4}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  select
-                  label="Select IGST %"
-                  sx={{ width: "200px" }}
-                  value={gstPercent}
-                  onChange={(e) => setGstPercent(e.target.value)}
-                >
-                  {[3, 5, 9, 16, 18].map((rate) => (
-                    <MenuItem key={rate} value={rate}>
-                      {rate}%
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+      {state && state.toLowerCase() !== "maharashtra" && billType === "gst" && (
+        <Box mt={4}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                label="Select IGST %"
+                sx={{ width: "200px" }}
+                value={gstPercent}
+                onChange={(e) => setGstPercent(e.target.value)}
+              >
+                {[3, 5, 9, 16, 18].map((rate) => (
+                  <MenuItem key={rate} value={rate}>
+                    {rate}%
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
-          </Box>
-        )}
+          </Grid>
+        </Box>
+      )}
 
       <Box mt={4}>
         <Grid container spacing={2}>
@@ -122,7 +124,9 @@ const BillType = ({
               label="Subtotal"
               fullWidth
               value={(totals?.subtotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}d
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -130,7 +134,9 @@ const BillType = ({
               label="GST Total"
               fullWidth
               value={(totals?.gstTotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}d
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -138,7 +144,9 @@ const BillType = ({
               label="Grand Total"
               fullWidth
               value={(totals?.grandTotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}d
             />
           </Grid>
         </Grid>

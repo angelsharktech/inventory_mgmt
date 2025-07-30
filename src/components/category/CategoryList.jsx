@@ -129,11 +129,12 @@ const filteredCategory = rows?.filter(
 
         <Box display="flex" justifyContent="flex-end" mb={2}>
           <Button
+          accessKey="t"
             variant="contained"
             sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
             onClick={handleOpen}
           >
-            Add Category
+            Add Category (alt+t)
           </Button>
         </Box>
 

@@ -153,11 +153,12 @@ const VendorList = () => {
 
         <Box display="flex" justifyContent="flex-end" mb={2}>
           <Button
+          accessKey="l"
             variant="contained"
             sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
             onClick={handleOpen}
           >
-            Add vendor
+            Add Supplier(alt+l)
           </Button>
         </Box>
 

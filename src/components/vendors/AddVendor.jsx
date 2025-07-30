@@ -17,6 +17,7 @@ import {
   getUserById,
   registerUser,
 } from "../../services/UserService";
+import { createGstDetails } from "../../services/GstService";
 
 const style = {
   position: "absolute",
@@ -148,11 +149,21 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         password: formData.first_name + "@example.com",
         role_id: vendorRole._id,
         position_id: vendorposition._id,
-        ...(isGstApplicable && { gst: gstDetails }),
+        gstRegistered: isGstApplicable
       };
 
       const result = await registerUser(payload);
       if (result) {
+         if (result) {
+                if(isGstApplicable === true){
+                   const r = await createGstDetails(result.user.id, gstDetails); 
+                   if (!r.data) {
+                    setSnackbarMessage("Enter Valid GST Details!");
+                    setSnackbarOpen(true);
+                    return;
+                  }
+                }
+              }
         setSnackbarMessage("Vendor Added successful!");
         setSnackbarOpen(true);
         refresh();
@@ -194,7 +205,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
       <Modal open={open} onClose={handleClose}>
         <Box sx={style}>
           <Typography variant="h6" mb={2}>
-            Add Vendor
+            Add Supplier
           </Typography>
 
           <Grid container spacing={2}>

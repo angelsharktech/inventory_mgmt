@@ -163,11 +163,12 @@ const PurchaseBillList = () => {
             /> */}
 
             <Button
+            accessKey="p"
               variant="contained"
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}
             >
-              Create Purchase bill
+              Create Purchase bill (Alt + P)
             </Button>
           </Box>
         </Box>
@@ -188,7 +189,7 @@ const PurchaseBillList = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Vendor Name</strong>
+                  <strong>Spplier Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>

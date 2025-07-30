@@ -17,6 +17,7 @@ import {
   getUserById,
   registerUser,
 } from "../../services/UserService";
+import { createGstDetails } from "../../services/GstService";
 
 const style = {
   position: "absolute",
@@ -129,11 +130,21 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
       password: formData.first_name + "@example.com",
       role_id: customerRole._id,
       position_id: customerposition._id,
-      ...(isGstApplicable && { gst: gstDetails }),
+      gstRegistered: isGstApplicable
     };
     try {
       const result = await registerUser(payload);
+      console.log(result);
+      
       if (result) {
+        if(isGstApplicable === true){
+           const r = await createGstDetails(result.user.id, gstDetails); 
+           if (!r.data) {
+            setSnackbarMessage("Enter Valid GST Details!");
+            setSnackbarOpen(true);
+            return;
+          }
+        }
         setSnackbarMessage("Customer Added successful!");
         setSnackbarOpen(true);
         refresh();

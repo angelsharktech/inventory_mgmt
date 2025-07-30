@@ -168,7 +168,9 @@ const PaymentDetails = ({
                     type="number"
                     fullWidth
                     value={paymentDetails.balance}
-                    disabled
+                    InputProps={{
+                  readOnly: true,
+                }}
                   />
                 </Grid>
 
@@ -276,7 +278,9 @@ const PaymentDetails = ({
                 type="number"
                 fullWidth
                 value={totals.grandTotal}
-                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={2}>

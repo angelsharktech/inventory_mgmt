@@ -76,7 +76,9 @@ const BillType = ({
                 label="CGST %"
                 fullWidth
                 value={(totals?.cgst || 0).toFixed(2)}
-                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
 
@@ -85,7 +87,9 @@ const BillType = ({
                 label="SGST %"
                 fullWidth
                 value={(totals?.sgst || 0).toFixed(2)}
-                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
           </Grid>
@@ -122,7 +126,9 @@ const BillType = ({
               label="Subtotal"
               fullWidth
               value={(totals?.subtotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -130,7 +136,9 @@ const BillType = ({
               label="GST Total"
               fullWidth
               value={(totals?.gstTotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -138,7 +146,9 @@ const BillType = ({
               label="Grand Total"
               fullWidth
               value={(totals?.grandTotal || 0).toFixed(2)}
-              disabled
+              InputProps={{
+                  readOnly: true,
+                }}
             />
           </Grid>
         </Grid>

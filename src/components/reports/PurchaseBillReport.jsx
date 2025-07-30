@@ -27,7 +27,7 @@ import { getUserById } from "../../services/UserService";
 
 const exportColumns = [
   { label: "#", key: "index" },
-  { label: "Vendor Name", key: "vendorName" },
+  { label: "Supplier Name", key: "vendorName" },
   { label: "Invoice No.", key: "invoiceNo" },
   { label: "Bill Date", key: "billDate" },
   { label: "Bill Total ", key: "billTotal" },
@@ -227,7 +227,7 @@ const PurchaseBillReport = () => {
           sx={{
             maxWidth: 1100,
             margin: "5px auto",
-            maxHeight: 600,
+            maxHeight: 550,
             overflowY: "auto",
           }}
         >
@@ -238,7 +238,7 @@ const PurchaseBillReport = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Vendor Name</strong>
+                  <strong>Supplier Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>

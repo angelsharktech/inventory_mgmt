@@ -32,7 +32,7 @@ import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Dashboard", icon: <DashboardIcon /> },
-  { label: "Vendors", icon: <StoreIcon /> },
+  { label: "Suppliers", icon: <StoreIcon /> },
   { label: "Customer", icon: <PeopleIcon /> },
   { label: "Category", icon: <CategoryIcon /> },
   { label: "Product", icon: <Inventory2Icon /> },

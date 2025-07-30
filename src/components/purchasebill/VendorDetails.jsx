@@ -22,7 +22,7 @@ const VendorDetails = ({
         </Grid>
         <Grid item xs={12} sm={4}>
           <TextField
-            label="Vendor Name"
+            label="Supplier Name"
             fullWidth
             value={vendor.first_name}
             onChange={(e) =>
