@@ -57,7 +57,7 @@ const SaleBillList = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await getUserById(webuser?.id);
+      const user = await getUserById(webuser?.id);      
       setMainUser(user);
     };
     fetchUser();

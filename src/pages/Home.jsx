@@ -71,7 +71,6 @@ const Home = ({ setSelectedTab }) => {
   });
   const [saleBills, setSaleBills] = useState([]);
   const [purchaseBills, setPurchaseBills] = useState([]);
-  const [chartData, setChartData] = useState([]);
   const [openSaleBill, setOpenSaleBill] = useState(false);
   const [openPurchaseBill, setOpenPurchaseBill] = useState(false);
 
@@ -93,6 +92,7 @@ const Home = ({ setSelectedTab }) => {
   const fetchCounts = async () => {
     const user = await getUserById(webuser.id);
     const users = await getUserByOrganizastionId(user.organization_id._id);
+    const prod = await getAllProducts();
     const roles = await getAllRoles();
     const categories = await getAllCategories();
 
@@ -109,6 +109,9 @@ const Home = ({ setSelectedTab }) => {
         (u) => u.role_id?._id === customerRole?._id && u.status === "active"
       ) || [];
 
+    const products = prod.data.filter((prod)=> prod?.organization_id === user.organization_id._id)
+    console.log('product count : ',products.length);
+    
     const categoryCount = categories.data.filter(
       (cat) => Array.isArray(cat.children) && cat.children.length > 0
     ).length;
@@ -117,6 +120,7 @@ const Home = ({ setSelectedTab }) => {
     setCounts({
       vendors: vendors.length,
       customers: customers.length,
+      products : products.length,
       category: categoryCount,
     });
     const saleBillsRes = await getSaleBillByOrganization(
@@ -259,7 +263,7 @@ const Home = ({ setSelectedTab }) => {
           <Grid item xs={12} sm={6} md={2.4}>
             <StatCard
               title="Products"
-              value={123}
+              value={counts.products}
               icon={<Inventory2Icon sx={{ fontSize: 50 }} />}
               onClick={() => setSelectedTab("Product")}
               color="#fbc02d"

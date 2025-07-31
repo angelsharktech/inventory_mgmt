@@ -56,3 +56,13 @@ export const updateSaleBill = async (id, data) => {
     return error;
   }
 };
+
+export const deleteSaleBill = async(id) =>{
+  try {
+     const response = await axios.delete(`${BASE_URL}${id}`,getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting sale bill:', error);
+    return error;
+  }
+}

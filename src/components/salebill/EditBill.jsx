@@ -108,7 +108,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
               : paymentDetails.fullMode,
           amount: paymentType === "advance" ? advance : bill?.grandTotal || 0,
           client_id: bill?.bill_to?._id, // customer_id
-          work_id: bill?._id, // sale_bill_id
+          salebill: bill?._id, // sale_bill_id
           organization: bill?.org?._id || bill?.organization?._id, // fallback if org is saved in different path
         };
 

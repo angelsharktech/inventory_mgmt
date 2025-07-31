@@ -17,6 +17,7 @@ import { getAllCategories } from "../../services/CategoryService";
 import { useAuth } from "../../context/AuthContext";
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import RemoveCircleOutlineOutlinedIcon from '@mui/icons-material/RemoveCircleOutlineOutlined';
+import { getUserById } from "../../services/UserService";
 
 const style = {
   position: "absolute",
@@ -34,6 +35,7 @@ const style = {
 
 const AddProduct = ({ open, handleClose, refresh }) => {
   const { webuser } = useAuth();
+  const [mainUser, setMainUser] = useState();
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -62,8 +64,12 @@ const AddProduct = ({ open, handleClose, refresh }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        const result = await getUserById(webuser.id)
+        setMainUser(result)
         const res = await getAllCategories();
         const parentsOnly = res.data.filter((cat) => cat.parent === null);
+        console.log(parentsOnly);
+        
         setCategories(parentsOnly);
       } catch (err) {
         console.error("Error loading categories", err);
@@ -122,8 +128,11 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       hasVariant: hasVariant,
       variantOptions: hasVariant === "Yes" ? variants : [],
       createdBy: webuser._id,
+      organization_id: mainUser.organization_id?._id,
     };
     try {
+      console.log('product::',product);
+      
       const res = await addProducts(product);
       if (res) {
         setSnackbarMessage("Product Added!");

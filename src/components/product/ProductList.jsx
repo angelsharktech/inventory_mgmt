@@ -28,6 +28,8 @@ import BarcodePrinter from "./BarcodePrinter";
 import PaginationComponent from "../shared/PaginationComponent";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import FilterData from "../shared/FilterData";
+import { useAuth } from "../../context/AuthContext";
+import { getUserById } from "../../services/UserService";
 
 const exportColumns = [
   { label: "HSN Code", key: "hsnCode" },
@@ -45,8 +47,9 @@ const exportColumns = [
   },
 ];
 
-
 const ProductList = () => {
+  const { webuser } = useAuth();
+  const [mainUser, setMainUser] = useState();
   const [products, setProducts] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -69,15 +72,22 @@ const ProductList = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
   const fetchProducts = async () => {
     try {
+      const result = await getUserById(webuser.id);
+      setMainUser(result); // still update state if needed elsewhere
+
       const data = await getAllProducts();
-      setProducts(data);
+
+      const org_prod = data.data.filter(
+        (prod) => prod?.organization_id === result?.organization_id?._id
+      );
+      setProducts(org_prod);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
   };
+
   const handleEdit = (rowData) => {
     setData(rowData);
     setEdit(true);
@@ -110,7 +120,7 @@ const ProductList = () => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredProducts = products.data?.filter(
+  const filteredProducts = products?.filter(
     (prod) =>
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prod.hsnCode?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -120,7 +130,7 @@ const ProductList = () => {
       setTotalPages(Math.ceil(filteredProducts.length / pageSize));
     }
   }, [filteredProducts]);
-   const paginatedProducts = filteredProducts?.slice(
+  const paginatedProducts = filteredProducts?.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -149,7 +159,7 @@ const ProductList = () => {
 
         <Box display="flex" justifyContent="flex-end" mb={2}>
           <Button
-          accessKey="r"
+            accessKey="r"
             variant="contained"
             sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
             onClick={handleOpen}
@@ -173,7 +183,7 @@ const ProductList = () => {
         >
           <MenuItem
             onClick={() => {
-              exportToPDF(products.data, exportColumns, "Products");
+              exportToPDF(products, exportColumns, "Products");
               handleExportClose();
             }}
           >
@@ -181,7 +191,7 @@ const ProductList = () => {
           </MenuItem>
           <MenuItem
             onClick={() => {
-              exportToExcel(products.data, exportColumns, "Products");
+              exportToExcel(products, exportColumns, "Products");
               handleExportClose();
             }}
           >
@@ -247,11 +257,15 @@ const ProductList = () => {
                   <TableCell>{prod.quantity}</TableCell>
                   <TableCell>
                     <Chip
-                      label={prod.status}
+                      label={
+                        prod.status.charAt(0).toUpperCase() +
+                        prod.status.slice(1)
+                      }
                       color={prod.status === "active" ? "success" : "default"}
                       size="small"
                     />
                   </TableCell>
+
                   <TableCell>
                     {prod.tags.map((tag, index) => (
                       <Chip

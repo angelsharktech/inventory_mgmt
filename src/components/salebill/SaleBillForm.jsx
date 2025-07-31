@@ -24,7 +24,7 @@ import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import { useAuth } from "../../context/AuthContext";
 import PaymentDetails from "./PaymentDetails";
-import { addSaleBill } from "../../services/SaleBillService";
+import { addSaleBill, deleteSaleBill } from "../../services/SaleBillService";
 import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
 import CustomerDetails from "./CustomerDetails";
@@ -257,7 +257,7 @@ const SaleBillForm = ({
       {
         productName: "",
         hsnCode: "",
-        qty: 0,
+        qty: 1,
         price: 0,
         gst: 0,
         discountPercentage: 0,
@@ -335,12 +335,19 @@ const SaleBillForm = ({
         finalCustomer = { ...customer, _id: res.user.id };
       }
 
-      const productIds = selectedProducts.map((product) => product._id);
+      const finalProducts = selectedProducts.map((product) => ({
+        _id: product._id,
+        name: product.productName,
+        hsnCode: product.hsnCode,
+        qty: Number(product.qty),
+        price: Number(product.discountedPrice),
+        discount: Number(product.discountPercentage) || 0,
+      }));
 
       const billPayload = {
         // bill_number: setInvoiceNumber,
         bill_to: finalCustomer._id,
-        products: productIds,
+        products: finalProducts,
         billType: billType,
         qty: selectedProducts.length,
         paymentType: paymentType,
@@ -361,8 +368,10 @@ const SaleBillForm = ({
         createdBy: mainUser._id,
         status: paymentDetails.balance === 0 ? "issued" : "draft",
       };
+      console.log(billPayload);
+
       const res = await addSaleBill(billPayload);
-      
+
       if (res.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
         setSnackbarOpen(true);
@@ -370,7 +379,7 @@ const SaleBillForm = ({
           navigate("/login");
         }, 2000);
         return;
-       }
+      }
 
       if (res.success === true) {
         setSnackbarMessage("Sale bill created successfully!");
@@ -392,7 +401,7 @@ const SaleBillForm = ({
           window.print();
           setShowPrint(false); // Optional
         }, 500);
-        if(refresh){
+        if (refresh) {
           refresh();
         }
 
@@ -407,8 +416,8 @@ const SaleBillForm = ({
               paymentType === "advance"
                 ? paymentDetails.advance
                 : paymentDetails.fullPaid,
-            client_id: finalCustomer._id,    //customer_id
-            work_id: res.data._id,   //sale_bill_id
+            client_id: finalCustomer._id, //customer_id
+            salebill: res.data._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
           };
 
@@ -419,7 +428,7 @@ const SaleBillForm = ({
           ) {
             paymentPayload = {
               ...paymentPayload,
-              utrId: paymentDetails.transactionNumber,
+              upiId: paymentDetails.transactionNumber,
             };
           } else if (
             paymentDetails.advpaymode.toLowerCase() === "cheque" ||
@@ -437,13 +446,14 @@ const SaleBillForm = ({
                 paymentType === "advance" ? "Advance" : "Full"
               } payment for Bill`,
             };
-          }         
-          
+          }
+
           const paymentResult = await addPayment(paymentPayload);
-         if(paymentResult.success === false){
-            console.log("error in payment adding");
-            
-          } 
+          if (paymentResult.success === false) {
+            setSnackbarMessage(paymentResult.errors);
+            setSnackbarOpen(true);
+            return;
+          }
         }
 
         setStep(1);
@@ -482,8 +492,6 @@ const SaleBillForm = ({
         });
 
         close();
-
-        
       }
     } catch (error) {
       setSnackbarMessage("Customer " + error);

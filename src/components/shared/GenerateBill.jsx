@@ -185,7 +185,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                     Advance Paid : {bill.paymentDetails.advance}
                   </Typography>
                   <Typography variant="body2">
-                    Advance Pay Mode : {bill.paymentDetails.advpaymode}
+                    Advance Pay Mode : {bill?.paymentDetails?.advpaymode}
                   </Typography>
                   {bill.paymentDetails.advpaymode === "upi" && (
                     <Typography variant="body2">

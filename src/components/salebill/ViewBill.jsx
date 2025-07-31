@@ -57,12 +57,12 @@ const ViewBill = ({ open, data, handleCloseView }) => {
     try {
       console.log("print bill::", bill);
 
-      setPrintData(bill);
-      setShowPrint(true); // Show bill for printing
-      setTimeout(() => {
-        window.print();
-        setShowPrint(false); // Optional
-      }, 500);
+      // setPrintData(bill);
+      // setShowPrint(true); // Show bill for printing
+      // setTimeout(() => {
+      //   window.print();
+      //   setShowPrint(false); // Optional
+      // }, 500);
     } catch (error) {}
   };
 
@@ -262,11 +262,11 @@ const ViewBill = ({ open, data, handleCloseView }) => {
         </Box>
       </Modal>
 
-      {/* {showPrint && printData && (
+      {showPrint && printData && (
               <div className="print-only">
                 <GenerateBill bill={printData} billName={"SALE"} />
               </div>
-            )} */}
+            )}
     </>
   );
 };
