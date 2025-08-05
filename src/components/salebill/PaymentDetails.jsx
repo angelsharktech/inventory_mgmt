@@ -93,6 +93,7 @@ const PaymentDetails = ({
                     <MenuItem value="upi">UPI</MenuItem>
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -106,6 +107,21 @@ const PaymentDetails = ({
                         setPaymentDetails({
                           ...paymentDetails,
                           transactionNumber: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
+                {paymentDetails.advpaymode === "finance" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Finance Name"
+                      fullWidth
+                      value={paymentDetails.financeName || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          financeName: e.target.value,
                         })
                       }
                     />
@@ -192,6 +208,7 @@ const PaymentDetails = ({
                     <MenuItem value="upi">UPI</MenuItem>
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -302,6 +319,7 @@ const PaymentDetails = ({
                 <MenuItem value="upi">UPI</MenuItem>
                 <MenuItem value="card">Card</MenuItem>
                 <MenuItem value="cheque">Cheque</MenuItem>
+                <MenuItem value="finance">Finance</MenuItem>
               </TextField>
             </Grid>
             {paymentDetails.fullMode === "upi" && (
@@ -319,6 +337,21 @@ const PaymentDetails = ({
                 />
               </Grid>
             )}
+            {paymentDetails.fullMode === "finance" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Finance Name"
+                      fullWidth
+                      value={paymentDetails.financeName || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          financeName: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
             {paymentDetails.fullMode === "card" && (
               <Grid item xs={12} sm={3}>
                 <TextField

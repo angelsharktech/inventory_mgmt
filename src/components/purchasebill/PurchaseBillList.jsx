@@ -39,8 +39,6 @@ const PurchaseBillList = () => {
   const [editData, setEditData] = useState();
   const [view, setView] = useState(false);
   const [startDate, setStartDate] = useState("");
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -61,16 +59,15 @@ const PurchaseBillList = () => {
   }, []);
   useEffect(() => {
     if (mainUser) {
-      fetchBills(currentPage);
+      fetchBills();
     }
-  }, [currentPage, mainUser]);
+  }, [ mainUser]);
 
-  const fetchBills = async (page = 1) => {
+  const fetchBills = async () => {
     if (!mainUser) return;
 
     const data = await getPurchaseBillByOrganization(
-      mainUser?.organization_id?._id,
-      page
+      mainUser?.organization_id?._id
     );
     if (data.status === 401) {
       setSnackbarMessage("Your Session is expired. Please login again!");
@@ -82,8 +79,6 @@ const PurchaseBillList = () => {
     if (data.success === true) {
       const allBills = data.data.docs || [];
       setBills(allBills);
-      setTotalPages(data.data.totalPages || 1);
-      setCurrentPage(data.data.page || page);
     }
   };
 
@@ -197,22 +192,22 @@ const PurchaseBillList = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Date</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Paid Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
-                {/* <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell> */}
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
@@ -231,18 +226,18 @@ const PurchaseBillList = () => {
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {bill.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {(
                       Number(bill.advance || 0) + Number(bill.fullPaid || 0)
                     ).toFixed(2)}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
                   {/* <TableCell align="center">
@@ -287,13 +282,13 @@ const PurchaseBillList = () => {
                 <TableCell colSpan={3}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={3}>
+                <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
               </TableRow>
@@ -327,11 +322,7 @@ const PurchaseBillList = () => {
         refresh={fetchBills}
       />
       <ViewBill open={view} data={data} handleCloseView={handleCloseView} />
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      
     </>
   );
 };

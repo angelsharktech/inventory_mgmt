@@ -27,7 +27,7 @@ const style = {
   minWidth: 350,
 };
 
-const AddCategory = ({ open, handleClose ,refresh }) => {
+const AddCategory = ({ open, handleClose, refresh }) => {
   const [categories, setCategories] = useState([]);
   const [main, setMain] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,18 +41,17 @@ const AddCategory = ({ open, handleClose ,refresh }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await getAllCategories();
-        const parentsOnly = res.data.filter((cat) => cat.parent === null);
-        setCategories(parentsOnly);
-      } catch (err) {
-        console.error("Error loading categories", err);
-      }
-    };
-
     fetchCategories();
   }, []);
+  const fetchCategories = async () => {
+    try {
+      const res = await getAllCategories();
+      const parentsOnly = res.data.filter((cat) => cat.parent === null);
+      setCategories(parentsOnly);
+    } catch (err) {
+      console.error("Error loading categories", err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,23 +98,31 @@ const AddCategory = ({ open, handleClose ,refresh }) => {
           name: formData.mainName,
           description: formData.mainDescription,
         };
+
+        const res = await addCategories(payload);
+        if (res) {
+          setSnackbarMessage("Category Added!");
+          setSnackbarOpen(true);
+          fetchCategories();
+          handleToggleMain();
+        }
       } else {
         payload = {
           name: formData.name,
           description: formData.description,
           parent: formData.parent,
         };
-      }
-      const res = await addCategories(payload);
-      
-      if (res) {
-        setSnackbarMessage("Category Added!");
-        setSnackbarOpen(true);
-        refresh();
-        handleClose();
+         const res = await addCategories(payload);
+        if (res) {
+          setSnackbarMessage("Category Added!");
+          setSnackbarOpen(true);
+          fetchCategories();
+          handleClose();
+          refresh();
+        }
       }
     } catch (error) {
-    //   console.error("Error adding category", error);
+      //   console.error("Error adding category", error);
       setSnackbarMessage("Category Already Exist!");
       setSnackbarOpen(true);
     }

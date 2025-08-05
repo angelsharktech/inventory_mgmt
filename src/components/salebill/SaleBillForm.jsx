@@ -82,6 +82,8 @@ const SaleBillForm = ({
     fullMode: "",
     fullPaid: 0,
     dueDate: "",
+    financeName:"",
+    
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -366,7 +368,8 @@ const SaleBillForm = ({
         dueDate: paymentDetails.dueDate,
         notes: notes,
         createdBy: mainUser._id,
-        status: paymentDetails.balance === 0 ? "issued" : "draft",
+        // status: paymentDetails.balance === 0 ? "issued" : "draft",
+        status: "draft",
       };
       console.log(billPayload);
 
@@ -394,16 +397,7 @@ const SaleBillForm = ({
           totals,
           org: mainUser.organization_id?.name,
         };
-
-        setPrintData(billData);
-        setShowPrint(true); // Show bill for printing
-        setTimeout(() => {
-          window.print();
-          setShowPrint(false); // Optional
-        }, 500);
-        if (refresh) {
-          refresh();
-        }
+        console.log("saved bill::", res.data);
 
         if (paymentType === "advance" || paymentType === "full") {
           // Base payload with common fields
@@ -419,6 +413,7 @@ const SaleBillForm = ({
             client_id: finalCustomer._id, //customer_id
             salebill: res.data._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
+            billType:'sale'
           };
 
           // Add mode-specific fields
@@ -439,6 +434,14 @@ const SaleBillForm = ({
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
             };
+          }else if (
+            paymentDetails.advpaymode.toLowerCase() === "finance" ||
+            paymentDetails.fullMode.toLowerCase() === "finance"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              financeName: paymentDetails.financeName,
+            };
           } else {
             paymentPayload = {
               ...paymentPayload,
@@ -450,12 +453,22 @@ const SaleBillForm = ({
 
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult.success === false) {
+            await deleteSaleBill(res.data._id);
             setSnackbarMessage(paymentResult.errors);
             setSnackbarOpen(true);
             return;
+          } else {
+            setPrintData(billData);
+            setShowPrint(true); // Show bill for printing
+            setTimeout(() => {
+              window.print();
+              setShowPrint(false); // Optional
+            }, 500);
+            if (refresh) {
+              refresh();
+            }
           }
         }
-
         setStep(1);
         setCustomer({
           first_name: "",

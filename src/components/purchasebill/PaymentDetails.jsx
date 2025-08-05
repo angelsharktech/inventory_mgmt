@@ -33,11 +33,7 @@ const PaymentDetails = ({
             value={paymentType}
             onChange={(e) => setPaymentType(e.target.value)}
           >
-            <FormControlLabel
-              value="full"
-              control={<Radio />}
-              label="Full"
-            />
+            <FormControlLabel value="full" control={<Radio />} label="Full" />
             <FormControlLabel
               value="advance"
               control={<Radio />}
@@ -62,10 +58,7 @@ const PaymentDetails = ({
                     value={paymentDetails.advance}
                     onChange={(e) => {
                       const adv = e.target.value;
-                      const balance = Math.max(
-                        totals.grandTotal - adv,
-                        0
-                      );
+                      const balance = Math.max(totals.grandTotal - adv, 0);
                       setPaymentDetails({
                         ...paymentDetails,
                         advance: adv,
@@ -93,6 +86,7 @@ const PaymentDetails = ({
                     <MenuItem value="upi">UPI</MenuItem>
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -106,6 +100,21 @@ const PaymentDetails = ({
                         setPaymentDetails({
                           ...paymentDetails,
                           transactionNumber: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
+                {paymentDetails.advpaymode === "finance" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Finance Name"
+                      fullWidth
+                      value={paymentDetails.financeName || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          financeName: e.target.value,
                         })
                       }
                     />
@@ -169,8 +178,8 @@ const PaymentDetails = ({
                     fullWidth
                     value={paymentDetails.balance}
                     InputProps={{
-                  readOnly: true,
-                }}
+                      readOnly: true,
+                    }}
                   />
                 </Grid>
 
@@ -192,6 +201,7 @@ const PaymentDetails = ({
                     <MenuItem value="upi">UPI</MenuItem>
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -302,6 +312,7 @@ const PaymentDetails = ({
                 <MenuItem value="upi">UPI</MenuItem>
                 <MenuItem value="card">Card</MenuItem>
                 <MenuItem value="cheque">Cheque</MenuItem>
+                <MenuItem value="finance">Finance</MenuItem>
               </TextField>
             </Grid>
             {paymentDetails.fullMode === "upi" && (
@@ -314,6 +325,21 @@ const PaymentDetails = ({
                     setPaymentDetails({
                       ...paymentDetails,
                       transactionNumber: e.target.value,
+                    })
+                  }
+                />
+              </Grid>
+            )}
+            {paymentDetails.advpaymode === "finance" && (
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  label="Finance Name"
+                  fullWidth
+                  value={paymentDetails.financeName || ""}
+                  onChange={(e) =>
+                    setPaymentDetails({
+                      ...paymentDetails,
+                      financeName: e.target.value,
                     })
                   }
                 />

@@ -63,7 +63,7 @@ const BillType = ({
                 value={gstPercent}
                 onChange={(e) => setGstPercent(e.target.value)}
               >
-                {[3, 5, 9, 16, 18].map((rate) => (
+                {[3, 5, 9,12, 16, 18].map((rate) => (
                   <MenuItem key={rate} value={rate}>
                     {rate}%
                   </MenuItem>
@@ -108,7 +108,7 @@ const BillType = ({
                   value={gstPercent}
                   onChange={(e) => setGstPercent(e.target.value)}
                 >
-                  {[3, 5, 9, 16, 18].map((rate) => (
+                  {[3, 5, 9,12, 16, 18].map((rate) => (
                     <MenuItem key={rate} value={rate}>
                       {rate}%
                     </MenuItem>

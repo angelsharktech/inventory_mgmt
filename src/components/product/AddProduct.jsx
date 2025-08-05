@@ -116,6 +116,11 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       setSnackbarOpen(true);
       return;
     }
+    if (form.hsnCode.length < 6 || form.hsnCode.length > 8) {
+      setSnackbarMessage("HSN code must be 6 to 8 digits!");
+      setSnackbarOpen(true);
+      return;
+    }
 
     const product = {
       ...form,
@@ -130,9 +135,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       createdBy: webuser._id,
       organization_id: mainUser.organization_id?._id,
     };
-    try {
-      console.log('product::',product);
-      
+    try {      
       const res = await addProducts(product);
       if (res) {
         setSnackbarMessage("Product Added!");

@@ -12,6 +12,7 @@ import PurchaseBill from "../components/PurchaseBill";
 import SaleBillReport from "../components/reports/SaleBillReport";
 import PurchaseBillReport from "../components/reports/PurchaseBillReport";
 import Home from "./Home";
+import HsnReport from "../components/reports/HsnReport";
 
 
 
@@ -48,7 +49,8 @@ const Dashboard = () => {
       case "Purchase Bill Report":
         return <PurchaseBillReport/>
 
-      case "Income Tax Reports":
+      case "HSN Report":
+        return <HsnReport />
 
       default:
         return <h2></h2>;

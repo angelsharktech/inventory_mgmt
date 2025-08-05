@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,6 +13,8 @@ import {
   Menu,
   Box,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
@@ -24,6 +26,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import PaginationComponent from "../shared/PaginationComponent";
 import { getUserById } from "../../services/UserService";
+import FilterData from "../shared/FilterData";
+import { useNavigate } from "react-router-dom";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -40,15 +44,17 @@ const exportColumns = [
 
 const PurchaseBillReport = () => {
   const { webuser } = useAuth();
+  const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [mainUser, setMainUser] = useState();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const openExportMenu = Boolean(anchorEl);
   useEffect(() => {
@@ -60,20 +66,27 @@ const PurchaseBillReport = () => {
   }, []);
   useEffect(() => {
     if (mainUser) {
-      fetchBills(currentPage);
+      fetchBills();
     }
-  }, [currentPage, mainUser]);
+  }, [ mainUser]);
 
-  const fetchBills = async (page = 1) => {
+  const fetchBills = async () => {
     try {
       // const data = await getAllPurchaseBills();
-      const data = await getPurchaseBillByOrganization(mainUser?.organization_id?._id,page);
+      const data = await getPurchaseBillByOrganization(
+        mainUser?.organization_id?._id
+      );
+      if (data.status === 401) {
+        setSnackbarMessage("Your Session is expired. Please login again!");
+        setSnackbarOpen(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
       const allBills = data.data.docs || [];
       console.log(allBills);
 
       setBills(allBills);
-      setTotalPages(data.data.totalPages || 1);
-      setCurrentPage(data.data.page || page);
     } catch (err) {
       console.error("Failed to fetch purchase bills:", err);
       setError("Failed to load purchase bills");
@@ -85,6 +98,7 @@ const PurchaseBillReport = () => {
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
       if (!bill.createdAt) return false;
+
       const billDate = new Date(bill.createdAt);
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
@@ -92,11 +106,20 @@ const PurchaseBillReport = () => {
       if (start) start.setHours(0, 0, 0, 0);
       if (end) end.setHours(23, 59, 59, 999);
 
-      if (start && billDate < start) return false;
-      if (end && billDate > end) return false;
-      return true;
+      const billNumber = (bill.bill_number || "").toLowerCase();
+      const billName = (bill?.bill_to?.first_name || "").toLowerCase();
+
+      const matchesDateRange =
+        (!start || billDate >= start) && (!end || billDate <= end);
+
+      const matchesSearch =
+        !searchQuery ||
+        billNumber.includes(searchQuery) ||
+        billName.includes(searchQuery);
+
+      return matchesDateRange && matchesSearch;
     });
-  }, [bills, startDate, endDate]);
+  }, [bills, startDate, endDate, searchQuery]);
 
   console.log("BILLS:", bills);
   console.log("FILTERED BILLS:", filteredBills);
@@ -122,6 +145,10 @@ const PurchaseBillReport = () => {
       })),
     [filteredBills]
   );
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value.toLowerCase()); // Case-insensitive search
+  };
 
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -159,6 +186,7 @@ const PurchaseBillReport = () => {
           <Typography variant="h5" fontWeight={600}>
             Purchase Bill Report
           </Typography>
+          <FilterData value={searchQuery} onChange={handleSearchChange} />
           <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
             <TextField
               label="Start Date"
@@ -246,22 +274,22 @@ const PurchaseBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Date</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Paid Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
-                <TableCell align="right" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
               </TableRow>
@@ -277,18 +305,18 @@ const PurchaseBillReport = () => {
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {bill.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {(
                       Number(bill.advance || 0) + Number(bill.fullPaid || 0)
                     ).toFixed(2)}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell align="center">
@@ -318,13 +346,13 @@ const PurchaseBillReport = () => {
                 <TableCell colSpan={3}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={3}>
+                <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
               </TableRow>
@@ -333,11 +361,22 @@ const PurchaseBillReport = () => {
         </TableContainer>
       </Box>
 
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbarMessage === " " ? "success" : "error"}
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+     
     </>
   );
 };

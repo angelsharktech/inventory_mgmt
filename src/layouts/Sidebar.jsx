@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Drawer,
@@ -42,7 +42,7 @@ const navItems = [
   { label: "Logout", icon: <LogoutIcon /> },
 ];
 
-const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report"];
+const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report","HSN Report"];  //
 
 const selectedStyle = {
   background: "#fff !important",
@@ -64,11 +64,9 @@ const unselectedStyle = {
 };
 
 const Sidebar = ({ selectedTab, setSelectedTab }) => {
-  const { webuser, logoutUser } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openReports, setOpenReports] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(0); // <-- Add this
-  const sidebarRef = useRef(null); // <-- Add this
+  const { webuser, logoutUser } = useAuth();
   const navigate = useNavigate();
 
   const theme = useTheme();
@@ -76,27 +74,6 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
 
   const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
-  const flatNavItems = [
-    ...navItems.slice(0, 7),
-    ...billReportsSubItems.map((label) => ({ label })),
-    navItems[8],
-  ];
-
-  const handleKeyDown = (e) => {
-    if (e.key === "ArrowDown") {
-      setFocusedIndex((prev) => Math.min(prev + 1, flatNavItems.length - 1));
-    } else if (e.key === "ArrowUp") {
-      setFocusedIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === "Enter") {
-      const item = flatNavItems[focusedIndex];
-      handleNavClick(item.label);
-    }
-  };
-  useEffect(() => {
-    if (sidebarRef.current) {
-      sidebarRef.current.focus();
-    }
-  }, []);
   const handleNavClick = (label) => {
     if (label === "Logout") {
       logoutUser();
@@ -109,9 +86,6 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
 
   const renderSidebarContent = () => (
     <Box
-      ref={sidebarRef}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
       sx={{
         width: 200,
         backgroundColor: "#2F4F4F",
@@ -138,27 +112,14 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
 
       <Box>
         <List>
-          {navItems.map((item, idx) =>
+          {navItems.map((item) =>
             item.hasDropdown ? (
               <Box key={item.label}>
                 <ListItemButton
                   onClick={() => setOpenReports(!openReports)}
-                  sx={
-                    focusedIndex === idx
-                      ? selectedStyle
-                      : selectedTab.startsWith("Report")
-                      ? selectedStyle
-                      : unselectedStyle
-                  }
-                  selected={focusedIndex === idx}
+                  sx={selectedTab.startsWith("Report") ? selectedStyle : unselectedStyle}
                 >
-                  <ListItemIcon
-                    sx={{
-                      color: selectedTab.startsWith("Report")
-                        ? "#2F4F4F"
-                        : "white",
-                    }}
-                  >
+                  <ListItemIcon sx={{ color: selectedTab.startsWith("Report") ? "#2F4F4F" : "white" }}>
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText primary={item.label} />
@@ -166,18 +127,17 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
                 </ListItemButton>
                 <Collapse in={openReports} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
-                    {billReportsSubItems.map((subLabel, subIdx) => (
+                    {billReportsSubItems.map((subLabel) => (
                       <ListItemButton
                         key={subLabel}
                         onClick={() => handleNavClick(subLabel)}
-                        sx={
-                          focusedIndex === idx + 1 + subIdx
-                            ? selectedStyle
-                            : selectedTab === subLabel
-                            ? selectedStyle
-                            : { pl: 4, ...unselectedStyle }
-                        }
-                        selected={focusedIndex === idx + 1 + subIdx}
+                        sx={{
+                          ...(
+                            selectedTab === subLabel
+                              ? selectedStyle
+                              : { pl: 4, ...unselectedStyle }
+                          ),
+                        }}
                       >
                         <ListItemText primary={subLabel} />
                       </ListItemButton>
@@ -188,23 +148,11 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
             ) : (
               <ListItemButton
                 key={item.label}
-                selected={selectedTab === item.label || focusedIndex === idx}
+                selected={selectedTab === item.label}
                 onClick={() => handleNavClick(item.label)}
-                // sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
-                sx={
-                  focusedIndex === idx
-                    ? selectedStyle
-                    : selectedTab === item.label
-                    ? selectedStyle
-                    : unselectedStyle
-                }
-                // selected={focusedIndex === idx}
+                sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
               >
-                <ListItemIcon
-                  sx={{
-                    color: selectedTab === item.label ? "#2F4F4F" : "white",
-                  }}
-                >
+                <ListItemIcon sx={{ color: selectedTab === item.label ? "#2F4F4F" : "white" }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.label} />
@@ -228,12 +176,7 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
         </Box>
       )}
 
-      <Drawer
-        anchor="left"
-        open={mobileOpen}
-        onClose={toggleDrawer}
-        ModalProps={{ keepMounted: true }}
-      >
+      <Drawer anchor="left" open={mobileOpen} onClose={toggleDrawer} ModalProps={{ keepMounted: true }}>
         {renderSidebarContent()}
       </Drawer>
 

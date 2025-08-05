@@ -18,7 +18,11 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
-import { getAllUser, getUserById, registerUser } from "../../services/UserService";
+import {
+  getAllUser,
+  getUserById,
+  registerUser,
+} from "../../services/UserService";
 import { getAllProducts } from "../../services/ProductService";
 import { addPayment } from "../../services/PaymentModeService";
 import ProductDetails from "./ProductDetails";
@@ -27,14 +31,14 @@ import PaymentDetails from "./PaymentDetails";
 import VendorDetails from "./VendorDetails";
 import { addPurchaseBill } from "../../services/PurchaseBillService";
 
-
 const PurchaseBillForm = ({
   setShowPrint,
   setPrintData,
   setSnackbarOpen,
   setSnackbarMessage,
   // setInvoiceNumber,
-  close, refresh
+  close,
+  refresh,
 }) => {
   const { webuser } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +82,7 @@ const PurchaseBillForm = ({
     fullMode: "",
     fullPaid: 0,
     dueDate: "",
+    financeName: "",
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -332,7 +337,7 @@ const PurchaseBillForm = ({
         const res = await registerUser(payload);
         finalVendor = { ...vendor, _id: res.user.id };
       }
-     
+
       const productIds = selectedProducts.map((product) => product._id);
 
       const billPayload = {
@@ -359,11 +364,11 @@ const PurchaseBillForm = ({
         dueDate: paymentDetails.dueDate,
         notes: notes,
         createdBy: mainUser._id,
-        status: paymentDetails.balance === 0 ? 'issued': 'draft'
+        status: "draft",
       };
-      
+
       const res = await addPurchaseBill(billPayload);
-      
+
       if (res.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
         setSnackbarOpen(true);
@@ -385,18 +390,8 @@ const PurchaseBillForm = ({
           totals,
           org: mainUser.organization_id?.name,
         };
-        setPrintData(billData);
-        setShowPrint(true); // Show bill for printing
-        setTimeout(() => {
-          window.print();
-          setShowPrint(false); // Optional
-        }, 500);
-        if(refresh){
-          refresh();
-        }
 
-          if (paymentType === "advance" || paymentType === "full") {           
-            
+        if (paymentType === "advance" || paymentType === "full") {
           // Base payload with common fields
           let paymentPayload = {
             paymentType:
@@ -407,9 +402,10 @@ const PurchaseBillForm = ({
               paymentType === "advance"
                 ? paymentDetails.advance
                 : paymentDetails.fullPaid,
-            client_id: finalVendor._id,    //customer_id
-            work_id: res?.data?._id,   //sale_bill_id
+            client_id: finalVendor._id, //customer_id
+            purchasebill: res?.data?._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
+            billType: "purchase",
           };
 
           // Add mode-specific fields
@@ -419,7 +415,7 @@ const PurchaseBillForm = ({
           ) {
             paymentPayload = {
               ...paymentPayload,
-              utrId: paymentDetails.transactionNumber,
+              upiId: paymentDetails.transactionNumber,
             };
           } else if (
             paymentDetails.advpaymode.toLowerCase() === "cheque" ||
@@ -430,6 +426,14 @@ const PurchaseBillForm = ({
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
             };
+          } else if (
+            paymentDetails.advpaymode.toLowerCase() === "finance" ||
+            paymentDetails.fullMode.toLowerCase() === "finance"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              financeName: paymentDetails.financeName,
+            };
           } else {
             paymentPayload = {
               ...paymentPayload,
@@ -437,14 +441,25 @@ const PurchaseBillForm = ({
                 paymentType === "advance" ? "Advance" : "Full"
               } payment for Bill`,
             };
-          }          
-          
+          }
+
           const paymentResult = await addPayment(paymentPayload);
-          if(paymentResult.success === false){
-            console.log("error in payment adding");
-            
-          }          
-         
+          if (paymentResult.success === false) {
+            await deleteSaleBill(res.data._id);
+            setSnackbarMessage(paymentResult.errors);
+            setSnackbarOpen(true);
+            return;
+          } else {
+            setPrintData(billData);
+            setShowPrint(true); // Show bill for printing
+            setTimeout(() => {
+              window.print();
+              setShowPrint(false); // Optional
+            }, 500);
+            if (refresh) {
+              refresh();
+            }
+          }
         }
 
         setStep(1);
@@ -482,11 +497,10 @@ const PurchaseBillForm = ({
           dueDate: "",
         });
         close();
-        
       }
     } catch (error) {
       console.log(error);
-      
+
       setSnackbarMessage("Vendor " + error);
       setSnackbarOpen(true);
     }

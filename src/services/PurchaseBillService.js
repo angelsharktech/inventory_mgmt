@@ -19,9 +19,9 @@ export const addPurchaseBill = async (billData) => {
     return error;
   }
 };
-export const getAllPurchaseBills = async (page = 1, limit = 10) => {
+export const getAllPurchaseBills = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}?page=${page}&limit=${limit}`, getAuthHeader());
+    const response = await axios.get(`${BASE_URL}`, getAuthHeader());
     return response.data;
   } catch (error) {
     console.error("Error getting purchase bill:", error);
@@ -37,9 +37,9 @@ export const getPurchaseBillById = async (id) => {
     return error;
   }
 };
-export const getPurchaseBillByOrganization = async (id,page = 1, limit = 10) => {
+export const getPurchaseBillByOrganization = async (id) => {
   try {
-    const response = await axios.get(`${BASE_URL}organization/${id}?page=${page}&limit=${limit}`, getAuthHeader());
+    const response = await axios.get(`${BASE_URL}organization/${id}`, getAuthHeader());
     return response.data;
   } catch (error) {
     console.error("Error getting purchase bill:", error);

@@ -13,14 +13,22 @@ import {
   Menu,
   Box,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import moment from "moment";
-import { getAllSaleBills, getSaleBillByOrganization } from "../../services/SaleBillService";
+import {
+  getAllSaleBills,
+  getSaleBillByOrganization,
+} from "../../services/SaleBillService";
 import { useAuth } from "../../context/AuthContext";
 import PaginationComponent from "../shared/PaginationComponent";
 import { getUserById } from "../../services/UserService";
+import { getPaymentByOrganization } from "../../services/PaymentModeService";
+import FilterData from "../shared/FilterData";
+import { useNavigate } from "react-router-dom";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -37,18 +45,20 @@ const exportColumns = [
 
 const SaleBillReport = () => {
   const { webuser } = useAuth();
+  const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [mainUser, setMainUser] = useState(null);
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [totalPages, setTotalPages] = useState(1);
-    const [currentPage, setCurrentPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const openExportMenu = Boolean(anchorEl);
- useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       const user = await getUserById(webuser?.id);
       setMainUser(user);
@@ -57,22 +67,32 @@ const SaleBillReport = () => {
   }, []);
   useEffect(() => {
     if (mainUser) {
-      fetchBills(currentPage);
+      fetchBills();
     }
-  }, [currentPage, mainUser]);
+  }, [ mainUser]);
 
-  const fetchBills = async (page = 1) => {
+  const fetchBills = async () => {
     try {
-      const data = await getSaleBillByOrganization(
-            mainUser?.organization_id?._id,
-            page
-          );
-       const allBills = data.data.docs || [];
-    console.log(allBills);
+      // const data = await getSaleBillByOrganization(
+      //   mainUser?.organization_id?._id,
+      //   page
+      // );
+      const data = await getPaymentByOrganization(
+        mainUser?.organization_id?._id
+      );
+      if (data.status === 401) {
+        setSnackbarMessage("Your Session is expired. Please login again!");
+        setSnackbarOpen(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
+      
+      // const allBills = data.data.docs || [];
+      const allBills = data.data || [];
+      const filteredBills = allBills.filter((bill) => bill.billType === "sale");
 
-    setBills(allBills);
-    setTotalPages(data.data.totalPages || 1);
-    setCurrentPage(data.data.page || page);
+      setBills(filteredBills);
     } catch (err) {
       console.error("Failed to fetch sale bills:", err);
       setError("Failed to load sale bills");
@@ -81,10 +101,10 @@ const SaleBillReport = () => {
     }
   };
 
-
   const filteredBills = useMemo(() => {
     return bills.filter((bill) => {
       if (!bill.createdAt) return false;
+
       const billDate = new Date(bill.createdAt);
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
@@ -92,11 +112,20 @@ const SaleBillReport = () => {
       if (start) start.setHours(0, 0, 0, 0);
       if (end) end.setHours(23, 59, 59, 999);
 
-      if (start && billDate < start) return false;
-      if (end && billDate > end) return false;
-      return true;
+      const billNumber = (bill.salebill?.bill_number || "").toLowerCase();
+      const billName = (bill.client_id?.first_name || "" + " " + bill.client_id?.last_name || "").toLowerCase();
+
+      const matchesDateRange =
+        (!start || billDate >= start) && (!end || billDate <= end);
+
+      const matchesSearch =
+        !searchQuery ||
+        billNumber.includes(searchQuery) ||
+        billName.includes(searchQuery);
+
+      return matchesDateRange && matchesSearch;
     });
-  }, [bills, startDate, endDate]);
+  }, [bills, startDate, endDate, searchQuery]);
 
   console.log("BILLS:", bills);
   console.log("FILTERED BILLS:", filteredBills);
@@ -105,23 +134,27 @@ const SaleBillReport = () => {
     () =>
       filteredBills.map((bill, index) => ({
         index: index + 1,
-        customerName: `${bill.bill_to?.first_name || ""}`,
-        invoiceNo: bill.bill_number || "",
+        customerName: `${bill.client_id?.first_name || "" + " " + bill.client_id?.last_name || ""}`,
+        invoiceNo: bill.salebill?.bill_number || "",
         billDate: bill.createdAt || "",
-        billTotal: bill.grandTotal || 0,
-        paymentType: bill.paymentType || "",
+        billTotal: bill.salebill?.grandTotal || 0,
+        paymentType: bill.salebill?.paymentType || "",
         paidAmount: Number(bill.advance || 0) + Number(bill.fullPaid || 0),
         balanceAmount: bill.balance || 0,
         paymentMode:
-          bill.paymentType === "advance"
+          bill.salebill?.paymentType === "advance"
             ? "Advance"
-            : bill.paymentType === "full"
+            : bill.salebill?.paymentType === "full"
             ? "Full"
             : "",
         transactionNumber: "", // You'll need to add transaction data from payment details if available
       })),
     [filteredBills]
   );
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value.toLowerCase()); // Case-insensitive search
+  };
 
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -132,7 +165,7 @@ const SaleBillReport = () => {
   };
 
   const totalBill = filteredBills.reduce(
-    (acc, bill) => acc + (bill.grandTotal || 0),
+    (acc, bill) => acc + (bill.salebill?.grandTotal || 0),
     0
   );
   const totalPaid = filteredBills.reduce(
@@ -159,6 +192,7 @@ const SaleBillReport = () => {
           <Typography variant="h5" fontWeight={600}>
             Sale Bill Report
           </Typography>
+          <FilterData value={searchQuery} onChange={handleSearchChange} />
           <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
             <TextField
               label="Start Date"
@@ -238,22 +272,22 @@ const SaleBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Date</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Paid Amount (₹)</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
-                <TableCell  sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
               </TableRow>
@@ -262,37 +296,34 @@ const SaleBillReport = () => {
               {filteredBills.map((bill, index) => (
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell>{bill.bill_to?.first_name || "N/A"}</TableCell>
-                  <TableCell>{bill.bill_number || "N/A"}</TableCell>
+                  <TableCell>{bill.client_id?.first_name || "N/A" + " " + bill.client_id?.last_name || ""}</TableCell>
+                  <TableCell>{bill.salebill?.bill_number || "N/A"}</TableCell>
                   <TableCell>
                     {bill.createdAt
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
-                  <TableCell >
-                    {bill.grandTotal?.toFixed(2) || "0.00"}
-                  </TableCell>
+                  <TableCell>{bill.salebill?.grandTotal?.toFixed(2) || "0.00"}</TableCell>
                   <TableCell align="center">
-                    {bill.paymentType || "N/A"}
-                  </TableCell>
-                  <TableCell >
-                    {(
-                      Number(bill.advance || 0) + Number(bill.fullPaid || 0)
-                    ).toFixed(2)}
-                  </TableCell>
-                  <TableCell >
-                    {bill.balance?.toFixed(2) || "0.00"}
-                  </TableCell>
-                  <TableCell align="center">
-                    {bill.paymentType === "advance"
+                     {bill.salebill?.paymentType === "advance"
                       ? "Advance"
-                      : bill.paymentType === "full"
+                      : bill.salebill?.paymentType === "full"
                       ? "Full"
                       : "N/A"}
+                    
+                  </TableCell>
+                  <TableCell>
+                    {(
+                      Number(bill.salebill?.advance || 0) + Number(bill.salebill?.fullPaid || 0)
+                    ).toFixed(2)}
+                  </TableCell>
+                  <TableCell>{bill.salebill?.balance?.toFixed(2) || "0.00"}</TableCell>
+                  <TableCell align="center">
+                   {bill.paymentType || "N/A"}  
                   </TableCell>
                   <TableCell align="center">
                     {/* You'll need to add transaction number logic based on your payment data */}
-                    {bill.referenceId || "N/A"}
+                    {bill.upiId || "N/A"}
                   </TableCell>
                 </TableRow>
               ))}
@@ -310,13 +341,13 @@ const SaleBillReport = () => {
                 <TableCell colSpan={3}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={2}>
+                <TableCell align="center" colSpan={2}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="right" colSpan={3}>
+                <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
               </TableRow>
@@ -325,11 +356,22 @@ const SaleBillReport = () => {
         </TableContainer>
       </Box>
 
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbarMessage === " " ? "success" : "error"}
+          variant="filled"
+          onClose={() => setSnackbarOpen(false)}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+     
     </>
   );
 };

@@ -110,13 +110,9 @@ const Home = ({ setSelectedTab }) => {
       ) || [];
 
     const products = prod.data.filter((prod)=> prod?.organization_id === user.organization_id._id)
-    console.log('product count : ',products.length);
-    
-    const categoryCount = categories.data.filter(
-      (cat) => Array.isArray(cat.children) && cat.children.length > 0
-    ).length;
-    console.log("category count::", categoryCount);
-
+  
+    const categoryCount = categories.data.filter((cat) => Array.isArray(cat.children) && cat.children.length > 0).length;
+  
     setCounts({
       vendors: vendors.length,
       customers: customers.length,

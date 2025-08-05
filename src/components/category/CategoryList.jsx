@@ -37,7 +37,7 @@ const CategoryList = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6;
+  const pageSize = 5;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -127,18 +127,18 @@ const filteredCategory = rows?.filter(
           <FilterData value={searchQuery} onChange={handleSearchChange} />
         </Box>
 
-        <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Box display="flex" justifyContent="flex-end" mb={2} >
           <Button
-          accessKey="t"
+          accessKey="x"
             variant="contained"
             sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
             onClick={handleOpen}
           >
-            Add Category (alt+t)
+            Add Category (alt+x)
           </Button>
         </Box>
 
-        <TableContainer component={Paper} elevation={3}>
+        <TableContainer component={Paper} elevation={3} sx={{height:'422px'}}>
           <Table>
             <TableHead sx={{ backgroundColor: "lightgrey" }}>
               <TableRow>

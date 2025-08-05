@@ -20,3 +20,12 @@ export const updatePayment = async (id, data) => {
     return error;
   }
 };
+export const getPaymentByOrganization = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}organization/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting purchase bill:", error);
+    return error;
+  }
+};
