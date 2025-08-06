@@ -30,6 +30,7 @@ import { exportToExcel, exportToPDF } from "../shared/Export";
 import FilterData from "../shared/FilterData";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
+import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 
 const exportColumns = [
   { label: "HSN Code", key: "hsnCode" },
@@ -171,9 +172,9 @@ const ProductList = () => {
             variant="outlined"
             sx={{ ml: 2 }}
             onClick={handleExportClick}
-            endIcon={<MoreVertIcon />}
+            // endIcon={<MoreVertIcon />}
           >
-            Export As
+           <GetAppOutlinedIcon titleAccess="Download As" />
           </Button>
         </Box>
         <Menu
@@ -240,9 +241,9 @@ const ProductList = () => {
                 <TableCell width={80}>
                   <strong>Actions</strong>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <strong>Barcode</strong>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -290,14 +291,14 @@ const ProductList = () => {
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     <IconButton
                       color="inherit"
                       onClick={() => handlePrint(prod)}
                     >
                       <PrintIcon />
                     </IconButton>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))}
             </TableBody>

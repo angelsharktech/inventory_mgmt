@@ -29,6 +29,7 @@ import { getUserById } from "../../services/UserService";
 import { getPaymentByOrganization } from "../../services/PaymentModeService";
 import FilterData from "../shared/FilterData";
 import { useNavigate } from "react-router-dom";
+import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -56,6 +57,7 @@ const SaleBillReport = () => {
   const [endDate, setEndDate] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [gstFilter, setGstFilter] = useState(""); // "" | "gst" | "non-gst"
 
   const openExportMenu = Boolean(anchorEl);
   useEffect(() => {
@@ -69,7 +71,7 @@ const SaleBillReport = () => {
     if (mainUser) {
       fetchBills();
     }
-  }, [ mainUser]);
+  }, [mainUser]);
 
   const fetchBills = async () => {
     try {
@@ -87,7 +89,7 @@ const SaleBillReport = () => {
           navigate("/login");
         }, 2000);
       }
-      
+
       // const allBills = data.data.docs || [];
       const allBills = data.data || [];
       const filteredBills = allBills.filter((bill) => bill.billType === "sale");
@@ -113,7 +115,11 @@ const SaleBillReport = () => {
       if (end) end.setHours(23, 59, 59, 999);
 
       const billNumber = (bill.salebill?.bill_number || "").toLowerCase();
-      const billName = (bill.client_id?.first_name || "" + " " + bill.client_id?.last_name || "").toLowerCase();
+      const billName = (
+        bill.client_id?.first_name ||
+        "" + " " + bill.client_id?.last_name ||
+        ""
+      ).toLowerCase();
 
       const matchesDateRange =
         (!start || billDate >= start) && (!end || billDate <= end);
@@ -123,31 +129,68 @@ const SaleBillReport = () => {
         billNumber.includes(searchQuery) ||
         billName.includes(searchQuery);
 
-      return matchesDateRange && matchesSearch;
+      const matchesGST = !gstFilter || bill.salebill?.billType === gstFilter;
+
+      return matchesDateRange && matchesSearch && matchesGST;
     });
-  }, [bills, startDate, endDate, searchQuery]);
+  }, [bills, startDate, endDate, searchQuery, gstFilter]);
 
-  console.log("BILLS:", bills);
-  console.log("FILTERED BILLS:", filteredBills);
+  const getStatementRows = () => {
+    const rows = [];
+    const grouped = {};
 
+    filteredBills.forEach((entry) => {
+      const billId = entry.salebill?._id;
+      if (!grouped[billId]) grouped[billId] = [];
+      grouped[billId].push(entry);
+    });
+
+    Object.values(grouped).forEach((entries) => {
+      entries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      const bill = entries[0]?.salebill;
+      const billTotal = Number(bill?.grandTotal || 0);
+      let runningBalance = billTotal;
+
+      entries.forEach((entry) => {
+        const paid = Number(entry.amount || 0);
+        const prevBalance = runningBalance;
+        runningBalance = prevBalance - paid;
+
+        rows.push({
+          ...entry,
+          amount: paid.toFixed(2),
+          previousBalance: prevBalance.toFixed(2),
+          newBalance: runningBalance.toFixed(2),
+          isOpening: false,
+        });
+      });
+    });
+
+    return rows;
+  };
   const mappedBills = useMemo(
     () =>
-      filteredBills.map((bill, index) => ({
+      getStatementRows().map((bill, index) => ({
         index: index + 1,
-        customerName: `${bill.client_id?.first_name || "" + " " + bill.client_id?.last_name || ""}`,
+        customerName: `${
+          bill.client_id?.first_name ||
+          "" + " " + bill.client_id?.last_name ||
+          ""
+        }`,
         invoiceNo: bill.salebill?.bill_number || "",
-        billDate: bill.createdAt || "",
+        billDate: moment(bill.createdAt).format("DD/MM/YYYY") || "",
         billTotal: bill.salebill?.grandTotal || 0,
-        paymentType: bill.salebill?.paymentType || "",
-        paidAmount: Number(bill.advance || 0) + Number(bill.fullPaid || 0),
-        balanceAmount: bill.balance || 0,
-        paymentMode:
+        paymentMode: bill?.paymentType || "",
+        paidAmount: bill.amount || 0, // <- this is the paid amount per row
+        previousBalance: bill.previousBalance || bill.salebill?.grandTotal || 0,
+        balanceAmount: bill.newBalance || 0,
+        paymentType:
           bill.salebill?.paymentType === "advance"
             ? "Advance"
             : bill.salebill?.paymentType === "full"
             ? "Full"
             : "",
-        transactionNumber: "", // You'll need to add transaction data from payment details if available
+        transactionNumber: bill.upiId || "", // optional: can be added from payment details
       })),
     [filteredBills]
   );
@@ -169,11 +212,14 @@ const SaleBillReport = () => {
     0
   );
   const totalPaid = filteredBills.reduce(
-    (acc, bill) => acc + Number(bill.advance || 0) + Number(bill.fullPaid || 0),
+    (acc, bill) =>
+      acc +
+      Number(bill.salebill?.advance || 0) +
+      Number(bill.salebill?.fullPaid || 0),
     0
   );
   const totalbal = filteredBills.reduce(
-    (acc, bill) => acc + Number(bill.balance || 0),
+    (acc, bill) => acc + Number(bill.salebill?.balance || 0),
     0
   );
 
@@ -189,11 +235,11 @@ const SaleBillReport = () => {
           alignItems="center"
           mb={2}
         >
-          <Typography variant="h5" fontWeight={600}>
+          <Typography variant="h5" fontWeight={600} mb={2}>
             Sale Bill Report
           </Typography>
           <FilterData value={searchQuery} onChange={handleSearchChange} />
-          <Box display="flex" alignItems="center" gap={2} mb={2} mr={4}>
+          <Box display="flex" alignItems="center" gap={2} mb={2} mr={2}>
             <TextField
               label="Start Date"
               type="date"
@@ -213,14 +259,25 @@ const SaleBillReport = () => {
                 min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
               }}
             />
-
-            <Button
-              variant="outlined"
-              sx={{ ml: 2 }}
-              onClick={handleExportClick}
-              endIcon={<MoreVertIcon />}
+            <TextField
+              select
+              label="GST Filter"
+              value={gstFilter}
+              onChange={(e) => setGstFilter(e.target.value)}
+              size="small"
+              sx={{ minWidth: 120 }}
             >
-              Export As
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="gst">GST</MenuItem>
+              <MenuItem value="non-gst">Non-GST</MenuItem>
+            </TextField>
+               <Button
+              variant="outlined"
+              // sx={{ ml: 2 }}
+              onClick={handleExportClick}
+              // endIcon={<MoreVertIcon />}
+            >
+              <GetAppOutlinedIcon titleAccess="Download As" />
             </Button>
           </Box>
         </Box>
@@ -232,7 +289,11 @@ const SaleBillReport = () => {
         >
           <MenuItem
             onClick={() => {
-              exportToPDF(mappedBills, exportColumns, "Sale Summary Report");
+              exportToPDF(
+                mappedBills,
+                exportColumns,
+                `Purchase Summary Report - ${gstFilter.toUpperCase() || "All"}`
+              );
               handleExportClose();
             }}
           >
@@ -240,7 +301,11 @@ const SaleBillReport = () => {
           </MenuItem>
           <MenuItem
             onClick={() => {
-              exportToExcel(mappedBills, exportColumns, "Sale Summary Report");
+              exportToExcel(
+                mappedBills,
+                exportColumns,
+                `Purchase Summary Report - ${gstFilter.toUpperCase() || "All"}`
+              );
               handleExportClose();
             }}
           >
@@ -293,33 +358,38 @@ const SaleBillReport = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredBills.map((bill, index) => (
+              {getStatementRows().map((bill, index) => (
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell>{bill.client_id?.first_name || "N/A" + " " + bill.client_id?.last_name || ""}</TableCell>
+                  <TableCell>
+                    {bill.client_id?.first_name ||
+                      "N/A" + " " + bill.client_id?.last_name ||
+                      ""}
+                  </TableCell>
                   <TableCell>{bill.salebill?.bill_number || "N/A"}</TableCell>
                   <TableCell>
                     {bill.createdAt
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
-                  <TableCell>{bill.salebill?.grandTotal?.toFixed(2) || "0.00"}</TableCell>
+                  <TableCell>
+                    {bill.salebill?.grandTotal?.toFixed(2) || "0.00"}
+                  </TableCell>
                   <TableCell align="center">
-                     {bill.salebill?.paymentType === "advance"
+                    {bill.salebill?.paymentType === "advance"
                       ? "Advance"
                       : bill.salebill?.paymentType === "full"
                       ? "Full"
                       : "N/A"}
-                    
                   </TableCell>
                   <TableCell>
-                    {(
-                      Number(bill.salebill?.advance || 0) + Number(bill.salebill?.fullPaid || 0)
-                    ).toFixed(2)}
+                    {bill.amount === "-"
+                      ? "-"
+                      : Number(bill.amount || 0).toFixed(2)}
                   </TableCell>
-                  <TableCell>{bill.salebill?.balance?.toFixed(2) || "0.00"}</TableCell>
+                  <TableCell>{bill.newBalance || "0.00"}</TableCell>
                   <TableCell align="center">
-                   {bill.paymentType || "N/A"}  
+                    {bill.paymentType || "N/A"}
                   </TableCell>
                   <TableCell align="center">
                     {/* You'll need to add transaction number logic based on your payment data */}
@@ -370,8 +440,6 @@ const SaleBillReport = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
-     
     </>
   );
 };

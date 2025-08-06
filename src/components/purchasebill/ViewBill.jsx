@@ -33,9 +33,9 @@ const style = {
 
 const ViewBill = ({ open, data, handleCloseView }) => {
   const [bill, setBill] = useState();
-   const [printData, setPrintData] = useState();
-    const [showPrint, setShowPrint] = useState(false);
-  
+  const [printData, setPrintData] = useState();
+  const [showPrint, setShowPrint] = useState(false);
+
   useEffect(() => {
     const fetchBill = async () => {
       try {
@@ -52,7 +52,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
       console.log("No valid ID found in data prop");
     }
   }, [data]);
- const handlePrint = () => {
+  const handlePrint = () => {
     try {
       console.log("print bill::", bill);
 
@@ -81,7 +81,9 @@ const ViewBill = ({ open, data, handleCloseView }) => {
           >
             <CloseIcon />
           </IconButton>
-
+          <Typography variant="h6" fontWeight="bold">
+            Invoice Type: {bill?.billType}
+          </Typography>
           {/* Invoice Info */}
           <Box mt={3}>
             <Grid container spacing={2}>
@@ -260,7 +262,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
         </Box>
       </Modal>
 
-        {/* {showPrint && printData && (
+      {/* {showPrint && printData && (
               <div className="print-only">
                 <GenerateBill bill={printData} billName={"SALE"} />
               </div>

@@ -9,7 +9,7 @@ const VendorDetails = ({
 }) => {
   return (
     <Box mt={3}>
-      <Typography variant="h6">Vendor Details</Typography>
+      <Typography variant="h6">Supplier Details</Typography>
       <Divider />
       <Grid container spacing={2} mt={4}>
         <Grid item xs={12} sm={4}>

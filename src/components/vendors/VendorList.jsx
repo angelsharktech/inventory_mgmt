@@ -146,7 +146,7 @@ const VendorList = () => {
           mb={2}
         >
           <Typography variant="h4" fontWeight={600}>
-            Vendors
+            Suppliers
           </Typography>
           <FilterData value={searchQuery} onChange={handleSearchChange} />
         </Box>

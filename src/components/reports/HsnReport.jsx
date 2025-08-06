@@ -20,6 +20,7 @@ import { getUserById } from "../../services/UserService";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FilterData from "../shared/FilterData";
+import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 
 const exportColumns = [
   { label: "#", key: "index" },
@@ -135,9 +136,8 @@ const HsnReport = () => {
               variant="outlined"
               sx={{ ml: 2 ,mb: 2}}
               onClick={handleExportClick}
-              endIcon={<MoreVertIcon />}
             >
-              Export As
+              <GetAppOutlinedIcon titleAccess="Download As" />
             </Button>
           </Box>
         </Box>

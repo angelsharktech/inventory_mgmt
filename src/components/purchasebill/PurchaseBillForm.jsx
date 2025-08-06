@@ -303,8 +303,6 @@ const PurchaseBillForm = ({
   const handleSubmit = async () => {
     try {
       let finalVendor = { ...vendor };
-      let advancePaymentId = null;
-      let fullPaymentId = null;
 
       if (!vendor.phone_number || !vendor.first_name) {
         setSnackbarMessage("Please fill vendor details!");
@@ -338,20 +336,26 @@ const PurchaseBillForm = ({
         finalVendor = { ...vendor, _id: res.user.id };
       }
 
-      const productIds = selectedProducts.map((product) => product._id);
+     
+      const finalProducts = selectedProducts.map((product) => ({
+        _id: product._id,
+        name: product.productName,
+        hsnCode: product.hsnCode,
+        qty: Number(product.qty),
+        price: Number(product.discountedPrice),
+        discount: Number(product.discountPercentage) || 0,
+      }));
 
       const billPayload = {
         // bill_number: setInvoiceNumber,
         bill_to: finalVendor._id,
-        products: productIds,
+        products: finalProducts,
         billType: billType,
         qty: selectedProducts.length,
         paymentType: paymentType,
         advance: paymentDetails.advance,
         balance: paymentDetails.balance,
         fullPaid: paymentDetails.fullPaid,
-        fullPayment: fullPaymentId,
-        advancePayments: advancePaymentId,
         subtotal: totals.subtotal,
         discount: 0,
         gstPercent: gstPercent,
@@ -366,8 +370,13 @@ const PurchaseBillForm = ({
         createdBy: mainUser._id,
         status: "draft",
       };
-
+    console.log("Bill Payload:", billPayload);
       const res = await addPurchaseBill(billPayload);
+      if (res.success === false) {
+        setSnackbarMessage(res.message || "Failed to create purchase bill");
+        setSnackbarOpen(true);
+        return;
+      }
 
       if (res.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
@@ -377,6 +386,7 @@ const PurchaseBillForm = ({
         }, 2000);
         return;
       }
+
       if (res.success === true) {
         setSnackbarMessage("Purchase bill created successfully!");
         setSnackbarOpen(true);
@@ -403,7 +413,7 @@ const PurchaseBillForm = ({
                 ? paymentDetails.advance
                 : paymentDetails.fullPaid,
             client_id: finalVendor._id, //customer_id
-            purchasebill: res?.data?._id, //sale_bill_id
+            purchasebill: res?.data?._id, //purchase_bill_id
             organization: mainUser.organization_id?._id,
             billType: "purchase",
           };

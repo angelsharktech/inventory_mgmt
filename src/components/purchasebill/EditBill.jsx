@@ -108,8 +108,9 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
               : paymentDetails.fullMode,
           amount: paymentType === "advance" ? advance : bill?.grandTotal || 0,
           client_id: bill?.bill_to?._id, // customer_id
-          work_id: bill?._id, // purchase_bill_id
+          purchasebill: bill?._id, // purchase_bill_id
           organization: bill?.org?._id || bill?.organization?._id, // fallback if org is saved in different path
+          billType: "purchase",
         };
 
         // Add payment mode-specific fields
@@ -126,7 +127,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
           } payment for Bill`;
         }
 
-        // Optional: Send payment data to server
+        console.log("Payment Payload:", paymentPayload);
         try {
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult?.success) {
@@ -247,7 +248,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                   label="Advance"
                   type="number"
                   value={bill.advance}
-                  onChange={handleAdvanceChange}
+                  // onChange={handleAdvanceChange}
                   fullWidth
                   disabled
                 />

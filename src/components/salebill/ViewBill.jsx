@@ -52,7 +52,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
       console.log("No valid ID found in data prop");
     }
   }, [data]);
-
+  console.log("view bill::", bill);
   const handlePrint = () => {
     try {
       console.log("print bill::", bill);
@@ -83,7 +83,9 @@ const ViewBill = ({ open, data, handleCloseView }) => {
           >
             <CloseIcon />
           </IconButton>
-
+          <Typography variant="h6" fontWeight="bold">
+            Invoice Type: {bill?.billType}
+          </Typography>
           {/* Invoice Info */}
           <Box mt={3}>
             <Grid container spacing={2}>
@@ -263,10 +265,10 @@ const ViewBill = ({ open, data, handleCloseView }) => {
       </Modal>
 
       {showPrint && printData && (
-              <div className="print-only">
-                <GenerateBill bill={printData} billName={"SALE"} />
-              </div>
-            )}
+        <div className="print-only">
+          <GenerateBill bill={printData} billName={"SALE"} />
+        </div>
+      )}
     </>
   );
 };

@@ -15,8 +15,8 @@ export const addPurchaseBill = async (billData) => {
     const response = await axios.post(BASE_URL, billData, getAuthHeader());
     return response.data;
   } catch (error) {
-    console.error("Error adding purchase bill:", error);
-    return error;
+    console.error("Error adding purchase bill:", error.response?.data );
+    return error.response?.data;
   }
 };
 export const getAllPurchaseBills = async () => {
