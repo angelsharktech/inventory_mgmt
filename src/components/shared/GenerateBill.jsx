@@ -14,8 +14,22 @@ import {
 } from "@mui/material";
 
 const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
-  console.log('generate bill:',bill);
-  
+  console.log("generate bill:", bill);
+
+  // ✅ Unified handling
+  const isGST = bill.billType?.toLowerCase() === "gst";
+  const customer = bill.biller || bill.bill_to;
+  const orgName = typeof bill.org === "string" ? bill.org : bill.org?.name;
+  const payment = bill.paymentDetails || bill;
+  const totals = bill.totals || {
+    subtotal: bill.subtotal,
+    gstTotal: bill.gstTotal,
+    cgst: bill.cgst,
+    sgst: bill.sgst,
+    igst: bill.igst,
+    grandTotal: bill.grandTotal,
+  };
+
   return (
     <Box sx={{ p: 4, minHeight: "100vh" }}>
       <Paper
@@ -26,7 +40,6 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
       >
         {/* Header */}
         <Box>
-          {/* Gradient Invoice Heading (Full Width) */}
           <Typography
             fontWeight="bold"
             variant="h5"
@@ -42,17 +55,17 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
               mr: 2,
             }}
           >
-            {bill.billType.toLowerCase() === 'gst' ? (<>INVOICE</>): (<>PERFORMA INVOICE</>)} 
+            {isGST ? "INVOICE" : "PERFORMA INVOICE"}
           </Typography>
 
-          {/* Org Name below aligned right */}
+          {/* Org Name */}
           <Box textAlign="right" sx={{ mb: 2 }}>
             <Typography
               variant="h6"
               fontWeight="bold"
               sx={{ color: "#00c6ff" }}
             >
-              {bill.org}
+              {orgName}
             </Typography>
           </Box>
           <Box textAlign="right" sx={{ mb: 2 }}>
@@ -69,55 +82,39 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
               <Typography variant="h6" fontWeight="bold">
                 Invoice to:
               </Typography>
-              <Typography>{bill.biller?.first_name}</Typography>
-              <Typography>{bill.biller?.address}</Typography>
-              <Typography>{bill.biller?.phone_number}</Typography>
+              <Typography>{customer?.first_name}</Typography>
+              <Typography>{customer?.address}</Typography>
+              <Typography>{customer?.phone_number}</Typography>
             </Grid>
           </Grid>
         </Box>
+
         <Divider sx={{ my: 2 }} />
+
+        {/* Products Table */}
         <Typography variant="h6" fontWeight="bold">
           Products:
         </Typography>
-        {/* Product Table */}
         <TableContainer sx={{ mt: 2, border: "1px solid #ccc" }}>
-          <Table
-            size="small"
-            aria-label="invoice table"
-            sx={{ borderCollapse: "collapse" }}
-          >
+          <Table size="small" aria-label="invoice table">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  SL.
-                </TableCell>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  Item Description
-                </TableCell>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  Price
-                </TableCell>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  Qty
-                </TableCell>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  Discount
-                </TableCell>
-                <TableCell
-                  sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                >
-                  Total
-                </TableCell>
+                {[
+                  "SL.",
+                  "Item Description",
+                  "Unit Price",
+                  "Discount",
+                  "Price",
+                  "Qty",
+                  "Total",
+                ].map((label) => (
+                  <TableCell
+                    key={label}
+                    sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
+                  >
+                    {label}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -127,7 +124,13 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                     {index + 1}
                   </TableCell>
                   <TableCell sx={{ border: "1px solid #ccc" }}>
-                    {item.productName} - {item.hsnCode}
+                    {item.name || item.productName} - {item.hsnCode}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid #ccc" }}>
+                    {item.unitPrice}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid #ccc" }}>
+                    {item.discount || item.discountPercentage}%
                   </TableCell>
                   <TableCell sx={{ border: "1px solid #ccc" }}>
                     ₹{item.price.toFixed(2)}
@@ -136,10 +139,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                     {item.qty}
                   </TableCell>
                   <TableCell sx={{ border: "1px solid #ccc" }}>
-                    {item.discountPercentage}
-                  </TableCell>
-                  <TableCell sx={{ border: "1px solid #ccc" }}>
-                    ₹{(item.discountedPrice * item.qty).toFixed(2)}
+                    ₹{(item.price * item.qty).toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -147,28 +147,29 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
           </Table>
         </TableContainer>
 
+        {/* Totals */}
         <Grid item xs={6} textAlign="right" mt={2}>
           <Typography>
-            <b>Sub Total: ₹{bill.totals?.subtotal.toFixed(2)}</b>
+            <b>Sub Total: ₹{totals.subtotal?.toFixed(2)}</b>
           </Typography>
 
-          {bill.billType === "gst" && (
+          {isGST && (
             <>
               <Typography>
-                <b>CGST:{`${bill.totals?.cgst}%`}</b>
+                <b>CGST: {totals.cgst}%</b>
               </Typography>
               <Typography>
-                <b>SGST: {`${bill.totals?.sgst}%`}</b>
+                <b>SGST: {totals.sgst}%</b>
               </Typography>
             </>
           )}
 
           <Typography variant="h6" fontWeight="bold" mt={1}>
-            Total: ₹{bill.totals?.grandTotal.toFixed(2)}
+            Total: ₹{totals.grandTotal?.toFixed(2)}
           </Typography>
         </Grid>
 
-        {/* Summary Section */}
+        {/* Payment Info */}
         <Box mt={3}>
           <Divider />
           <Grid container spacing={2} mt={1}>
@@ -179,63 +180,63 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
               <Typography variant="body2">
                 Payment Type : {bill.paymentType}
               </Typography>
+
+              {/* Advance Payment */}
               {bill.paymentType === "advance" && (
                 <>
                   <Typography variant="body2">
-                    Advance Paid : {bill.paymentDetails.advance}
+                    Advance Paid : {payment.advance}
                   </Typography>
                   <Typography variant="body2">
-                    Advance Pay Mode : {bill?.paymentDetails?.advpaymode}
+                    Advance Pay Mode : {payment.advpaymode}
                   </Typography>
-                  {bill.paymentDetails.advpaymode === "upi" && (
+                  {payment.advpaymode === "upi" && (
                     <Typography variant="body2">
-                      Transaction Number :{" "}
-                      {bill.paymentDetails.transactionNumber}
+                      Transaction Number : {payment.transactionNumber}
                     </Typography>
                   )}
-                  <Typography>
-                    Balance : {bill.paymentDetails.balance}
-                  </Typography>
+                  {payment.advpaymode === "card" && (
+                    <Typography variant="body2">
+                      Card Number : {payment.cardNumber}
+                    </Typography>
+                  )}
+                  {payment.advpaymode === "cheque" && (
+                    <Typography variant="body2">
+                      Cheque Number : {payment.chequeNumber}
+                    </Typography>
+                  )}
+                  <Typography>Balance : {payment.balance}</Typography>
                 </>
               )}
-              {bill.paymentDetails.advpaymode === "card" && (
-                <Typography variant="body2">
-                  Card Number : {bill.paymentDetails.cardNumber}
-                </Typography>
-              )}
-              {bill.paymentDetails.advpaymode === "cheque" && (
-                <Typography variant="body2">
-                  Cheque Number : {bill.paymentDetails.chequeNumber}
-                </Typography>
-              )}
+
+              {/* Full Payment */}
               {bill.paymentType === "full" && (
                 <>
                   <Typography variant="body2">
-                    Payment Mode : {bill.paymentDetails.fullMode}
+                    Payment Mode : {payment.fullMode}
                   </Typography>
-                  </>
-              )}
-              {bill.paymentDetails.fullMode === "upi" && (
+                  {payment.fullMode === "upi" && (
                     <Typography variant="body2">
-                      Transaction Number :{" "}
-                      {bill.paymentDetails.transactionNumber}
+                      Transaction Number : {payment.transactionNumber}
                     </Typography>
                   )}
-                   {bill.paymentDetails.fullMode === "card" && (
-                <Typography variant="body2">
-                  Card Number : {bill.paymentDetails.cardNumber}
-                </Typography>
-              )}
-              {bill.paymentDetails.fullMode === "cheque" && (
-                <Typography variant="body2">
-                  Cheque Number : {bill.paymentDetails.chequeNumber}
-                </Typography>
+                  {payment.fullMode === "card" && (
+                    <Typography variant="body2">
+                      Card Number : {payment.cardNumber}
+                    </Typography>
+                  )}
+                  {payment.fullMode === "cheque" && (
+                    <Typography variant="body2">
+                      Cheque Number : {payment.chequeNumber}
+                    </Typography>
+                  )}
+                </>
               )}
             </Grid>
           </Grid>
         </Box>
 
-        {/* Terms */}
+        {/* Footer */}
         <Box mt={3}>
           <Typography fontWeight="bold" gutterBottom>
             Thank you for your business
@@ -246,9 +247,8 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
         <Box display="flex" justifyContent="center" mt={4}>
           <Grid item ml={4} marginRight={"40px"}>
             <b style={{ fontSize: "12px" }}>
-              This is system generated receipt no signature required
+              This is system generated receipt, no signature required.
             </b>
-            <br />
           </Grid>
         </Box>
       </Paper>

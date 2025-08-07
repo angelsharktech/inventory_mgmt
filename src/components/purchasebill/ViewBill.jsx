@@ -17,6 +17,7 @@ import React, { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { getPurchaseBillById } from "../../services/PurchaseBillService";
 import GenerateBill from "../shared/GenerateBill";
+import moment from "moment";
 
 const style = {
   position: "absolute",
@@ -81,9 +82,16 @@ const ViewBill = ({ open, data, handleCloseView }) => {
           >
             <CloseIcon />
           </IconButton>
-          <Typography variant="h6" fontWeight="bold">
-            Invoice Type: {bill?.billType}
-          </Typography>
+            <Box display="flex" justifyContent="space-between">
+                   <Typography variant="h6" fontWeight="bold">
+                     Invoice Type: {bill?.billType}
+                   </Typography>
+                   <Typography variant="h6" fontSize={16} mt={6}>
+                     Invoice Number: {bill?.bill_number} <br />
+                     Date: {moment(bill?.createdAt).format("DD/MM/YYYY")}
+                   </Typography>
+         
+                   </Box>
           {/* Invoice Info */}
           <Box mt={3}>
             <Grid container spacing={2}>
@@ -123,6 +131,16 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                   <TableCell
                     sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
                   >
+                    Unit Price
+                  </TableCell>
+                  <TableCell
+                    sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
+                  >
+                    Discount
+                  </TableCell>
+                  <TableCell
+                    sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
+                  >
                     Price
                   </TableCell>
                   <TableCell
@@ -130,11 +148,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                   >
                     Qty
                   </TableCell>
-                  <TableCell
-                    sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
-                  >
-                    Discount
-                  </TableCell>
+                  
                   <TableCell
                     sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
                   >
@@ -152,16 +166,20 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                       {item.name} - {item.hsnCode}
                     </TableCell>
                     <TableCell sx={{ border: "1px solid #ccc" }}>
-                      ₹{item.price.toFixed(2)}
+                      ₹{item.unitPrice}
+                    </TableCell>
+                    <TableCell sx={{ border: "1px solid #ccc" }}>
+                      {item.discount}
+                    </TableCell>
+                    <TableCell sx={{ border: "1px solid #ccc" }}>
+                      ₹{item.price}
                     </TableCell>
                     <TableCell sx={{ border: "1px solid #ccc" }}>
                       {item.qty}
                     </TableCell>
+                    
                     <TableCell sx={{ border: "1px solid #ccc" }}>
-                      {item.discountPercentage}
-                    </TableCell>
-                    <TableCell sx={{ border: "1px solid #ccc" }}>
-                      ₹{(item.discountedPrice * item.qty).toFixed(2)}
+                      ₹{(item.price * item.qty).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -255,9 +273,9 @@ const ViewBill = ({ open, data, handleCloseView }) => {
             </Grid>
           </Box>
           <Box mt={3} display="flex" justifyContent="flex-end">
-            {/* <Button variant="contained" onClick={handlePrint}>
+            <Button variant="contained" onClick={handlePrint}>
               Print
-            </Button> */}
+            </Button>
           </Box>
         </Box>
       </Modal>

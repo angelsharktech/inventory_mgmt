@@ -82,8 +82,7 @@ const SaleBillForm = ({
     fullMode: "",
     fullPaid: 0,
     dueDate: "",
-    financeName:"",
-    
+    financeName: "",
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -343,6 +342,7 @@ const SaleBillForm = ({
         hsnCode: product.hsnCode,
         qty: Number(product.qty),
         price: Number(product.discountedPrice),
+        unitPrice: Number(product.price),
         discount: Number(product.discountPercentage) || 0,
       }));
 
@@ -389,7 +389,7 @@ const SaleBillForm = ({
         setSnackbarOpen(true);
         const billData = {
           biller: finalCustomer,
-          products: selectedProducts,
+          products: finalProducts,
           billType,
           paymentType,
           paymentDetails,
@@ -413,7 +413,7 @@ const SaleBillForm = ({
             client_id: finalCustomer._id, //customer_id
             salebill: res.data._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
-            billType:'sale'
+            billType: "sale",
           };
 
           // Add mode-specific fields
@@ -434,7 +434,7 @@ const SaleBillForm = ({
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
             };
-          }else if (
+          } else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
             paymentDetails.fullMode.toLowerCase() === "finance"
           ) {

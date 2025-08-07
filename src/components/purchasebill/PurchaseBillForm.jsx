@@ -61,6 +61,7 @@ const PurchaseBillForm = ({
       gst: 0,
       discountPercentage: 0,
       discountedPrice: 0,
+      
     },
   ]);
   const [billType, setBillType] = useState("non-gst");
@@ -343,6 +344,7 @@ const PurchaseBillForm = ({
         hsnCode: product.hsnCode,
         qty: Number(product.qty),
         price: Number(product.discountedPrice),
+        unitPrice: Number(product.price),
         discount: Number(product.discountPercentage) || 0,
       }));
 
@@ -392,7 +394,7 @@ const PurchaseBillForm = ({
         setSnackbarOpen(true);
         const billData = {
           biller: finalVendor,
-          products: selectedProducts,
+          products: finalProducts,
           billType,
           paymentType,
           paymentDetails,
