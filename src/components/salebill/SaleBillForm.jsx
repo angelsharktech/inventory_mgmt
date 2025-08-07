@@ -371,7 +371,6 @@ const SaleBillForm = ({
         // status: paymentDetails.balance === 0 ? "issued" : "draft",
         status: "draft",
       };
-      console.log(billPayload);
 
       const res = await addSaleBill(billPayload);
 
@@ -397,7 +396,6 @@ const SaleBillForm = ({
           totals,
           org: mainUser.organization_id?.name,
         };
-        console.log("saved bill::", res.data);
 
         if (paymentType === "advance" || paymentType === "full") {
           // Base payload with common fields

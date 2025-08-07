@@ -59,7 +59,6 @@ export const updateSaleBill = async (id, data) => {
 
 export const deleteSaleBill = async(id) =>{
   try {
-    console.log('delete:',id);
     
      const response = await axios.delete(`${BASE_URL}${id}`,getAuthHeader());
     return response.data;

@@ -39,7 +39,6 @@ const CreateSaleBill = ({ open, handleClose, refresh }) => {
 
   //           const lastBill = sortedBills[0];
   //           const lastInvoice = lastBill.bill_number;
-  // console.log('*************',lastInvoice);
 
   //           // Generate the new invoice number here
   //           const nextInvoiceNumber = generateNextInvoiceNumber(lastInvoice);

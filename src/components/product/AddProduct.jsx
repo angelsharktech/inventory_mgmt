@@ -68,7 +68,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
         setMainUser(result)
         const res = await getAllCategories();
         const parentsOnly = res.data.filter((cat) => cat.parent === null);
-        console.log(parentsOnly);
         
         setCategories(parentsOnly);
       } catch (err) {

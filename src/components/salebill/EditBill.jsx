@@ -131,7 +131,6 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
         try {
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult?.success) {
-            console.log("Payment added successfully");
           }
         } catch (error) {
           console.error("Failed to add payment:", error);

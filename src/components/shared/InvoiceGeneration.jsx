@@ -25,8 +25,6 @@ export const generateNextInvoiceNumber = (lastNumber) => {
   } else {
     nextCounter = parseInt(lastCounter) + 1;
   }
-console.log(`INV${currentYear}${nextCounter.toString().padStart(3, '0')}`);
-
   // Format with leading zeros
   return `INV${currentYear}${nextCounter.toString().padStart(3, '0')}`;
 };

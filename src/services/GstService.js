@@ -13,11 +13,8 @@ const getAuthHeader = () => {
 export const createGstDetails = async (id,data)=>{
     try {
     const response = await axios.post(`${BASE_URL}/gst/${id}/register`,data, getAuthHeader());
-    console.log('***',response);
     return response.data; 
-    } catch (error) {
-        console.log('error::',error.response.data.error);
-        
+    } catch (error) {        
        return error.response.data.error; 
     }
 }

@@ -73,7 +73,6 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
           setIsGstApplicable(data.gstRegistered ? true : false);
           if (isGstApplicable === true) {
             const gst = await getGstDetails(data._id);
-            console.log("gst:", gst);
 
             setGstDetails({
               gstNumber: gst?.gstNumber || "",
@@ -137,7 +136,6 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
       if (res && isGstApplicable) {
         if (gstDetails.gstNumber === "") {
           const r = await createGstDetails(data._id, gstDetails); // Call your API here
-          console.log("******", r);
           if (r) {
             setSnackbarMessage("Enter Valid GST Details!");
             setSnackbarOpen(true);

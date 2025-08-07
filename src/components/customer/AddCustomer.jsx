@@ -134,7 +134,6 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
     };
     try {
       const result = await registerUser(payload);
-      console.log(result);
       
       if (result) {
         if(isGstApplicable === true){

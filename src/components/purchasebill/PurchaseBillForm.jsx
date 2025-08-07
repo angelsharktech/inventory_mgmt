@@ -61,7 +61,7 @@ const PurchaseBillForm = ({
       gst: 0,
       discountPercentage: 0,
       discountedPrice: 0,
-      
+
     },
   ]);
   const [billType, setBillType] = useState("non-gst");
@@ -372,7 +372,6 @@ const PurchaseBillForm = ({
         createdBy: mainUser._id,
         status: "draft",
       };
-    console.log("Bill Payload:", billPayload);
       const res = await addPurchaseBill(billPayload);
       if (res.success === false) {
         setSnackbarMessage(res.message || "Failed to create purchase bill");

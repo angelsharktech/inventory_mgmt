@@ -53,10 +53,8 @@ const ViewBill = ({ open, data, handleCloseView }) => {
       console.log("No valid ID found in data prop");
     }
   }, [data]);
-  console.log("view bill::", bill);
   const handlePrint = () => {
     try {
-      console.log("print bill::", bill);
 
       setPrintData(bill);
       setShowPrint(true); // Show bill for printing

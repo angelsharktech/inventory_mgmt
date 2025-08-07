@@ -55,8 +55,6 @@ const ViewBill = ({ open, data, handleCloseView }) => {
   }, [data]);
   const handlePrint = () => {
     try {
-      console.log("print bill::", bill);
-
       setPrintData(bill);
       setShowPrint(true); // Show bill for printing
       setTimeout(() => {

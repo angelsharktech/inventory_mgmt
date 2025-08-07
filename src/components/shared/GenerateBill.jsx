@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 
 const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
-  console.log("generate bill:", bill);
 
   // ✅ Unified handling
   const isGST = bill.billType?.toLowerCase() === "gst";
