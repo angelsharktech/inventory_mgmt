@@ -209,7 +209,7 @@ const HsnReport = () => {
               ))}
 
               {/* Totals Row */}
-              <TableRow
+              {/* <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -236,7 +236,7 @@ const HsnReport = () => {
                       .toFixed(2)}
                   </strong>
                 </TableCell>
-              </TableRow>
+              </TableRow> */}
             </TableBody>
           </Table>
         </TableContainer>

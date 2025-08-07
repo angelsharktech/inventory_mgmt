@@ -399,7 +399,7 @@ const SaleBillReport = () => {
               ))}
 
               {/* Totals */}
-              <TableRow
+              {/* <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -420,7 +420,7 @@ const SaleBillReport = () => {
                 <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
-              </TableRow>
+              </TableRow> */}
             </TableBody>
           </Table>
         </TableContainer>
