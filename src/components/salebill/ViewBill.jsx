@@ -257,9 +257,9 @@ const ViewBill = ({ open, data, handleCloseView }) => {
             </Grid>
           </Box>
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button variant="contained" onClick={handlePrint}>
+            {/* <Button variant="contained" onClick={handlePrint}>
               Print
-            </Button>
+            </Button> */}
           </Box>
         </Box>
       </Modal>

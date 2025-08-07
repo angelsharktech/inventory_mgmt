@@ -44,7 +44,6 @@ const Login = () => {
         }, 500);
       }
     } catch (err) {
-      console.log("**************", err);
       if(err.error){
         setSnackbarMessage(err.error);
         setShowSnackbar(true);
