@@ -38,7 +38,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
   const [mainUser, setMainUser] = useState();
   const [form, setForm] = useState({
     name: "",
-    description: "",
     shortDescription: "",
     price: "",
     compareAtPrice: "",
@@ -48,6 +47,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
     category: "",
     tags: "",
     unit:"",
+    // description: "",
     // weight: "",
     // dimensions: {
     //   length: "",
@@ -90,7 +90,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
     handleClose();
     setForm({
       name: "",
-      description: "",
+      // description: "",
       shortDescription: "",
       price: "",
       compareAtPrice: "",
@@ -131,16 +131,17 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       tags: form.tags.split(",").map((tag) => tag.trim()),
       hasVariant: hasVariant,
       variantOptions: hasVariant === "Yes" ? variants : [],
-      createdBy: webuser._id,
+      createdBy: webuser.id,
       organization_id: mainUser.organization_id?._id,
     };
-    try {      
+    try {     
       const res = await addProducts(product);
+      
       if (res) {
         setSnackbarMessage("Product Added!");
         setSnackbarOpen(true);
         refresh();
-        handleClose();
+        handleCancel();
       }
     } catch (error) {
       console.error("Error adding product", error);
@@ -187,6 +188,16 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 required
               />
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                sx={{ width: "200px" }}
+                label="MRP(₹)"
+                name="compareAtPrice"
+                type="number"
+                value={form.compareAtPrice}
+                onChange={handleChange}
+              />
+            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 sx={{ width: "200px" }}
@@ -206,7 +217,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
                 multiline
@@ -216,17 +227,8 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 value={form.description}
                 onChange={handleChange}
               />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Compare at Price (₹)"
-                name="compareAtPrice"
-                type="number"
-                value={form.compareAtPrice}
-                onChange={handleChange}
-              />
-            </Grid>
+            </Grid> */}
+            
 
             <Grid item xs={6}>
               <TextField

@@ -63,17 +63,8 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
             city: data.city || "",
             bio: data.bio || "",
           });
-          setIsGstApplicable(data.gstRegistered ? true : false);
-          if(isGstApplicable === true) {
-            const gst = await getGstDetails(data._id)
-            setGstDetails({
-              gstNumber: gst?.gstNumber || "",
-              legalName: gst?.legalName || "",
-              state: gst?.state || "",
-              stateCode: gst?.stateCode || "",
-            });
-
-          }
+          const gstApplicable = data.gstRegistered;
+          setIsGstApplicable(gstApplicable);
         }
       } catch (err) {
         console.error("Error loading user", err);
@@ -82,6 +73,24 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
 
     fetchUser();
   }, [data]);
+   useEffect(() => {
+      const fetchGstDetails = async () => {
+        try {
+          const gst = await getGstDetails(data?._id);
+  
+          setGstDetails({
+            gstNumber: gst?.gstNumber || "",
+            legalName: gst?.legalName || "",
+            state: gst?.state || "",
+            stateCode: gst?.stateCode || "",
+          });
+        } catch (err) {
+          console.error("Error fetching GST details", err);
+        }
+      };
+  
+      fetchGstDetails();
+    }, [isGstApplicable]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -92,47 +101,52 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
   };
 
   const handleUpdateUser = async () => {
-    try {
-      const updatedUser = {
-        ...formData,
-        gstRegistered: isGstApplicable,
-        // gstDetails: isGstApplicable ? gstDetails : null,
-      };
-
-      const res = await updateUser(data._id, updatedUser);
-      if (res === 401) {
-        setSnackbarMessage("Your Session is expired. Please login again!");
-        setSnackbarOpen(true);
-        refresh();
-        handleCloseEdit();
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-
-        return;
-      }
-      if (res && isGstApplicable) {
-        if(gstDetails.gstNumber === "" ){
-          const r = await createGstDetails(data._id, gstDetails); // Call your API here
-          if (r) {
-            setSnackbarMessage("Enter Valid GST Details!");
-            setSnackbarOpen(true);
-            return;
-          }
-      }
-      }
-      if (res) {
-        setSnackbarMessage("Customer Updated successful!");
-        setSnackbarOpen(true);
-        refresh();
-        handleCloseEdit();
-      }
-    } catch (error) {
-      setSnackbarMessage("Failed to update Customer! ");
-      setSnackbarOpen(true);
-    }
-  };
-
+     try {
+       const updatedUser = {
+         ...formData,
+         bankDetails,
+         gstRegistered: isGstApplicable,
+       };
+       const res = await updateUser(data._id, updatedUser);
+ 
+       if (res === 401) {
+         setSnackbarMessage("Your Session is expired. Please login again!");
+         setSnackbarOpen(true);
+         refresh();
+         handleCloseEdit();
+         setTimeout(() => {
+           navigate("/login");
+         }, 2000);
+         return;
+       }
+       if (res) {
+         
+         // if (gstDetails.gstNumber === "") {
+         if (isGstApplicable && gstDetails.gstNumber === "") {
+           const r = await createGstDetails(data._id, gstDetails); // Call your API here
+           if (r.success === true) {
+             setSnackbarMessage("Customer Updated successful!");
+             setSnackbarOpen(true);
+             refresh();
+             handleCloseEdit();
+           }
+           if (r.success === false) {
+             setSnackbarMessage(r.message);
+             setSnackbarOpen(true);
+             return;
+           }
+         }
+         setSnackbarMessage("Customer Updated successful!");
+         setSnackbarOpen(true);
+         refresh();
+         handleCloseEdit();
+         // }
+       }
+     } catch (error) {
+       setSnackbarMessage("Failed to update Customer! ");
+       setSnackbarOpen(true);
+     }
+   };
   return (
     <>
       <Modal open={open} onClose={handleCloseEdit}>

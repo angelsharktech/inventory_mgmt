@@ -199,7 +199,7 @@ const CustomerList = () => {
                     {customer.first_name} {customer.last_name}
                   </TableCell>
                   <TableCell>{customer.phone_number}</TableCell>
-                  <TableCell>{customer.address}{customer.city}</TableCell>
+                  <TableCell>{customer.address}  {customer.city}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"

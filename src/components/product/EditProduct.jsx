@@ -37,27 +37,29 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [form, setForm] = useState({
+
     name: "",
-    sku: "",
     shortDescription: "",
-    description: "",
     price: "",
     compareAtPrice: "",
+    hsnCode: "",
+    sku: "",
     quantity: "",
-    weight: "",
     category: "",
     tags: "",
     unit: "",
-    hsnCode: "",
     hasVariants: false,
-    costPerItem: "",
-    lowStockThreshold: "",
     variantOptions: [],
-    dimensions: {
-      length: "",
-      width: "",
-      height: "",
-    },
+
+    // description: "",
+    // costPerItem: "",
+    // lowStockThreshold: "",
+    // weight: "",
+    // dimensions: {
+    //   length: "",
+    //   width: "",
+    //   height: "",
+    // },
   });
 
   useEffect(() => {
@@ -79,10 +81,10 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
       try {
         const res = await getProductById(data?._id);
         const prod = res.data;
-
         setForm({
           ...form,
           ...prod,
+          sku: '',
           category: prod.category?._id || "",
           tags: prod.tags?.join(", ") || "",
           hasVariants: prod.hasVariants || false,
@@ -107,21 +109,21 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-    if (["length", "width", "height"].includes(name)) {
-      setForm((prev) => ({
-        ...prev,
-        dimensions: {
-          ...prev.dimensions,
-          [name]: value,
-        },
-      }));
-    } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    // if (["length", "width", "height"].includes(name)) {
+    //   setForm((prev) => ({
+    //     ...prev,
+    //     dimensions: {
+    //       ...prev.dimensions,
+    //       [name]: value,
+    //     },
+    //   }));
+    // } else {
+    // }
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -221,15 +223,6 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
-                label="Unit"
-                name="unit"
-                value={form.unit}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                sx={{ width: "200px" }}
                 label="Price (₹)"
                 name="price"
                 type="number"
@@ -241,7 +234,16 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
-                label="Compare at Price (₹)"
+                label="Unit"
+                name="unit"
+                value={form.unit}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                sx={{ width: "200px" }}
+                label="MRP (₹)"
                 name="compareAtPrice"
                 type="number"
                 value={form.compareAtPrice}
@@ -258,7 +260,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={6}>
+            {/* <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
                 label="Weight (kg)"
@@ -267,7 +269,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 value={form.weight}
                 onChange={handleChange}
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} sm={6}>
               <TextField
                 sx={{ width: "200px" }}
@@ -286,7 +288,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
                 multiline
@@ -295,7 +297,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 value={form.description}
                 onChange={handleChange}
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
@@ -322,7 +324,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
               />
             </Grid>
 
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               <TextField
                 sx={{ width: "200px" }}
                 label="Length (cm)"
@@ -351,8 +353,8 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 value={form.dimensions.height}
                 onChange={handleChange}
               />
-            </Grid>
-            <Grid item xs={6}>
+            </Grid> */}
+            {/* <Grid item xs={6}>
               <TextField
                 label="Cost Per Item"
                 name="costPerItem"
@@ -361,9 +363,9 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
                  sx={{ width: "200px" }}
               />
-            </Grid>
+            </Grid> */}
 
-            <Grid item xs={6}>
+            {/* <Grid item xs={6}>
               <TextField
                 label="Low Stock Threshold"
                 name="lowStockThreshold"
@@ -372,7 +374,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
                  sx={{ width: "200px" }}
               />
-            </Grid>
+            </Grid> */}
             {/* <Grid></Grid> */}
             <Grid item xs={12}>
               <Box display="flex" alignItems="center">

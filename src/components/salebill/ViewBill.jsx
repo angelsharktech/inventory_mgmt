@@ -236,7 +236,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                 )}
                 {/* {bill.paymentDetails.mode1 === "card" && (
                 <Typography variant="body2">
-                  Card Number : {bill.paymentDetails.cardNumber}
+                  Card Number : {bill.paymentDetails.cardLastFour}
                 </Typography>
               )}
               {bill.paymentDetails.mode1 === "cheque" && (
@@ -259,7 +259,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                   )}
                    {bill.paymentDetails.fullMode === "card" && (
                 <Typography variant="body2">
-                  Card Number : {bill.paymentDetails.cardNumber}
+                  Card Number : {bill.paymentDetails.cardLastFour}
                 </Typography>
               )}
               {bill.paymentDetails.fullMode === "cheque" && (

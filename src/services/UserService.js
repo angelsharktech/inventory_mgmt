@@ -67,5 +67,14 @@ export const updateUser = async (id, userData) => {
     return err.response?.status;
   }
 };
+export const deleteUser = async (id, userData) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/${id}` ,getAuthHeader()); // adjust path as needed
+     return response.data;
+  } catch (err) {
+    console.error("Error deleting user", err);
+    return err.response?.status;
+  }
+};
 
 

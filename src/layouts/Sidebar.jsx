@@ -170,7 +170,7 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
     <>
       {isMobile && (
         <Box position="fixed" top={10} left={10} zIndex={1201}>
-          <IconButton onClick={toggleDrawer} sx={{ color: "#2F4F4F" }}>
+          <IconButton onClick={toggleDrawer} sx={{ color: "#e4eeeeff" }}>
             <MenuIcon />
           </IconButton>
         </Box>

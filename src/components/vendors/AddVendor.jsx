@@ -151,20 +151,21 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         position_id: vendorposition._id,
         gstRegistered: isGstApplicable
       };
-
+      
       const result = await registerUser(payload);
       if (result) {
          if (result) {
                 if(isGstApplicable === true){
                    const r = await createGstDetails(result.user.id, gstDetails); 
                    if (!r.data) {
+                    await deleteUser(result.user.id);                                                       
                     setSnackbarMessage("Enter Valid GST Details!");
                     setSnackbarOpen(true);
                     return;
-                  }
+                  } 
                 }
               }
-        setSnackbarMessage("Vendor Added successful!");
+        setSnackbarMessage("Supplier Added successful!");
         setSnackbarOpen(true);
         refresh();
         handleClose();

@@ -37,7 +37,7 @@ const exportColumns = [
   { label: "Name", key: "name" },
   { label: "Short Description", key: "shortDescription" },
   { label: "Price", key: "price" },
-  { label: "Compare Price", key: "compareAtPrice" },
+  { label: "MRP", key: "compareAtPrice" },
   { label: "Discount (%)", key: "discountPercentage" },
   { label: "Quantity", key: "quantity" },
   { label: "Status", key: "status" },
@@ -224,7 +224,7 @@ const ProductList = () => {
                   <strong>Price (₹)</strong>
                 </TableCell>
                 <TableCell>
-                  <strong>Compare Price (₹)</strong>
+                  <strong>MRP (₹)</strong>
                 </TableCell>
                 <TableCell>
                   <strong>Discount (%)</strong>

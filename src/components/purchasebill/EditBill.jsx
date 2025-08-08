@@ -43,7 +43,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
   const [paymentDetails, setPaymentDetails] = useState({
     advpaymode: "",
     transactionNumber: "",
-    cardNumber: "",
+    cardLastFour: "",
     bankName: "",
     chequeNumber: "",
     fullMode: "", // for full payment if needed
@@ -315,11 +315,11 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                       <TextField
                         label="Card No."
                         fullWidth
-                        value={paymentDetails.cardNumber}
+                        value={paymentDetails.cardLastFour}
                         onChange={(e) =>
                           setPaymentDetails({
                             ...paymentDetails,
-                            cardNumber: e.target.value,
+                            cardLastFour: e.target.value,
                           })
                         }
                       />
@@ -408,11 +408,11 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                       <TextField
                         label="Card No."
                         fullWidth
-                        value={paymentDetails.cardNumber}
+                        value={paymentDetails.cardLastFour}
                         onChange={(e) =>
                           setPaymentDetails({
                             ...paymentDetails,
-                            cardNumber: e.target.value,
+                            cardLastFour: e.target.value,
                           })
                         }
                       />

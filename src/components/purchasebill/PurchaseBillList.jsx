@@ -184,7 +184,7 @@ const PurchaseBillList = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Spplier Name</strong>
+                  <strong>Supplier Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>

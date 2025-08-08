@@ -101,7 +101,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                 {[
                   "SL.",
                   "Item Description",
-                  "Unit Price",
+                  "MRP",
                   "Discount",
                   "Price",
                   "Qty",
@@ -196,7 +196,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                   )}
                   {payment.advpaymode === "card" && (
                     <Typography variant="body2">
-                      Card Number : {payment.cardNumber}
+                      Card Number : {payment.cardLastFour}
                     </Typography>
                   )}
                   {payment.advpaymode === "cheque" && (
@@ -221,7 +221,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                   )}
                   {payment.fullMode === "card" && (
                     <Typography variant="body2">
-                      Card Number : {payment.cardNumber}
+                      Card Number : {payment.cardLastFour}
                     </Typography>
                   )}
                   {payment.fullMode === "cheque" && (

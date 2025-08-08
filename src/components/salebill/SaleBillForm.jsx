@@ -77,12 +77,14 @@ const SaleBillForm = ({
     transactionNumber2: "",
     bankName2: "",
     chequeNumber2: "",
-    cardNumber: "",
-    cardNumber2: "",
+    cardLastFour: "",
+    cardLastFour2: "",
     fullMode: "",
     fullPaid: 0,
     dueDate: "",
     financeName: "",
+    chequeDate: "",
+    cardType: "",
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -408,8 +410,8 @@ const SaleBillForm = ({
               paymentType === "advance"
                 ? paymentDetails.advance
                 : paymentDetails.fullPaid,
-            client_id: finalCustomer._id, //customer_id
-            salebill: res.data._id, //sale_bill_id
+            client_id: finalVendor._id, //customer_id
+            salebill: res?.data?._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
             billType: "sale",
           };
@@ -431,6 +433,16 @@ const SaleBillForm = ({
               ...paymentPayload,
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
+              chequeDate: paymentDetails.chequeDate,
+            };
+          } else if (
+            paymentDetails.advpaymode.toLowerCase() === "card" ||
+            paymentDetails.fullMode.toLowerCase() === "card"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              cardType: paymentDetails.cardType,
+              cardLastFour: paymentDetails.cardLastFour,
             };
           } else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
@@ -448,7 +460,6 @@ const SaleBillForm = ({
               } payment for Bill`,
             };
           }
-
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult.success === false) {
             await deleteSaleBill(res.data._id);
@@ -495,8 +506,8 @@ const SaleBillForm = ({
           transactionNumber2: "",
           bankName2: "",
           chequeNumber2: "",
-          cardNumber: "",
-          cardNumber2: "",
+          cardLastFour: "",
+          cardLastFour2: "",
           fullMode: "",
           fullPaid: 0,
           dueDate: "",

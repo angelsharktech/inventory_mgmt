@@ -70,17 +70,8 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
             city: data.city || "",
             bio: data.bio || "",
           });
-          setIsGstApplicable(data.gstRegistered ? true : false);
-          if (isGstApplicable === true) {
-            const gst = await getGstDetails(data._id);
-
-            setGstDetails({
-              gstNumber: gst?.gstNumber || "",
-              legalName: gst?.legalName || "",
-              state: gst?.state || "",
-              stateCode: gst?.stateCode || "",
-            });
-          }
+          const gstApplicable = data.gstRegistered;
+          setIsGstApplicable(gstApplicable);
 
           setBankDetails({
             bankName: data.bankDetails?.bankName || "",
@@ -97,6 +88,25 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
 
     fetchUser();
   }, [data]);
+
+  useEffect(() => {
+    const fetchGstDetails = async () => {
+      try {
+        const gst = await getGstDetails(data?._id);
+
+        setGstDetails({
+          gstNumber: gst?.gstNumber || "",
+          legalName: gst?.legalName || "",
+          state: gst?.state || "",
+          stateCode: gst?.stateCode || "",
+        });
+      } catch (err) {
+        console.error("Error fetching GST details", err);
+      }
+    };
+
+    fetchGstDetails();
+  }, [isGstApplicable]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,24 +143,31 @@ const EditVendor = ({ open, data, handleCloseEdit, refresh }) => {
         }, 2000);
         return;
       }
-      if (res && isGstApplicable) {
-        if (gstDetails.gstNumber === "") {
+      if (res) {
+        
+        // if (gstDetails.gstNumber === "") {
+        if (isGstApplicable && gstDetails.gstNumber === "") {
           const r = await createGstDetails(data._id, gstDetails); // Call your API here
-          if (r) {
-            setSnackbarMessage("Enter Valid GST Details!");
+          if (r.success === true) {
+            setSnackbarMessage("Supplier Updated successful!");
+            setSnackbarOpen(true);
+            refresh();
+            handleCloseEdit();
+          }
+          if (r.success === false) {
+            setSnackbarMessage(r.message);
             setSnackbarOpen(true);
             return;
           }
         }
-      }
-      if (res) {
-        setSnackbarMessage("Vendor Updated successful!");
+        setSnackbarMessage("Supplier Updated successful!");
         setSnackbarOpen(true);
         refresh();
         handleCloseEdit();
+        // }
       }
     } catch (error) {
-      setSnackbarMessage("Failed to update Vendor! ");
+      setSnackbarMessage("Failed to update Supplier! ");
       setSnackbarOpen(true);
     }
   };

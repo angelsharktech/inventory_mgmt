@@ -73,7 +73,7 @@ const ProductDetails = ({
           </Grid>
           <Grid item xs={12} sm={2}>
             <TextField
-              label="Unit Price"
+              label="MRP"
               type="number"
               sx={{ width: "90px" }}
               value={item.price}
@@ -99,7 +99,7 @@ const ProductDetails = ({
           </Grid>
           <Grid item xs={12} sm={2}>
             <TextField
-              label="Selling Price"
+              label="Purchase Price"
               type="number"
               sx={{ width: "100px" }}
               value={item.discountedPrice }

@@ -197,7 +197,7 @@ const VendorList = () => {
                     {vendor.first_name} {vendor.last_name}
                   </TableCell>
                   <TableCell>{vendor.phone_number}</TableCell>
-                  <TableCell>{vendor.address}{vendor.city}</TableCell>
+                  <TableCell>{vendor.address}  {vendor.city}</TableCell>
                   {/* <TableCell></TableCell> */}
                   <TableCell>
                     <IconButton

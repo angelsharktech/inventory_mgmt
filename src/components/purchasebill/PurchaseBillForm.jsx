@@ -29,7 +29,7 @@ import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
 import PaymentDetails from "./PaymentDetails";
 import VendorDetails from "./VendorDetails";
-import { addPurchaseBill } from "../../services/PurchaseBillService";
+import { addPurchaseBill, deletePurchaseBill } from "../../services/PurchaseBillService";
 
 const PurchaseBillForm = ({
   setShowPrint,
@@ -74,16 +74,18 @@ const PurchaseBillForm = ({
     transactionNumber: "",
     bankName: "",
     chequeNumber: "",
+    chequeDate: "",
     balpaymode: "",
     transactionNumber2: "",
     bankName2: "",
     chequeNumber2: "",
-    cardNumber: "",
-    cardNumber2: "",
+    cardLastFour: "",
+    cardLastFour2: "",
     fullMode: "",
     fullPaid: 0,
     dueDate: "",
     financeName: "",
+    cardType: "",
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -164,31 +166,42 @@ const PurchaseBillForm = ({
       console.error("Error fetching product data", error);
     }
   };
+const handleVendorSelection = (value, type) => {
+  let selectedVendor = null;
 
-  const handleMobile = async (phone) => {
-    const phoneExists = users.find(
+  if (type === "phone") {
+    // Search by phone
+    selectedVendor = users.find(
       (u) =>
-        u.phone_number === phone && u.role_id.name.toLowerCase() === "vendor"
+        u.phone_number === value &&
+        u.role_id.name.toLowerCase() === "vendor"
     );
+  } else if (type === "name") {
+    // Search by name
+    selectedVendor = users.find(
+      (s) => s.first_name === value
+    );
+  }
 
-    if (phoneExists) {
-      setVendor({
-        _id: phoneExists._id,
-        first_name: phoneExists.first_name,
-        address: phoneExists.address,
-        phone_number: phone,
-      });
-      setIsExistingVendor(true);
-    } else {
-      setVendor({
-        _id: "",
-        first_name: "",
-        address: "",
-        phone_number: phone,
-      });
-      setIsExistingVendor(false);
-    }
-  };
+  if (selectedVendor) {
+    setVendor({
+      _id: selectedVendor._id,
+      first_name: selectedVendor.first_name,
+      address: selectedVendor.address || "",
+      phone_number: selectedVendor.phone_number || value,
+    });
+    setIsExistingVendor(true);
+  } else {
+    setVendor({
+      _id: "",
+      first_name: type === "name" ? value : "",
+      address: "",
+      phone_number: type === "phone" ? value : "",
+    });
+    setIsExistingVendor(false);
+  }
+};
+
 
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
@@ -436,8 +449,18 @@ const PurchaseBillForm = ({
               ...paymentPayload,
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
+              chequeDate: paymentDetails.chequeDate
             };
-          } else if (
+          }else if (
+            paymentDetails.advpaymode.toLowerCase() === "card" ||
+            paymentDetails.fullMode.toLowerCase() === "card"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              cardType: paymentDetails.cardType,
+              cardLastFour: paymentDetails.cardLastFour,
+            };
+          }  else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
             paymentDetails.fullMode.toLowerCase() === "finance"
           ) {
@@ -453,10 +476,10 @@ const PurchaseBillForm = ({
               } payment for Bill`,
             };
           }
-
+          
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult.success === false) {
-            await deleteSaleBill(res.data._id);
+            await deletePurchaseBill(res.data._id);
             setSnackbarMessage(paymentResult.errors);
             setSnackbarOpen(true);
             return;
@@ -497,12 +520,13 @@ const PurchaseBillForm = ({
           transactionNumber: "",
           bankName: "",
           chequeNumber: "",
+          chequeDate: "",
           balpaymode: "",
           transactionNumber2: "",
           bankName2: "",
           chequeNumber2: "",
-          cardNumber: "",
-          cardNumber2: "",
+          cardLastFour: "",
+          cardLastFour2: "",
           fullMode: "",
           fullPaid: 0,
           dueDate: "",
@@ -528,8 +552,11 @@ const PurchaseBillForm = ({
         <VendorDetails
           vendor={vendor}
           isExistingVendor={isExistingVendor}
-          handleMobile={handleMobile}
+          handleVendorSelection={handleVendorSelection}
           setVendor={setVendor}
+          supplierList={users.filter(
+      (u) => u.role_id?.name?.toLowerCase() === "vendor"
+    )}
         />
       )}
 

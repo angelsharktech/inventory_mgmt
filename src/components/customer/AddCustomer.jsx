@@ -13,6 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import {
+  deleteUser,
   getAllUser,
   getUserById,
   registerUser,
@@ -139,6 +140,7 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
         if(isGstApplicable === true){
            const r = await createGstDetails(result.user.id, gstDetails); 
            if (!r.data) {
+            await deleteUser(result.user.id);  
             setSnackbarMessage("Enter Valid GST Details!");
             setSnackbarOpen(true);
             return;
