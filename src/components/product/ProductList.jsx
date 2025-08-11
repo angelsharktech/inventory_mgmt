@@ -81,7 +81,7 @@ const ProductList = () => {
       const data = await getAllProducts();
 
       const org_prod = data.data.filter(
-        (prod) => prod?.organization_id === result?.organization_id?._id
+        (prod) => prod?.organization_id === result?.organization_id?._id && prod.status === "active"
       );
       setProducts(org_prod);
     } catch (error) {

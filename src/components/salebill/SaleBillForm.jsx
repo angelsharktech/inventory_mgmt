@@ -160,7 +160,10 @@ const SaleBillForm = ({
   const fetchProducts = async () => {
     try {
       const data = await getAllProducts();
-      setProducts(data);
+        const prod = (data?.data || []).filter(
+      (p) => p?.organization_id?.toString() === mainUser?.organization_id?._id?.toString() && p.status === "active"
+    );
+      setProducts(prod);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -196,7 +199,7 @@ const SaleBillForm = ({
     const item = updated[index];
 
     if (field === "productName") {
-      const product = products.data.find((p) => p.name === value);
+      const product = products.find((p) => p.name === value);
       if (product) {
         const price = product.compareAtPrice || 0;
         const discountPrice = product.price;
@@ -211,7 +214,7 @@ const SaleBillForm = ({
         };
       }
     } else if (field === "hsnCode") {
-      const product = products.data.find((p) => p.hsnCode === value);
+      const product = products.find((p) => p.hsnCode === value);
       if (product) {
         const price = product.compareAtPrice || 0;
         const discountPrice = product.price;

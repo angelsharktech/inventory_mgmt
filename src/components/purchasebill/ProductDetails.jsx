@@ -1,22 +1,22 @@
-import React from 'react';
-import { 
-  Box, 
-  Grid, 
-  TextField, 
-  MenuItem, 
-  IconButton, 
-  Typography, 
-  Divider, 
-  Button 
-} from '@mui/material';
-import { Delete } from '@mui/icons-material';
+import React from "react";
+import {
+  Box,
+  Grid,
+  TextField,
+  MenuItem,
+  IconButton,
+  Typography,
+  Divider,
+  Button,
+} from "@mui/material";
+import { Delete } from "@mui/icons-material";
 
 const ProductDetails = ({
   products,
   selectedProducts,
   handleProductChange,
   handleAddProduct,
-  handleRemoveProduct
+  handleRemoveProduct,
 }) => {
   return (
     <Box mt={3}>
@@ -33,8 +33,18 @@ const ProductDetails = ({
                 handleProductChange(index, "productName", e.target.value)
               }
               label="Select Product"
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300, // set dropdown height
+                      overflowY: "auto", // make it scrollable
+                    },
+                  },
+                },
+              }}
             >
-              {products.data?.map((prod) => (
+              {products?.map((prod) => (
                 <MenuItem key={prod._id} value={prod.name}>
                   {prod.name}
                 </MenuItem>
@@ -51,13 +61,13 @@ const ProductDetails = ({
               }
               sx={{ width: "150px" }}
             >
-              {[
-                ...new Set(products.data?.map((prod) => prod.hsnCode)),
-              ].map((hsn) => (
-                <MenuItem key={hsn} value={hsn}>
-                  {hsn}
-                </MenuItem>
-              ))}
+              {[...new Set(products?.map((prod) => prod.hsnCode))].map(
+                (hsn) => (
+                  <MenuItem key={hsn} value={hsn}>
+                    {hsn}
+                  </MenuItem>
+                )
+              )}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={1}>
@@ -89,11 +99,7 @@ const ProductDetails = ({
               sx={{ width: "100px" }}
               value={item.discountPercentage}
               onChange={(e) =>
-                handleProductChange(
-                  index,
-                  "discountPercentage",
-                  e.target.value
-                )
+                handleProductChange(index, "discountPercentage", e.target.value)
               }
             />
           </Grid>
@@ -102,13 +108,9 @@ const ProductDetails = ({
               label="Purchase Price"
               type="number"
               sx={{ width: "100px" }}
-              value={item.discountedPrice }
+              value={item.discountedPrice}
               onChange={(e) =>
-                handleProductChange(
-                  index,
-                  "discountedPrice",
-                  e.target.value
-                )
+                handleProductChange(index, "discountedPrice", e.target.value)
               }
             />
           </Grid>

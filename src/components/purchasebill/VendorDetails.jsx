@@ -36,6 +36,12 @@ const VendorDetails = ({
                 handleVendorSelection(newValue.first_name, "name");
               }
             }}
+            ListboxProps={{
+              style: {
+                maxHeight: 300, // set dropdown height
+                overflowY: "auto", // make it scrollable
+              },
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}

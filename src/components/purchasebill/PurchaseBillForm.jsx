@@ -161,7 +161,10 @@ const PurchaseBillForm = ({
   const fetchProducts = async () => {
     try {
       const data = await getAllProducts();
-      setProducts(data);
+          const prod = (data?.data || []).filter(
+      (p) => p?.organization_id?.toString() === mainUser?.organization_id?._id?.toString() && p.status === "active"
+    );
+      setProducts(prod);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
@@ -208,7 +211,7 @@ const handleVendorSelection = (value, type) => {
     const item = updated[index];
 
     if (field === "productName") {
-      const product = products.data.find((p) => p.name === value);
+      const product = products.find((p) => p.name === value);
       if (product) {
         const price = product.compareAtPrice || 0;
         const discountPrice = product.price;
@@ -223,7 +226,7 @@ const handleVendorSelection = (value, type) => {
         };
       }
     } else if (field === "hsnCode") {
-      const product = products.data.find((p) => p.hsnCode === value);
+      const product = products.find((p) => p.hsnCode === value);
       if (product) {
         const price = product.compareAtPrice || 0;
         const discountPrice = product.price;
@@ -555,7 +558,9 @@ const handleVendorSelection = (value, type) => {
           handleVendorSelection={handleVendorSelection}
           setVendor={setVendor}
           supplierList={users.filter(
-      (u) => u.role_id?.name?.toLowerCase() === "vendor"
+      (u) => u.role_id?.name?.toLowerCase() === "vendor" && 
+        u.organization_id?._id === mainUser?.organization_id?._id &&
+        u.status === "active"
     )}
         />
       )}

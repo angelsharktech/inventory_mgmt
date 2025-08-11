@@ -84,7 +84,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
         setForm({
           ...form,
           ...prod,
-          sku: '',
+          // sku: '',
           category: prod.category?._id || "",
           tags: prod.tags?.join(", ") || "",
           hasVariants: prod.hasVariants || false,

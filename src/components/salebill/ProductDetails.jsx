@@ -33,8 +33,18 @@ const ProductDetails = ({
                 handleProductChange(index, "productName", e.target.value)
               }
               label="Select Product"
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300, // set dropdown height
+                      overflowY: "auto", // make it scrollable
+                    },
+                  },
+                },
+              }}
             >
-              {products.data?.map((prod) => (
+              {products?.map((prod) => (
                 <MenuItem key={prod._id} value={prod.name}>
                   {prod.name}
                 </MenuItem>
@@ -50,8 +60,18 @@ const ProductDetails = ({
                 handleProductChange(index, "hsnCode", e.target.value)
               }
               sx={{ width: "150px" }}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300, // set dropdown height
+                      overflowY: "auto", // make it scrollable
+                    },
+                  },
+                },
+              }}
             >
-              {[...new Set(products.data?.map((prod) => prod.hsnCode))].map(
+              {[...new Set(products?.map((prod) => prod.hsnCode))].map(
                 (hsn) => (
                   <MenuItem key={hsn} value={hsn}>
                     {hsn}
