@@ -134,7 +134,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       createdBy: webuser.id,
       organization_id: mainUser.organization_id?._id,
     };
-    try {     
+    try {           
       const res = await addProducts(product);
       
       if (res) {

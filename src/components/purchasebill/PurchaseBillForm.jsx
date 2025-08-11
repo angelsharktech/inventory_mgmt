@@ -156,13 +156,13 @@ const PurchaseBillForm = ({
   // Fetch product data
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [mainUser]);
 
   const fetchProducts = async () => {
     try {
       const data = await getAllProducts();
           const prod = (data?.data || []).filter(
-      (p) => p?.organization_id?.toString() === mainUser?.organization_id?._id?.toString() && p.status === "active"
+      (p) => p?.organization_id === mainUser?.organization_id?._id && p.status === "active"
     );
       setProducts(prod);
     } catch (error) {

@@ -79,7 +79,9 @@ const VendorList = () => {
       //   );
         if (vendorRole) {
           const vendorsOnly = data.filter(
-            (u) => u.role_id?._id === vendorRole?._id && u.status === "active" && u.organization_id?._id === mainUser.organization_id?._id
+            (u) => u.role_id?._id === vendorRole?._id && 
+                   u.status === "active" && 
+                   u.organization_id?._id === mainUser.organization_id?._id
           );
         setFilteredVendors(vendorsOnly);
       }
