@@ -182,12 +182,15 @@ const HsnReport = () => {
           <Table stickyHeader >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }} align="center">
                   <strong>#</strong>
                 </TableCell>
-                <TableCell sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }} align="center">
                   <strong>HSN Code</strong>
                 </TableCell>
+                {/* <TableCell sx={{ background: "#e0e0e0ff" }} align="center">
+                  <strong>Count</strong>
+                </TableCell> */}
                 <TableCell sx={{ background: "#e0e0e0ff" }} align="center">
                   <strong>Total Quantity</strong>
                 </TableCell>
@@ -199,8 +202,9 @@ const HsnReport = () => {
             <TableBody>
               {filteredData.map((row, index) => (
                 <TableRow key={row.hsnCode}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{row.hsnCode}</TableCell>
+                  <TableCell align="center">{index + 1}</TableCell>
+                  <TableCell align="center">{row.hsnCode}</TableCell>
+                  {/* <TableCell align="center">{row.count}</TableCell> */}
                   <TableCell align="center">{row.totalQty}</TableCell>
                   <TableCell align="center">
                     ₹{row.totalPrice.toFixed(2)}

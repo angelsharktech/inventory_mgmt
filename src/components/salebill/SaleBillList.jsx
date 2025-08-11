@@ -31,6 +31,7 @@ import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import { useNavigate } from "react-router-dom";
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const SaleBillList = () => {
   const { webuser } = useAuth();
@@ -166,7 +167,7 @@ const SaleBillList = () => {
         <TableContainer
           component={Paper}
           sx={{
-            maxWidth: 1100,
+            maxWidth: 1200,
             margin: "5px auto",
             maxHeight: 550,
             overflowY: "auto",
@@ -250,13 +251,19 @@ const SaleBillList = () => {
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility color="primary" />
+                      <Visibility  style={{ color: '#1976d2' }} />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon color="primary" />
+                      <EditIcon style={{ color: '#f57c00' }} />
+                    </IconButton>
+                    <IconButton
+                      color="inherit"
+                      // onClick={() => handleCancelBill(bill)}
+                    >
+                      <CancelIcon style={{ color: '#d32f2f' }} />
                     </IconButton>
                   </TableCell>
                 </TableRow>

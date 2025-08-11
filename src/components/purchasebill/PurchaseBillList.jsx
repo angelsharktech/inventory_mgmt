@@ -29,6 +29,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import PaginationComponent from "../shared/PaginationComponent";
 import { useNavigate } from "react-router-dom";
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const PurchaseBillList = () => {
   const { webuser } = useAuth();
@@ -61,7 +62,7 @@ const PurchaseBillList = () => {
     if (mainUser) {
       fetchBills();
     }
-  }, [ mainUser]);
+  }, [mainUser]);
 
   const fetchBills = async () => {
     if (!mainUser) return;
@@ -158,7 +159,7 @@ const PurchaseBillList = () => {
             /> */}
 
             <Button
-            accessKey="p"
+              accessKey="p"
               variant="contained"
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}
@@ -171,7 +172,7 @@ const PurchaseBillList = () => {
         <TableContainer
           component={Paper}
           sx={{
-            maxWidth: 1100,
+            maxWidth: 1200,
             margin: "5px auto",
             maxHeight: 550,
             overflowY: "auto",
@@ -255,13 +256,19 @@ const PurchaseBillList = () => {
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility color="primary" />
+                      <Visibility style={{ color: '#1976d2' }}  />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon color="primary" />
+                      <EditIcon style={{ color: '#f57c00' }} />
+                    </IconButton>
+                    <IconButton
+                      color="inherit"
+                      // onClick={() => handleCancelBill(bill)}
+                    >
+                      <CancelIcon style={{ color: '#d32f2f' }} />
                     </IconButton>
                   </TableCell>
                   {/* <TableCell align="center">
@@ -322,7 +329,6 @@ const PurchaseBillList = () => {
         refresh={fetchBills}
       />
       <ViewBill open={view} data={data} handleCloseView={handleCloseView} />
-      
     </>
   );
 };
