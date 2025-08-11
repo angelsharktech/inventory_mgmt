@@ -413,7 +413,7 @@ const SaleBillForm = ({
               paymentType === "advance"
                 ? paymentDetails.advance
                 : paymentDetails.fullPaid,
-            client_id: finalVendor._id, //customer_id
+            client_id: finalCustomer._id, //customer_id
             salebill: res?.data?._id, //sale_bill_id
             organization: mainUser.organization_id?._id,
             billType: "sale",
