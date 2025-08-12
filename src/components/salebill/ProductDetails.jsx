@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Grid,
@@ -10,6 +10,7 @@ import {
   Button,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
+import { getProductByBarcode } from "../../services/ProductService";
 
 const ProductDetails = ({
   products,
@@ -17,11 +18,82 @@ const ProductDetails = ({
   handleProductChange,
   handleAddProduct,
   handleRemoveProduct,
+  productErrors,
+  setSelectedProducts, // <-- Needed to update list after scan
 }) => {
+  const [scannedCode, setScannedCode] = useState("");
+  const inputRef = useRef();
+
+  // Always keep scanner input ready
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // Handle barcode scan
+  const handleScan = async (e) => {
+    if (e.key === "Enter") {
+      const code = scannedCode.trim();
+      if (!code) return;
+
+      try {
+        console.log("Scanning code:", code);
+
+        const product = await getProductByBarcode(code);
+        console.log("Scanned product:", product);
+
+        if (product) {
+          setSelectedProducts((prev) => {
+            const existingIndex = prev.findIndex(
+              (p) => p._id === product.data._id
+            );
+            if (existingIndex > -1) {
+              // If product already exists, increment qty
+              const updated = [...prev];
+              updated[existingIndex].qty =
+                Number(updated[existingIndex].qty) + 1;
+              return updated;
+            } else {
+              return [
+                ...prev,
+                {
+                  productName: product.data.name,
+                  hsnCode: product.data.hsnCode,
+                  qty: 1,
+                  price: product.data.price,
+                  discountPercentage: product.data.discountPercentage || 0,
+                  discountedPrice: product.data.price, // You can calculate based on discount
+                  _id: product.data._id,
+                },
+              ];
+            }
+          });
+        } else {
+          console.log("No product found for code:", code);
+        }
+      } catch (err) {
+        console.error("Error fetching product:", err);
+      }
+
+      setScannedCode("");
+    }
+  };
+
   return (
     <Box mt={3}>
       <Typography variant="h6">Products</Typography>
       <Divider />
+      {/* Hidden scanner input */}
+      <TextField
+        inputRef={inputRef}
+        value={scannedCode}
+        onChange={(e) => setScannedCode(e.target.value)}
+        onKeyDown={handleScan}
+        label="Scan Barcode"
+        variant="outlined"
+        size="small"
+        sx={{ position: "absolute", left: "-9999px" }} // hide from UI
+      />
+
       {selectedProducts.map((item, index) => (
         <Grid container spacing={2} key={index} mt={4}>
           <Grid item xs={12} sm={3}>
@@ -89,6 +161,8 @@ const ProductDetails = ({
               onChange={(e) =>
                 handleProductChange(index, "qty", e.target.value)
               }
+              error={!!productErrors?.[index]}
+              helperText={productErrors?.[index] || ""}
             />
           </Grid>
           <Grid item xs={12} sm={2}>
@@ -146,6 +220,14 @@ const ProductDetails = ({
       >
         + Add Product
       </Button>
+      {/* //barcode scanner button */}
+      {/* <Button
+        onClick={() => inputRef.current.focus()}
+        variant="outlined"
+        sx={{ mt: 2, ml: 2 }}
+      >
+        Enable Scanner
+      </Button> */}
     </Box>
   );
 };

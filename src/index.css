@@ -98,8 +98,9 @@ body {
     top: 0;
     left: 0;
     width: 80mm; /* Thermal printer width */
+    height:45mm; /* Adjust height as needed */
     padding: 10px;
-    text-align: start;
+    text-align: center;
     background: white;
   }
 

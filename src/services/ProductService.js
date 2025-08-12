@@ -37,6 +37,16 @@ export const getProductById = async (id) => {
     throw error;
   }
 };
+//barcode api 
+export const getProductByBarcode = async (id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/hsn/${id}` , getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Product :", error);
+    throw error;
+  }
+};
 export const updateProductById = async (id , data) => {
   try {
     const response = await axios.put(`${BASE_URL}/${id}`, data , getAuthHeader());

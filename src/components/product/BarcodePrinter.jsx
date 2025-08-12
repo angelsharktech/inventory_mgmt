@@ -9,7 +9,7 @@ const BarcodePrinter = ({ product }) => {
 
     const svg = printRef.current.querySelector("svg");
     
-    JsBarcode(svg, (product?.hsnCode || '000000' + " " +product.name)  , {
+    JsBarcode(svg, (product?.hsnCode || '000000')  , {
       format: "CODE128",
       lineColor: "#000",
       width: 2,
