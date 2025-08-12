@@ -5,6 +5,7 @@ const CustomerDetails = ({
   customer, 
   isExistingCustomer, 
   handleMobile, 
+  errors,
   setCustomer 
 }) => {
   return (
@@ -18,6 +19,8 @@ const CustomerDetails = ({
             fullWidth
             value={customer.phone_number}
             onChange={(e) => handleMobile(e.target.value)}
+             error={Boolean(errors.phone_number)}
+            helperText={errors.phone_number}
           />
         </Grid>
         <Grid item xs={12} sm={4}>

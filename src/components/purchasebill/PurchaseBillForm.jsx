@@ -29,7 +29,10 @@ import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
 import PaymentDetails from "./PaymentDetails";
 import VendorDetails from "./VendorDetails";
-import { addPurchaseBill, deletePurchaseBill } from "../../services/PurchaseBillService";
+import {
+  addPurchaseBill,
+  deletePurchaseBill,
+} from "../../services/PurchaseBillService";
 
 const PurchaseBillForm = ({
   setShowPrint,
@@ -61,7 +64,6 @@ const PurchaseBillForm = ({
       gst: 0,
       discountPercentage: 0,
       discountedPrice: 0,
-
     },
   ]);
   const [billType, setBillType] = useState("non-gst");
@@ -95,6 +97,7 @@ const PurchaseBillForm = ({
   const [state, setState] = useState();
   const [mainUser, setMainUser] = useState();
   const [notes, setNotes] = useState("");
+  const [errors, setErrors] = useState({ phone_number: "" });
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -161,50 +164,68 @@ const PurchaseBillForm = ({
   const fetchProducts = async () => {
     try {
       const data = await getAllProducts();
-          const prod = (data?.data || []).filter(
-      (p) => p?.organization_id === mainUser?.organization_id?._id && p.status === "active"
-    );
+      const prod = (data?.data || []).filter(
+        (p) =>
+          p?.organization_id === mainUser?.organization_id?._id &&
+          p.status === "active"
+      );
       setProducts(prod);
     } catch (error) {
       console.error("Error fetching product data", error);
     }
   };
-const handleVendorSelection = (value, type) => {
-  let selectedVendor = null;
+  const handleVendorSelection = (value, type) => {
+    let selectedVendor = null;
 
-  if (type === "phone") {
-    // Search by phone
-    selectedVendor = users.find(
-      (u) =>
-        u.phone_number === value &&
-        u.role_id.name.toLowerCase() === "vendor"
-    );
-  } else if (type === "name") {
-    // Search by name
-    selectedVendor = users.find(
-      (s) => s.first_name === value
-    );
-  }
+    // Validation
 
-  if (selectedVendor) {
-    setVendor({
-      _id: selectedVendor._id,
-      first_name: selectedVendor.first_name,
-      address: selectedVendor.address || "",
-      phone_number: selectedVendor.phone_number || value,
-    });
-    setIsExistingVendor(true);
-  } else {
-    setVendor({
-      _id: "",
-      first_name: type === "name" ? value : "",
-      address: "",
-      phone_number: type === "phone" ? value : "",
-    });
-    setIsExistingVendor(false);
-  }
-};
+    if (type === "phone") {
+      // Search by phone
+      const phoneRegex = /^[6-9]\d{9}$/;
 
+      // Update vendor state
+      setVendor((prev) => ({
+        ...prev,
+        phone_number: value,
+      }));
+      if (!phoneRegex.test(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          phone_number: "Invalid mobile number",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          phone_number: "",
+        }));
+      }
+      selectedVendor = users.find(
+        (u) =>
+          u.phone_number === value && u.role_id.name.toLowerCase() === "vendor"
+      );
+    } else if (type === "name") {
+      // Search by name
+      selectedVendor = users.find((s) => s.first_name === value);
+    }
+
+    if (selectedVendor) {
+      setVendor({
+        _id: selectedVendor._id,
+        first_name: selectedVendor.first_name,
+        address: selectedVendor.address || "",
+        phone_number: selectedVendor.phone_number || value,
+      });
+      setIsExistingVendor(true);
+    } else {
+      setVendor({
+        _id: "",
+        first_name: type === "name" ? value : "",
+        address: "",
+        phone_number: type === "phone" ? value : "",
+      });
+      setIsExistingVendor(false);
+    }
+  };
 
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
@@ -344,8 +365,12 @@ const handleVendorSelection = (value, type) => {
         const payload = {
           ...vendor,
           organization_id: mainUser.organization_id?._id,
-          email: vendor.first_name + "@example.com",
-          password: vendor.first_name + "@example.com",
+          email:
+            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
+            "@example.com",
+          password:
+            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
+            "@example.com",
           role_id: vendorRole._id,
           position_id: vendorposition._id,
         };
@@ -353,7 +378,6 @@ const handleVendorSelection = (value, type) => {
         finalVendor = { ...vendor, _id: res.user.id };
       }
 
-     
       const finalProducts = selectedProducts.map((product) => ({
         _id: product._id,
         name: product.productName,
@@ -452,9 +476,9 @@ const handleVendorSelection = (value, type) => {
               ...paymentPayload,
               bankName: paymentDetails.bankName,
               chequeNumber: paymentDetails.chequeNumber,
-              chequeDate: paymentDetails.chequeDate
+              chequeDate: paymentDetails.chequeDate,
             };
-          }else if (
+          } else if (
             paymentDetails.advpaymode.toLowerCase() === "card" ||
             paymentDetails.fullMode.toLowerCase() === "card"
           ) {
@@ -463,7 +487,7 @@ const handleVendorSelection = (value, type) => {
               cardType: paymentDetails.cardType,
               cardLastFour: paymentDetails.cardLastFour,
             };
-          }  else if (
+          } else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
             paymentDetails.fullMode.toLowerCase() === "finance"
           ) {
@@ -479,7 +503,7 @@ const handleVendorSelection = (value, type) => {
               } payment for Bill`,
             };
           }
-          
+
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult.success === false) {
             await deletePurchaseBill(res.data._id);
@@ -557,11 +581,13 @@ const handleVendorSelection = (value, type) => {
           isExistingVendor={isExistingVendor}
           handleVendorSelection={handleVendorSelection}
           setVendor={setVendor}
+          errors={errors}
           supplierList={users.filter(
-      (u) => u.role_id?.name?.toLowerCase() === "vendor" && 
-        u.organization_id?._id === mainUser?.organization_id?._id &&
-        u.status === "active"
-    )}
+            (u) =>
+              u.role_id?.name?.toLowerCase() === "vendor" &&
+              u.organization_id?._id === mainUser?.organization_id?._id &&
+              u.status === "active"
+          )}
         />
       )}
 

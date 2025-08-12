@@ -31,7 +31,7 @@ import PaginationComponent from "../shared/PaginationComponent";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import { useNavigate } from "react-router-dom";
-import CancelIcon from '@mui/icons-material/Cancel';
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const SaleBillList = () => {
   const { webuser } = useAuth();
@@ -52,11 +52,10 @@ const SaleBillList = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleCloseView = () => setView(false);
-  
 
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await getUserById(webuser?.id);      
+      const user = await getUserById(webuser?.id);
       setMainUser(user);
     };
     fetchUser();
@@ -65,7 +64,7 @@ const SaleBillList = () => {
     if (mainUser) {
       fetchBills();
     }
-  }, [ mainUser]);
+  }, [mainUser]);
 
   const fetchBills = async () => {
     if (!mainUser) return;
@@ -200,6 +199,9 @@ const SaleBillList = () => {
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Notes</strong>
+                </TableCell>
                 {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
@@ -236,6 +238,9 @@ const SaleBillList = () => {
                   <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
+                  <TableCell align="center">
+                    {bill.notes}
+                  </TableCell>
                   {/* <TableCell align="center">
                     {bill.paymentType === "advance"
                       ? "Advance"
@@ -246,24 +251,24 @@ const SaleBillList = () => {
                   {/* <TableCell align="center">
                     {bill.referenceId || "N/A"}
                   </TableCell> */}
-                  <TableCell align="center">
+                  <TableCell align="center" sx={{ width: "150px" }}>
                     <IconButton
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility  style={{ color: '#1976d2' }} />
+                      <Visibility style={{ color: "#1976d2" }} />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon style={{ color: '#f57c00' }} />
+                      <EditIcon style={{ color: "#f57c00" }} />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       // onClick={() => handleCancelBill(bill)}
                     >
-                      <CancelIcon style={{ color: '#d32f2f' }} />
+                      <CancelIcon style={{ color: "#d32f2f" }} />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -324,8 +329,6 @@ const SaleBillList = () => {
         refresh={fetchBills}
       />
       <ViewBill open={view} data={data} handleCloseView={handleCloseView} />
-
-     
     </>
   );
 };

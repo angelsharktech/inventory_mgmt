@@ -94,6 +94,7 @@ const SaleBillForm = ({
   const [state, setState] = useState();
   const [mainUser, setMainUser] = useState();
   const [notes, setNotes] = useState("");
+  const [errors, setErrors] = useState({ phone_number: "" });
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -169,30 +170,63 @@ const SaleBillForm = ({
     }
   };
 
-  const handleMobile = async (phone) => {
-    const phoneExists = users.find(
-      (u) =>
-        u.phone_number === phone && u.role_id.name.toLowerCase() === "customer"
-    );
+const handleMobile = (phone) => {
+  const phoneRegex = /^[6-9]\d{9}$/;
 
-    if (phoneExists) {
-      setCustomer({
-        _id: phoneExists._id,
-        first_name: phoneExists.first_name,
-        address: phoneExists.address,
-        phone_number: phone,
-      });
-      setIsExistingCustomer(true);
-    } else {
-      setCustomer({
-        _id: "",
-        first_name: "",
-        address: "",
-        phone_number: phone,
-      });
-      setIsExistingCustomer(false);
-    }
-  };
+  // If input is empty, clear all customer info
+  if (!phone) {
+    setCustomer({
+      _id: "",
+      first_name: "",
+      address: "",
+      phone_number: "",
+    });
+    setErrors((prev) => ({ ...prev, phone_number: "" }));
+    setIsExistingCustomer(false);
+    return;
+  }
+
+  // If invalid, show error and clear name/address
+  if (!phoneRegex.test(phone)) {
+    setCustomer((prev) => ({
+      ...prev,
+      phone_number: phone,
+      first_name: "",
+      address: "",
+      _id: ""
+    }));
+    setErrors((prev) => ({ ...prev, phone_number: "Invalid mobile number" }));
+    setIsExistingCustomer(false);
+    return;
+  }
+
+  // If valid, search for customer
+  setErrors((prev) => ({ ...prev, phone_number: "" }));
+
+  const phoneExists = users.find(
+    (u) =>
+      u.phone_number === phone && u.role_id?.name?.toLowerCase() === "customer"
+  );
+
+  if (phoneExists) {
+    setCustomer({
+      _id: phoneExists._id,
+      first_name: phoneExists.first_name,
+      address: phoneExists.address,
+      phone_number: phone,
+    });
+    setIsExistingCustomer(true);
+  } else {
+    setCustomer({
+      _id: "",
+      first_name: "",
+      address: "",
+      phone_number: phone,
+    });
+    setIsExistingCustomer(false);
+  }
+};
+
 
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
@@ -332,8 +366,8 @@ const SaleBillForm = ({
         const payload = {
           ...customer,
           organization_id: mainUser.organization_id?._id,
-          email: customer.first_name + "@example.com",
-          password: customer.first_name + "@example.com",
+          email: customer.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
+          password: customer.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
           role_id: customerRole._id,
           position_id: customerposition._id,
         };
@@ -537,6 +571,7 @@ const SaleBillForm = ({
           isExistingCustomer={isExistingCustomer}
           handleMobile={handleMobile}
           setCustomer={setCustomer}
+           errors={errors}
         />
       )}
 

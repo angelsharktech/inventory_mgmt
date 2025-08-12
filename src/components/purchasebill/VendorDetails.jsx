@@ -14,8 +14,10 @@ const VendorDetails = ({
   isExistingVendor,
   handleVendorSelection,
   setVendor,
+  errors,
   supplierList = [],
 }) => {
+  
   return (
     <Box mt={3}>
       <Typography variant="h6">Supplier Details</Typography>
@@ -58,6 +60,8 @@ const VendorDetails = ({
             fullWidth
             value={vendor.phone_number}
             onChange={(e) => handleVendorSelection(e.target.value, "phone")}
+            error={Boolean(errors.phone_number)}
+            helperText={errors.phone_number}
           />
         </Grid>
 

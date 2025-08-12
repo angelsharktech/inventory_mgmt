@@ -355,6 +355,7 @@ const SaleBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
+               
               </TableRow>
             </TableHead>
             <TableBody>

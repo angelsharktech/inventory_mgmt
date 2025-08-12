@@ -29,7 +29,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import PaginationComponent from "../shared/PaginationComponent";
 import { useNavigate } from "react-router-dom";
-import CancelIcon from '@mui/icons-material/Cancel';
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const PurchaseBillList = () => {
   const { webuser } = useAuth();
@@ -205,6 +205,9 @@ const PurchaseBillList = () => {
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Notes</strong>
+                </TableCell>
                 {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
@@ -241,6 +244,7 @@ const PurchaseBillList = () => {
                   <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
+                  <TableCell align="center">{bill.notes}</TableCell>
                   {/* <TableCell align="center">
                     {bill.paymentType === "advance"
                       ? "Advance"
@@ -251,24 +255,24 @@ const PurchaseBillList = () => {
                   {/* <TableCell align="center">
                     {bill.referenceId || "N/A"}
                   </TableCell> */}
-                  <TableCell align="center">
+                  <TableCell align="center" sx={{ width: "150px" }}>
                     <IconButton
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
-                      <Visibility style={{ color: '#1976d2' }}  />
+                      <Visibility style={{ color: "#1976d2" }} />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
-                      <EditIcon style={{ color: '#f57c00' }} />
+                      <EditIcon style={{ color: "#f57c00" }} />
                     </IconButton>
                     <IconButton
                       color="inherit"
                       // onClick={() => handleCancelBill(bill)}
                     >
-                      <CancelIcon style={{ color: '#d32f2f' }} />
+                      <CancelIcon style={{ color: "#d32f2f" }} />
                     </IconButton>
                   </TableCell>
                   {/* <TableCell align="center">
