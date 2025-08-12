@@ -19,6 +19,7 @@ import moment from "moment";
 import { Visibility } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import {
+  cancelPurchaseBill,
   getAllPurchaseBills,
   getPurchaseBillByOrganization,
 } from "../../services/PurchaseBillService";
@@ -79,7 +80,12 @@ const PurchaseBillList = () => {
     }
     if (data.success === true) {
       const allBills = data.data.docs || [];
-      setBills(allBills);
+
+      const FilteredBill = allBills.filter((bill) => {
+        return bill.status === "draft";
+      });
+
+      setBills(FilteredBill);
     }
   };
 
@@ -121,7 +127,22 @@ const PurchaseBillList = () => {
     setEditData(rowData);
     setEdit(true);
   };
-
+  const handleCancelBill = async (id) => {
+    try {
+      console.log("Cancelling bill with ID:", id);
+      const response = await cancelPurchaseBill(id, { status: "cancelled" });
+      console.log(response);
+      if (response.success === true) {
+        setSnackbarMessage("Bill cancelled successfully!");
+        setSnackbarOpen(true);
+        fetchBills(); // Refresh the bill list after cancellation
+      }
+    } catch (error) {
+      console.error("Error cancel bill:", error);
+      setSnackbarMessage("Failed to cancel bill");
+      setSnackbarOpen(true);
+    }
+  };
   return (
     <>
       <Box>
@@ -270,7 +291,7 @@ const PurchaseBillList = () => {
                     </IconButton>
                     <IconButton
                       color="inherit"
-                      // onClick={() => handleCancelBill(bill)}
+                      onClick={() => handleCancelBill(bill._id)}
                     >
                       <CancelIcon style={{ color: "#d32f2f" }} />
                     </IconButton>
@@ -314,7 +335,11 @@ const PurchaseBillList = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          severity={snackbarMessage === " " ? "success" : "error"}
+          severity={
+            snackbarMessage === "Bill cancelled successfully!"
+              ? "success"
+              : "error"
+          }
           variant="filled"
           onClose={() => setSnackbarOpen(false)}
         >

@@ -114,6 +114,7 @@ const PurchaseBillReport = () => {
       if (end) end.setHours(23, 59, 59, 999);
 
       const billNumber = (bill.purchasebill?.bill_number || "").toLowerCase();
+      const billStatus = (bill.purchasebill?.status || "").toLowerCase();
       const billName = (
         bill.client_id?.first_name ||
         "" + " " + bill.client_id?.last_name ||
@@ -126,7 +127,8 @@ const PurchaseBillReport = () => {
       const matchesSearch =
         !searchQuery ||
         billNumber.includes(searchQuery) ||
-        billName.includes(searchQuery);
+        billName.includes(searchQuery) ||
+        billStatus.includes(searchQuery);
       const matchesGST =
         !gstFilter || bill.purchasebill?.billType === gstFilter;
       return matchesDateRange && matchesSearch && matchesGST;
@@ -271,7 +273,7 @@ const PurchaseBillReport = () => {
               <MenuItem value="gst">GST</MenuItem>
               <MenuItem value="non-gst">Non-GST</MenuItem>
             </TextField>
-             <Button
+            <Button
               variant="outlined"
               // sx={{ ml: 2 }}
               onClick={handleExportClick}
@@ -356,6 +358,9 @@ const PurchaseBillReport = () => {
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Bill Status</strong>
+                </TableCell>
                 {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>bill type</strong>
                 </TableCell> */}
@@ -401,6 +406,9 @@ const PurchaseBillReport = () => {
                   <TableCell align="center">
                     {/* You'll need to add transaction number logic based on your payment data */}
                     {bill.upiId || "N/A"}
+                  </TableCell>
+                  <TableCell align="center">
+                    {bill.purchasebill.status}
                   </TableCell>
                   {/* <TableCell align="center">
                      {bill.purchasebill?.billType || "N/A"}

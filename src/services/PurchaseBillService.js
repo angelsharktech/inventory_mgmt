@@ -65,4 +65,13 @@ export const deletePurchaseBill = async(id) =>{
     console.error('Error deleting purchase bill:', error);
     return error;
   }
+};
+export const cancelPurchaseBill = async(id , status) =>{
+  try {
+     const response = await axios.put(`${BASE_URL}cancel/${id}`,status,getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error cancel purchase bill:', error);
+    return error;
+  }
 }

@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import moment from "moment";
 import {
+  cancelSaleBill,
   getAllSaleBills,
   getSaleBillByOrganization,
 } from "../../services/SaleBillService";
@@ -81,8 +82,10 @@ const SaleBillList = () => {
     }
     if (data.success === true) {
       const allBills = data.data.docs || [];
-
-      setBills(allBills);
+      const FilteredBill = allBills.filter((bill) => {
+        return bill.status === "draft";
+      });
+      setBills(FilteredBill);
     }
   };
 
@@ -124,7 +127,21 @@ const SaleBillList = () => {
     setEditData(rowData);
     setEdit(true);
   };
-
+  const handleCancelBill = async (id) => {
+    try {
+      const response = await cancelSaleBill(id, { status: "cancelled" });
+      console.log(response);
+      if (response.success === true) {
+        setSnackbarMessage("Bill cancelled successfully!");
+        setSnackbarOpen(true);
+        fetchBills(); // Refresh the bill list after cancellation
+      }
+    } catch (error) {
+      console.error("Error cancel bill:", error);
+      setSnackbarMessage("Failed to cancel bill");
+      setSnackbarOpen(true);
+    }
+  };
   return (
     <>
       <Box>
@@ -238,9 +255,7 @@ const SaleBillList = () => {
                   <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">
-                    {bill.notes}
-                  </TableCell>
+                  <TableCell align="center">{bill.notes}</TableCell>
                   {/* <TableCell align="center">
                     {bill.paymentType === "advance"
                       ? "Advance"
@@ -266,7 +281,7 @@ const SaleBillList = () => {
                     </IconButton>
                     <IconButton
                       color="inherit"
-                      // onClick={() => handleCancelBill(bill)}
+                      onClick={() => handleCancelBill(bill._id)}
                     >
                       <CancelIcon style={{ color: "#d32f2f" }} />
                     </IconButton>
@@ -309,7 +324,7 @@ const SaleBillList = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          severity={snackbarMessage === " " ? "success" : "error"}
+          severity={snackbarMessage === "Bill cancelled successfully!" ? "success" : "error"}
           variant="filled"
           onClose={() => setSnackbarOpen(false)}
         >

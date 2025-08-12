@@ -67,3 +67,12 @@ export const deleteSaleBill = async(id) =>{
     return error;
   }
 }
+export const cancelSaleBill = async(id , status) =>{
+  try {
+     const response = await axios.put(`${BASE_URL}cancel/${id}`,status,getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error cancel sale bill:', error);
+    return error;
+  }
+}

@@ -115,6 +115,7 @@ const SaleBillReport = () => {
       if (end) end.setHours(23, 59, 59, 999);
 
       const billNumber = (bill.salebill?.bill_number || "").toLowerCase();
+      const billStatus = (bill.salebill?.status).toLowerCase();
       const billName = (
         bill.client_id?.first_name ||
         "" + " " + bill.client_id?.last_name ||
@@ -127,7 +128,8 @@ const SaleBillReport = () => {
       const matchesSearch =
         !searchQuery ||
         billNumber.includes(searchQuery) ||
-        billName.includes(searchQuery);
+        billName.includes(searchQuery)||
+        billStatus.includes(searchQuery);
 
       const matchesGST = !gstFilter || bill.salebill?.billType === gstFilter;
 
@@ -355,6 +357,9 @@ const SaleBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Bill Status</strong>
+                </TableCell>
                
               </TableRow>
             </TableHead>
@@ -395,6 +400,10 @@ const SaleBillReport = () => {
                   <TableCell align="center">
                     {/* You'll need to add transaction number logic based on your payment data */}
                     {bill.upiId || "N/A"}
+                  </TableCell>
+                  <TableCell align="center">
+                    {/* You'll need to add transaction number logic based on your payment data */}
+                    {bill.salebill?.status }
                   </TableCell>
                 </TableRow>
               ))}
