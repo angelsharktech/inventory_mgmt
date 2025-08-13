@@ -66,11 +66,21 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+:root {
+  --app-width: 100vw;
+  --app-height: 100vh;
+}
+
+body {
+  width: var(--app-width);
+  height: var(--app-height);
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: auto;
   height: 100%;
 }
 

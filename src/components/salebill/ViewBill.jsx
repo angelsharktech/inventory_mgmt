@@ -135,7 +135,7 @@ const ViewBill = ({ open, data, handleCloseView }) => {
                   <TableCell
                     sx={{ border: "1px solid #ccc", fontWeight: "bold" }}
                   >
-                    Discount
+                    Discount %
                   </TableCell>
                   <TableCell
                     sx={{ border: "1px solid #ccc", fontWeight: "bold" }}

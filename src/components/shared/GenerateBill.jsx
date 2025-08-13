@@ -30,12 +30,12 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
   };
 
   return (
-    <Box sx={{ p: 4, minHeight: "100vh" }}>
+    // <Box sx={{ p: 4, minHeight: "100vh" }}>
       <Paper
         ref={ref}
         className="print-only"
-        elevation={3}
-        sx={{ maxWidth: 800, mx: "auto", p: 4 }}
+        // elevation={3}
+        sx={{ maxWidth: 800, mx: "auto", p: 4 ,mt: 2}}
       >
         {/* Header */}
         <Box>
@@ -102,7 +102,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
                   "SL.",
                   "Item Description",
                   "MRP",
-                  "Discount",
+                  "Discount ",
                   "Price",
                   "Qty",
                   "Total",
@@ -251,7 +251,7 @@ const GenerateBill = React.forwardRef(({ bill, billName }, ref) => {
           </Grid>
         </Box>
       </Paper>
-    </Box>
+    // </Box>
   );
 });
 

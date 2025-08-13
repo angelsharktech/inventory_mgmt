@@ -12,12 +12,14 @@ import {
   Button,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Link } from "react-router-dom";
-
-
+import { Link, useNavigate } from "react-router-dom";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { webuser, logoutUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
@@ -26,25 +28,35 @@ const Navbar = () => {
       <Typography variant="h6" sx={{ my: 2 }}>
         BillingApp
       </Typography>
-      
     </Box>
   );
-const drawerWidth = 100;
+  const drawerWidth = 100;
+  const handleNavClick = () => {
+    logoutUser();
+    navigate("/login");
+  };
   return (
     <>
-         <AppBar
+      <AppBar
         position="fixed"
         sx={{
           // ml: { sm: `${drawerWidth}px` },
           // width: { sm: `calc(100% - ${drawerWidth}px)` },
           backgroundColor: "#2F4F4F",
-         borderBottomRightRadius: 40,
+          borderBottomRightRadius: 40,
         }}
       >
         <Toolbar sx={{ justifyContent: "flex-end" }}>
-          <Typography variant="h4" noWrap component="div" mr={5}>
+          <Typography variant="h4" noWrap component="div" mr={2}>
             Billing Desk
           </Typography>
+          <Button
+            // variant="outlined"
+            color="#fff"
+            onClick={handleNavClick}
+          >
+            <LogoutIcon titleAccess="LogOut" />
+          </Button>
         </Toolbar>
       </AppBar>
 

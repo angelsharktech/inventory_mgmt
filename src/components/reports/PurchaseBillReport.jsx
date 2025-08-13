@@ -115,6 +115,7 @@ const PurchaseBillReport = () => {
 
       const billNumber = (bill.purchasebill?.bill_number || "").toLowerCase();
       const billStatus = (bill.purchasebill?.status || "").toLowerCase();
+      const billPayStatus = (bill?.paymentType).toLowerCase();
       const billName = (
         bill.client_id?.first_name ||
         "" + " " + bill.client_id?.last_name ||
@@ -128,7 +129,8 @@ const PurchaseBillReport = () => {
         !searchQuery ||
         billNumber.includes(searchQuery) ||
         billName.includes(searchQuery) ||
-        billStatus.includes(searchQuery);
+        billStatus.includes(searchQuery) ||
+        billPayStatus.includes(searchQuery);
       const matchesGST =
         !gstFilter || bill.purchasebill?.billType === gstFilter;
       return matchesDateRange && matchesSearch && matchesGST;
@@ -416,7 +418,7 @@ const PurchaseBillReport = () => {
                 </TableRow>
               ))}
               {/* Totals */}
-              {/* <TableRow
+              <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -425,19 +427,19 @@ const PurchaseBillReport = () => {
                   fontWeight: "bold",
                 }}
               >
-                <TableCell colSpan={3}>
+                <TableCell colSpan={9}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={2}>
+                {/* <TableCell align="center" colSpan={2}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
-                </TableCell>
+                </TableCell> */}
                 <TableCell align="center" colSpan={2}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={3}>
+                {/* <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
-                </TableCell>
-              </TableRow> */}
+                </TableCell> */}
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>

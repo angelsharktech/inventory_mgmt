@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Drawer,
@@ -39,7 +39,7 @@ const navItems = [
   { label: "Purchase Bill", icon: <AccountBalanceWalletIcon /> },
   { label: "Sale Bill", icon: <ReceiptLongIcon /> },
   { label: "Bill Reports", icon: <AssessmentIcon />, hasDropdown: true },
-  { label: "Logout", icon: <LogoutIcon /> },
+  // { label: "Logout", icon: <LogoutIcon /> },
 ];
 
 const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report","HSN Report"];  //
@@ -69,6 +69,8 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
   const { webuser, logoutUser } = useAuth();
   const navigate = useNavigate();
 
+
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -90,18 +92,24 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
         width: 200,
         backgroundColor: "#2F4F4F",
         color: "white",
-        height: "100%",
+        // mt: 7,
+         height: `100vh`,
         px: 2,
         pt: 3,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        gap: 2,
+        // justifyContent: "space-between",
         borderTopRightRadius: 40,
         borderBottomRightRadius: 60,
+        position: "fixed",
+        // overflowY: "auto",
       }}
     >
-      <Box textAlign="center" mt={4}>
-        <Avatar sx={{ width: 60, height: 60, mx: "auto", mb: 1 }} />
+   
+
+      <Box textAlign="center" >
+        <Avatar sx={{ width: 60, height: 60, mx: "auto", mb:1 }} />
         <Typography fontWeight="bold" fontSize={14}>
           {webuser.first_name}
         </Typography>

@@ -17,7 +17,6 @@ const VendorDetails = ({
   errors,
   supplierList = [],
 }) => {
-  
   return (
     <Box mt={3}>
       <Typography variant="h6">Supplier Details</Typography>
@@ -27,21 +26,37 @@ const VendorDetails = ({
 
         <Grid item xs={12} sm={4}>
           <Autocomplete
+            freeSolo // allows typing values not in list
             options={supplierList}
-            getOptionLabel={(option) => option.first_name || ""}
+            getOptionLabel={(option) =>
+              typeof option === "string"
+                ? option
+                : option.first_name + " " + (option.last_name || "")
+            }
             value={
               supplierList.find((s) => s.first_name === vendor.first_name) ||
-              null
+              vendor.first_name ||
+              "" // keep typed value for new vendors
             }
             onChange={(event, newValue) => {
-              if (newValue) {
+              if (typeof newValue === "string") {
+                // User typed a new vendor name
+                handleVendorSelection(newValue, "name");
+              } else if (newValue && newValue.first_name) {
+                // Selected existing vendor
                 handleVendorSelection(newValue.first_name, "name");
+              }
+            }}
+            onInputChange={(event, newInputValue) => {
+              // This handles typing live into the field
+              if (event && event.type === "change") {
+                handleVendorSelection(newInputValue, "name");
               }
             }}
             ListboxProps={{
               style: {
-                maxHeight: 300, // set dropdown height
-                overflowY: "auto", // make it scrollable
+                maxHeight: 300,
+                overflowY: "auto",
               },
             }}
             renderInput={(params) => (

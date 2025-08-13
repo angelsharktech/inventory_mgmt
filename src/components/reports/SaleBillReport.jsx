@@ -116,6 +116,7 @@ const SaleBillReport = () => {
 
       const billNumber = (bill.salebill?.bill_number || "").toLowerCase();
       const billStatus = (bill.salebill?.status).toLowerCase();
+      const billPayStatus = (bill?.paymentType).toLowerCase();
       const billName = (
         bill.client_id?.first_name ||
         "" + " " + bill.client_id?.last_name ||
@@ -129,7 +130,8 @@ const SaleBillReport = () => {
         !searchQuery ||
         billNumber.includes(searchQuery) ||
         billName.includes(searchQuery)||
-        billStatus.includes(searchQuery);
+        billStatus.includes(searchQuery)||
+        billPayStatus.includes(searchQuery);
 
       const matchesGST = !gstFilter || bill.salebill?.billType === gstFilter;
 
@@ -409,7 +411,7 @@ const SaleBillReport = () => {
               ))}
 
               {/* Totals */}
-              {/* <TableRow
+              <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -418,19 +420,19 @@ const SaleBillReport = () => {
                   fontWeight: "bold",
                 }}
               >
-                <TableCell colSpan={3}>
+                <TableCell colSpan={9}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={2}>
+                {/* <TableCell align="center" colSpan={2}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
-                </TableCell>
+                </TableCell> */}
                 <TableCell align="center" colSpan={2}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={3}>
+                {/* <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
-                </TableCell>
-              </TableRow> */}
+                </TableCell> */}
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>

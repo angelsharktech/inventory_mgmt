@@ -205,7 +205,10 @@ const PurchaseBillForm = ({
       );
     } else if (type === "name") {
       // Search by name
-      selectedVendor = users.find((s) => s.first_name === value);
+      selectedVendor = users.find(
+        (s) =>
+          s.first_name === value && s.role_id.name.toLowerCase() === "vendor"
+      );
     }
 
     if (selectedVendor) {
@@ -217,12 +220,12 @@ const PurchaseBillForm = ({
       });
       setIsExistingVendor(true);
     } else {
-      setVendor({
+      setVendor((prev) => ({
         _id: "",
-        first_name: type === "name" ? value : "",
-        address: "",
-        phone_number: type === "phone" ? value : "",
-      });
+        first_name: type === "name" ? value : prev.first_name, // keep existing name
+        address: prev.address,
+        phone_number: type === "phone" ? value : prev.phone_number, // update phone
+      }));
       setIsExistingVendor(false);
     }
   };
@@ -365,12 +368,8 @@ const PurchaseBillForm = ({
         const payload = {
           ...vendor,
           organization_id: mainUser.organization_id?._id,
-          email:
-            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
-            "@example.com",
-          password:
-            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
-            "@example.com",
+          email:vendor.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
+          password:vendor.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
           role_id: vendorRole._id,
           position_id: vendorposition._id,
         };

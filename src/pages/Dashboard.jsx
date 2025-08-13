@@ -65,9 +65,10 @@ const Dashboard = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 2,
           bgcolor: "#f9f9f9",
-          minHeight: "100vh",
+          minHeight: "80vh",
+           marginLeft: "230px", 
         }}
       >
         <Toolbar />

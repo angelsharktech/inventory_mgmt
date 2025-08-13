@@ -23,7 +23,7 @@ const ProductDetails = ({
 }) => {
   const [scannedCode, setScannedCode] = useState("");
   const inputRef = useRef();
-
+  const productRefs = useRef([]); //for focusing new dropdowns
   // Always keep scanner input ready
   useEffect(() => {
     inputRef.current?.focus();
@@ -78,6 +78,17 @@ const ProductDetails = ({
     }
   };
 
+   // Keep refs for each product name dropdown for focus
+   const handleAddAndFocus = () => {
+      handleAddProduct();
+      setTimeout(() => {
+        const lastIndex = selectedProducts.length; // after push
+        if (productRefs.current[lastIndex]) {
+          productRefs.current[lastIndex].focus(); // Focus the new dropdown
+        }
+      }, 10);
+    };
+
   return (
     <Box mt={3}>
       <Typography variant="h6">Products</Typography>
@@ -91,7 +102,7 @@ const ProductDetails = ({
         label="Scan Barcode"
         variant="outlined"
         size="small"
-        sx={{ position: "absolute", left: "-9999px" }} // hide from UI
+        sx={{ position: "absolute", left: "-9999px" }} // hide from UI for barcode scanning
       />
 
       {selectedProducts.map((item, index) => (
@@ -105,6 +116,7 @@ const ProductDetails = ({
                 handleProductChange(index, "productName", e.target.value)
               }
               label="Select Product"
+               inputRef={(el) => (productRefs.current[index] = el)} // ✅ attach ref for focus
               SelectProps={{
                 MenuProps: {
                   PaperProps: {
@@ -214,7 +226,7 @@ const ProductDetails = ({
         </Grid>
       ))}
       <Button
-        onClick={handleAddProduct}
+        onClick={handleAddAndFocus}
         variant="contained"
         sx={{ mt: 2, backgroundColor: "#2F4F4F" }}
       >
