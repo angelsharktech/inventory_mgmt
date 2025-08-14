@@ -331,6 +331,21 @@ const PaymentDetails = ({
                     </Grid>
                       </>
                     )}
+                    {paymentDetails.balpaymode === "finance" && (
+                      <Grid item xs={12} sm={3}>
+                        <TextField
+                          label="Finance Name"
+                          fullWidth
+                          value={paymentDetails.financeName || ""}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              financeName: e.target.value,
+                            })
+                          }
+                        />
+                      </Grid>
+                    )}
                     <TextField
                       label="End Date"
                       type="date"

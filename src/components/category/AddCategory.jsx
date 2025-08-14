@@ -52,7 +52,7 @@ const AddCategory = ({ open, handleClose, refresh }) => {
       const result = await getUserById(webuser.id);
       setMainUser(result);
       const res = await getAllCategories();
-      const parentsOnly = res.data.filter((cat) => cat.parent === null);
+      const parentsOnly = res.data.filter((cat) => cat.parent === null && cat?.organization_id === result.organization_id?._id);
       setCategories(parentsOnly);
     } catch (err) {
       console.error("Error loading categories", err);

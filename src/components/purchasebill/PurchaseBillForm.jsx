@@ -77,7 +77,7 @@ const PurchaseBillForm = ({
     bankName: "",
     chequeNumber: "",
     chequeDate: "",
-    balpaymode: "",
+    balancePayMode: "",
     transactionNumber2: "",
     bankName2: "",
     chequeNumber2: "",
@@ -396,6 +396,7 @@ const PurchaseBillForm = ({
         paymentType: paymentType,
         advance: paymentDetails.advance,
         balance: paymentDetails.balance,
+        balancePayMode:paymentDetails.balancePayMode +'-'+ paymentDetails.financeName ,
         fullPaid: paymentDetails.fullPaid,
         subtotal: totals.subtotal,
         discount: 0,
@@ -411,6 +412,8 @@ const PurchaseBillForm = ({
         createdBy: mainUser._id,
         status: "draft",
       };
+      console.log("Bill Payload:", billPayload);
+      
       const res = await addPurchaseBill(billPayload);
       if (res.success === false) {
         setSnackbarMessage(res.message || "Failed to create purchase bill");
@@ -488,6 +491,7 @@ const PurchaseBillForm = ({
             };
           } else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
+            paymentDetails.balancePayMode.toLowerCase().includes('finance') ||
             paymentDetails.fullMode.toLowerCase() === "finance"
           ) {
             paymentPayload = {
@@ -547,7 +551,7 @@ const PurchaseBillForm = ({
           bankName: "",
           chequeNumber: "",
           chequeDate: "",
-          balpaymode: "",
+          balancePayMode: "",
           transactionNumber2: "",
           bankName2: "",
           chequeNumber2: "",

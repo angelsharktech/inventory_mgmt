@@ -77,23 +77,52 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
     setFullPay(fullPayment);
   }, [advance, balance]);
 
-  const handleAdvanceChange = async (e) => {
-    const newAdvance = parseFloat(e.target.value || "0");
-    setAdvance(newAdvance);
+const handleAdvanceChange = async (e) => {
+  const newAdvance = parseFloat(e.target.value || "0");
+  
+  // Calculate total advance (existing advance + new advance)
+  const totalAdvance = (bill?.advance || 0) + newAdvance;
+  
+  // Calculate new balance
+  const newBalance = (bill?.grandTotal || 0) - totalAdvance - (bill?.fullPaid || 0);
 
-    const newBalance = (bill?.grandTotal || 0) - (bill?.advance + newAdvance);
+  setAdvance(newAdvance); // Store just the new advance amount
+  
+  if (newBalance <= 0) {
+    setBalance(0);
+    setFullPay(bill?.grandTotal || 0);
+  } else {
     setBalance(newBalance);
-  };
-  const updateBill = async () => {
-    try {
-      const updatedData = {
-        advance: advance + bill.advance,
-        balance: balance,
-        paymentType: balance > 0 ? "advance" : "full",
-        fullpaid: fullPay,
-      };
+    setFullPay(0);
+  }
+};
 
-      const res = await updatePurchaseBill(bill._id, updatedData);
+const updateBill = async () => {
+  try {
+    // Calculate total advance (existing + new)
+    const billTotal = bill?.grandTotal || 0;
+    
+    // Calculate new advance (this is the additional amount being paid now)
+    const newAdvance = advance || 0;
+    
+    // Calculate total advance (existing advance + new advance)
+    const totalAdvance = (bill?.advance || 0) + newAdvance;
+    
+    // Calculate remaining balance
+    const remainingBalance = billTotal - totalAdvance;
+    
+    // Determine if this is a full payment
+    const isFullPayment = remainingBalance <= 0;
+    
+    const updatedData = {
+      advance: isFullPayment ? 0 : totalAdvance, // Reset advance if fully paid
+      balance: isFullPayment ? 0 : remainingBalance,
+      paymentType: isFullPayment ? "full" : "advance",
+      fullPaid: isFullPayment ? billTotal : 0,
+    };
+    
+    const res = await updatePurchaseBill(bill._id, updatedData);
+      
       if (res.success === true) {
         setSnackbarMessage("Purchase bill Updated !");
         setSnackbarOpen(true);

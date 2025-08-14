@@ -56,12 +56,16 @@ const unselectedStyle = {
   color: "white",
   borderRadius: "8px",
   fontWeight: 500,
-  transition: "background 0.2s",
+  transition: "background 0.2s, color 0.2s",
   "&:hover": {
     backgroundColor: "#fff",
-    color: "#2F4F4F",
+    color: "#2F4F4F", // text color on hover
+    "& .MuiListItemIcon-root": {
+      color: "#2F4F4F", // icon color on hover
+    },
   },
 };
+
 
 const Sidebar = ({ selectedTab, setSelectedTab }) => {
   const [mobileOpen, setMobileOpen] = useState(false);

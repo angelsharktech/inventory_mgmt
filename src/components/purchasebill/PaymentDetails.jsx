@@ -73,7 +73,7 @@ const PaymentDetails = ({
                     select
                     sx={{ width: "200px" }}
                     label="Advance Pay Mode"
-                    value={paymentDetails.advpaymode}
+                    value={paymentDetails.advpaymode }
                     onChange={(e) =>
                       setPaymentDetails({
                         ...paymentDetails,
@@ -122,7 +122,7 @@ const PaymentDetails = ({
                 )}
                 {paymentDetails.advpaymode === "card" && (
                   <>
-                  {/* <Grid item xs={12} sm={3}>
+                    {/* <Grid item xs={12} sm={3}>
                     <TextField
                       label="Last 4 digit on Card "
                       fullWidth
@@ -136,22 +136,22 @@ const PaymentDetails = ({
                     />
                     </Grid> */}
                     <Grid item xs={12} sm={3}>
-                    <TextField
-                      label="Card Type"
-                      select
-                      sx={{ width: "200px" }}
-                      value={paymentDetails.cardType || ""}
-                      onChange={(e) =>
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          cardType: e.target.value,
-                        })
-                      }
-                    >
-                      <MenuItem value="Debit">Debit</MenuItem>
-                      <MenuItem value="Credit">Credit</MenuItem>
-                    </TextField>
-                  </Grid>
+                      <TextField
+                        label="Card Type"
+                        select
+                        sx={{ width: "200px" }}
+                        value={paymentDetails.cardType ?? ""}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardType: e.target.value,
+                          })
+                        }
+                      >
+                        <MenuItem value="Debit">Debit</MenuItem>
+                        <MenuItem value="Credit">Credit</MenuItem>
+                      </TextField>
+                    </Grid>
                   </>
                 )}
                 {paymentDetails.advpaymode === "cheque" && (
@@ -183,19 +183,19 @@ const PaymentDetails = ({
                       />
                     </Grid>
                     <Grid item xs={12} sm={3}>
-                 <TextField
-                  label="Cheque Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={paymentDetails.chequeDate}
-                  onChange={(e) =>
-                    setPaymentDetails({
-                      ...paymentDetails,
-                      chequeDate: e.target.value,
-                    })
-                  }
-                />
-                </Grid>
+                      <TextField
+                        label="Cheque Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={paymentDetails.chequeDate}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            chequeDate: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
                   </>
                 )}
               </Grid>
@@ -221,11 +221,11 @@ const PaymentDetails = ({
                     select
                     sx={{ width: "200px" }}
                     label="Balance Pay Mode"
-                    value={paymentDetails.balpaymode}
+                    value={paymentDetails.balancePayMode ??""} 
                     onChange={(e) =>
                       setPaymentDetails({
                         ...paymentDetails,
-                        balpaymode: e.target.value,
+                        balancePayMode: e.target.value,
                       })
                     }
                   >
@@ -238,12 +238,12 @@ const PaymentDetails = ({
                   </TextField>
                 </Grid>
 
-                {paymentDetails.balpaymode === "upi" && (
+                {paymentDetails.balancePayMode === "upi" && (
                   <Grid item xs={12} sm={3}>
                     <TextField
                       label="UPI Transaction No."
                       fullWidth
-                      value={paymentDetails.transactionNumber2 || ""}
+                      value={paymentDetails.transactionNumber2 ?? ""}
                       onChange={(e) =>
                         setPaymentDetails({
                           ...paymentDetails,
@@ -253,9 +253,9 @@ const PaymentDetails = ({
                     />
                   </Grid>
                 )}
-                {paymentDetails.balpaymode === "card" && (
+                {paymentDetails.balancePayMode === "card" && (
                   <>
-                  {/* <Grid item xs={12} sm={3}>
+                    {/* <Grid item xs={12} sm={3}>
                     <TextField
                       label="Last 4 digit on Card "
                       fullWidth
@@ -268,26 +268,26 @@ const PaymentDetails = ({
                       }
                     />
                     </Grid> */}
-                     <Grid item xs={12} sm={3}>
-                    <TextField
-                      label="Card Type"
-                      select
-                      sx={{ width: "200px" }}
-                      value={paymentDetails.cardType || ""}
-                      onChange={(e) =>
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          cardType: e.target.value,
-                        })
-                      }
-                    >
-                      <MenuItem value="Debit">Debit</MenuItem>
-                      <MenuItem value="Credit">Credit</MenuItem>
-                    </TextField>
-                  </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Card Type"
+                        select
+                        sx={{ width: "200px" }}
+                        value={paymentDetails.cardType ?? ""}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardType: e.target.value,
+                          })
+                        }
+                      >
+                        <MenuItem value="Debit">Debit</MenuItem>
+                        <MenuItem value="Credit">Credit</MenuItem>
+                      </TextField>
+                    </Grid>
                   </>
                 )}
-                {paymentDetails.balpaymode === "cheque" && (
+                {paymentDetails.balancePayMode === "cheque" && (
                   <>
                     <Grid item xs={12} sm={3}>
                       <TextField
@@ -316,20 +316,35 @@ const PaymentDetails = ({
                       />
                     </Grid>
                     <Grid item xs={12} sm={3}>
-                 <TextField
-                  label="Cheque Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={paymentDetails.chequeDate}
-                  onChange={(e) =>
-                    setPaymentDetails({
-                      ...paymentDetails,
-                      chequeDate: e.target.value,
-                    })
-                  }
-                />
-                </Grid>
+                      <TextField
+                        label="Cheque Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={paymentDetails.chequeDate}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            chequeDate: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
                   </>
+                )}
+                {paymentDetails.balancePayMode === "finance" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Finance Name"
+                      fullWidth
+                      value={paymentDetails.financeName || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          financeName: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
                 )}
                 <TextField
                   label="End Date"
@@ -363,7 +378,7 @@ const PaymentDetails = ({
               <TextField
                 sx={{ width: "200px" }}
                 select
-                value={paymentDetails.fullMode}
+                value={paymentDetails.fullMode ?? ""}
                 onChange={(e) =>
                   setPaymentDetails({
                     ...paymentDetails,
@@ -386,7 +401,7 @@ const PaymentDetails = ({
                 <TextField
                   label="UPI Transaction No."
                   fullWidth
-                  value={paymentDetails.transactionNumber || ""}
+                  value={paymentDetails.transactionNumber ?? ""}
                   onChange={(e) =>
                     setPaymentDetails({
                       ...paymentDetails,
@@ -401,7 +416,7 @@ const PaymentDetails = ({
                 <TextField
                   label="Finance Name"
                   fullWidth
-                  value={paymentDetails.financeName || ""}
+                  value={paymentDetails.financeName ?? ""}
                   onChange={(e) =>
                     setPaymentDetails({
                       ...paymentDetails,
@@ -413,7 +428,7 @@ const PaymentDetails = ({
             )}
             {paymentDetails.fullMode === "card" && (
               <>
-              {/* <Grid item xs={12} sm={3}>
+                {/* <Grid item xs={12} sm={3}>
                 <TextField
                   label="Last 4 digit on Card"
                   fullWidth
@@ -427,22 +442,22 @@ const PaymentDetails = ({
                 />
                 </Grid> */}
                 <Grid item xs={12} sm={3}>
-                <TextField
-                      label="Card Type"
-                      select
-                       sx={{ width: "200px" }}
-                      value={paymentDetails.cardType || ""}
-                      onChange={(e) =>
-                        setPaymentDetails({
-                          ...paymentDetails,
-                          cardType: e.target.value,
-                        })
-                      }
-                    >
-                      <MenuItem value="Debit">Debit</MenuItem>
-                      <MenuItem value="Credit">Credit</MenuItem>
-                    </TextField>
-              </Grid>
+                  <TextField
+                    label="Card Type"
+                    select
+                    sx={{ width: "200px" }}
+                    value={paymentDetails.cardType ?? ""}
+                    onChange={(e) =>
+                      setPaymentDetails({
+                        ...paymentDetails,
+                        cardType: e.target.value,
+                      })
+                    }
+                  >
+                    <MenuItem value="Debit">Debit</MenuItem>
+                    <MenuItem value="Credit">Credit</MenuItem>
+                  </TextField>
+                </Grid>
               </>
             )}
 
@@ -475,18 +490,18 @@ const PaymentDetails = ({
                   />
                 </Grid>
                 <Grid item xs={12} sm={3}>
-                 <TextField
-                  label="Cheque Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={paymentDetails.chequeDate}
-                  onChange={(e) =>
-                    setPaymentDetails({
-                      ...paymentDetails,
-                      chequeDate: e.target.value,
-                    })
-                  }
-                />
+                  <TextField
+                    label="Cheque Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={paymentDetails.chequeDate}
+                    onChange={(e) =>
+                      setPaymentDetails({
+                        ...paymentDetails,
+                        chequeDate: e.target.value,
+                      })
+                    }
+                  />
                 </Grid>
               </>
             )}

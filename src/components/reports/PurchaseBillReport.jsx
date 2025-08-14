@@ -410,7 +410,7 @@ const PurchaseBillReport = () => {
                     {bill.upiId || "N/A"}
                   </TableCell>
                   <TableCell align="center">
-                    {bill.purchasebill.status}
+                    {bill.purchasebill?.status}
                   </TableCell>
                   {/* <TableCell align="center">
                      {bill.purchasebill?.billType || "N/A"}

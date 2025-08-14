@@ -84,7 +84,8 @@ const PurchaseBillList = () => {
       const FilteredBill = allBills.filter((bill) => {
         return bill.status === "draft";
       });
-
+      console.log("Filtered Bills:", FilteredBill);
+      
       setBills(FilteredBill);
     }
   };

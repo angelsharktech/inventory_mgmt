@@ -13,6 +13,8 @@ import {
   getAllCategories,
   updateCategory,
 } from "../../services/CategoryService";
+import { getUserById } from "../../services/UserService";
+import { useAuth } from "../../context/AuthContext";
 
 const style = {
   position: "absolute",
@@ -27,7 +29,7 @@ const style = {
 };
 
 const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
-
+  const {webuser} = useAuth();
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -66,8 +68,9 @@ const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        const result = await getUserById(webuser.id);
         const res = await getAllCategories();
-        const parentsOnly = res.data.filter((cat) => cat.parent === null);
+        const parentsOnly = res.data.filter((cat) => cat.parent === null && cat?.organization_id === result.organization_id?._id);
         setCategories(parentsOnly);
 
         if (data) {
