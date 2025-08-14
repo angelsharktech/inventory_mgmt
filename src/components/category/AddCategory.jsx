@@ -14,6 +14,8 @@ import {
   addCategories,
   getAllCategories,
 } from "../../services/CategoryService";
+import { useAuth } from "../../context/AuthContext";
+import { getUserById } from "../../services/UserService";
 
 const style = {
   position: "absolute",
@@ -28,6 +30,7 @@ const style = {
 };
 
 const AddCategory = ({ open, handleClose, refresh }) => {
+  const {webuser} = useAuth();
   const [categories, setCategories] = useState([]);
   const [main, setMain] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,12 +42,15 @@ const AddCategory = ({ open, handleClose, refresh }) => {
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [mainUser, setMainUser] = useState();
 
   useEffect(() => {
     fetchCategories();
   }, []);
   const fetchCategories = async () => {
     try {
+      const result = await getUserById(webuser.id);
+      setMainUser(result);
       const res = await getAllCategories();
       const parentsOnly = res.data.filter((cat) => cat.parent === null);
       setCategories(parentsOnly);
@@ -92,14 +98,17 @@ const AddCategory = ({ open, handleClose, refresh }) => {
   const categoryAdd = async () => {
     try {
       let payload;
-
+      
       if (main) {
         payload = {
           name: formData.mainName,
           description: formData.mainDescription,
+          organization_id: mainUser.organization_id?._id,
         };
 
         const res = await addCategories(payload);
+        console.log("main res", res);
+        
         if (res) {
           setSnackbarMessage("Category Added!");
           setSnackbarOpen(true);
@@ -111,8 +120,11 @@ const AddCategory = ({ open, handleClose, refresh }) => {
           name: formData.name,
           description: formData.description,
           parent: formData.parent,
+          organization_id: mainUser.organization_id?._id,
         };
          const res = await addCategories(payload);
+         console.log("child res", res);
+         
         if (res) {
           setSnackbarMessage("Category Added!");
           setSnackbarOpen(true);
@@ -122,7 +134,7 @@ const AddCategory = ({ open, handleClose, refresh }) => {
         }
       }
     } catch (error) {
-      //   console.error("Error adding category", error);
+        console.error("Error adding category", error);
       setSnackbarMessage("Category Already Exist!");
       setSnackbarOpen(true);
     }

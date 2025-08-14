@@ -122,7 +122,7 @@ const PaymentDetails = ({
                     )}
                     {paymentDetails.advpaymode === "card" && (
                       <>
-                      <Grid item xs={12} sm={3}>
+                      {/* <Grid item xs={12} sm={3}>
                         <TextField
                           label="Last 4 digit on Card "
                           fullWidth
@@ -134,7 +134,7 @@ const PaymentDetails = ({
                             })
                           }
                         />
-                        </Grid>
+                        </Grid> */}
                         <Grid item xs={12} sm={3}>
                         <TextField
                           label="Card Type"
@@ -255,7 +255,7 @@ const PaymentDetails = ({
                     )}
                     {paymentDetails.balpaymode === "card" && (
                       <>
-                      <Grid item xs={12} sm={3}>
+                      {/* <Grid item xs={12} sm={3}>
                         <TextField
                           label="Last 4 digit on Card "
                           fullWidth
@@ -267,7 +267,7 @@ const PaymentDetails = ({
                             })
                           }
                         />
-                        </Grid>
+                        </Grid> */}
                          <Grid item xs={12} sm={3}>
                         <TextField
                           label="Card Type"
@@ -413,7 +413,7 @@ const PaymentDetails = ({
                 )}
                 {paymentDetails.fullMode === "card" && (
                   <>
-                  <Grid item xs={12} sm={3}>
+                  {/* <Grid item xs={12} sm={3}>
                     <TextField
                       label="Last 4 digit on Card"
                       fullWidth
@@ -425,7 +425,7 @@ const PaymentDetails = ({
                         })
                       }
                     />
-                    </Grid>
+                    </Grid> */}
                     <Grid item xs={12} sm={3}>
                     <TextField
                           label="Card Type"

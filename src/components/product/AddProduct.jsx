@@ -115,11 +115,11 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       setSnackbarOpen(true);
       return;
     }
-    if (form.hsnCode.length < 6 || form.hsnCode.length > 8) {
-      setSnackbarMessage("HSN code must be 6 to 8 digits!");
-      setSnackbarOpen(true);
-      return;
-    }
+    // if (form.hsnCode.length < 6 || form.hsnCode.length > 8) {
+    //   setSnackbarMessage("HSN code must be 6 to 8 digits!");
+    //   setSnackbarOpen(true);
+    //   return;
+    // }
 
     const product = {
       ...form,

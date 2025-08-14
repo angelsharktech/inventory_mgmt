@@ -26,8 +26,11 @@ import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
 import PaginationComponent from "../shared/PaginationComponent";
 import FilterData from "../shared/FilterData";
+import { useAuth } from "../../context/AuthContext";
+import { getUserById } from "../../services/UserService";
 
 const CategoryList = () => {
+  const {webuser} = useAuth();
   const [rows, setRows] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -49,12 +52,14 @@ const CategoryList = () => {
 
   const fetchCategories = async () => {
     try {
+      const result = await getUserById(webuser.id);
       const res = await getAllCategories();
+      
       if (res.success) {
         const flattened = [];
 
         res.data
-          .filter((cat) => cat.parent) 
+          .filter((cat) => cat.parent && cat?.organization_id === result.organization_id?._id) 
           .forEach((cat) => {
             flattened.push({
               id: cat._id,
@@ -67,7 +72,7 @@ const CategoryList = () => {
                   : null,
             });
           });
-
+          
         setRows(flattened);
       }
     } catch (err) {
