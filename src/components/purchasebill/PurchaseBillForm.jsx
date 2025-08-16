@@ -23,7 +23,11 @@ import {
   getUserById,
   registerUser,
 } from "../../services/UserService";
-import { getAllProducts } from "../../services/ProductService";
+import {
+  addProducts,
+  getAllProducts,
+  updateInventory,
+} from "../../services/ProductService";
 import { addPayment } from "../../services/PaymentModeService";
 import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
@@ -33,6 +37,7 @@ import {
   addPurchaseBill,
   deletePurchaseBill,
 } from "../../services/PurchaseBillService";
+import { getAllCategories } from "../../services/CategoryService";
 
 const PurchaseBillForm = ({
   setShowPrint,
@@ -64,6 +69,8 @@ const PurchaseBillForm = ({
       gst: 0,
       discountPercentage: 0,
       discountedPrice: 0,
+      isExisting: false, //16.08.2025
+      category: "", //16.08.2025
     },
   ]);
   const [billType, setBillType] = useState("non-gst");
@@ -88,6 +95,7 @@ const PurchaseBillForm = ({
     dueDate: "",
     financeName: "",
     cardType: "",
+    utrId:"",  // 16.08.25
   });
   const [totals, setTotals] = useState(0);
   const [step, setStep] = useState(1);
@@ -98,6 +106,7 @@ const PurchaseBillForm = ({
   const [mainUser, setMainUser] = useState();
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState({ phone_number: "" });
+  const [categories, setCategories] = useState([]);
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -119,8 +128,27 @@ const PurchaseBillForm = ({
         console.error("Failed to fetch form data:", err);
       }
     };
-    fetchAll();
+    fetchAll();   
   }, []);
+
+useEffect(() => {
+  const fetchCategories = async () => {
+    if (!mainUser?.organization_id?._id) return; // guard
+    try {
+      const res = await getAllCategories();
+      const parentsOnly = res.data.filter(
+        (cat) =>
+          cat.parent === null &&
+          cat.organization_id === mainUser.organization_id._id
+      );
+      setCategories(parentsOnly);
+    } catch (err) {
+      console.error("Error loading categories", err);
+    }
+  };
+
+  fetchCategories();
+}, [mainUser]); // 16.08.25
 
   // Calculating totals
   useEffect(() => {
@@ -230,11 +258,84 @@ const PurchaseBillForm = ({
     }
   };
 
+  // const handleProductChange = (index, field, value) => {
+  //   const updated = [...selectedProducts];
+  //   const item = updated[index];
+
+  //   if (field === "productName") {
+  //     const product = products.find((p) => p.name === value);
+  //     if (product) {
+  //       const price = product.compareAtPrice || 0;
+  //       const discountPrice = product.price;
+  //       updated[index] = {
+  //         ...item,
+  //         _id: product._id,
+  //         productName: product.name,
+  //         hsnCode: product.hsnCode || "",
+  //         price,
+  //         discountPercentage: product.discountPercentage,
+  //         discountedPrice: discountPrice,
+  //         isExisting: true,
+  //       };
+  //     }
+  //   }  else {
+  //     updated[index][field] = value;
+  //   }
+  //   setSelectedProducts(updated);
+  //   // else if (field === "hsnCode") {
+  //   //   const product = products.find((p) => p.hsnCode === value);
+  //   //   if (product) {
+  //   //     const price = product.compareAtPrice || 0;
+  //   //     const discountPrice = product.price;
+  //   //     const discountPercentage = ((price - discountPrice) / price) * 100;
+
+  //   //     updated[index] = {
+  //   //       ...item,
+  //   //       _id: product._id,
+  //   //       productName: product.name,
+  //   //       hsnCode: product.hsnCode,
+  //   //       price,
+  //   //       discountPercentage: discountPercentage,
+  //   //       discountedPrice: discountPrice,
+  //   //     };
+  //   //   }
+  //   // } else if (field === "discountPercentage") {
+  //   //   const discount = parseFloat(value) || 0;
+  //   //   const price = parseFloat(item.price) || 0;
+  //   //   const discountPrice = price - (price * discount) / 100;
+
+  //   //   updated[index] = {
+  //   //     ...item,
+  //   //     discountPercentage: discount.toFixed(0),
+  //   //     discountedPrice: discountPrice,
+  //   //   };
+  //   // } else if (field === "discountedPrice") {
+  //   //   const discountedPrice = parseFloat(value) || 0;
+  //   //   const price = parseFloat(item.price) || 0;
+  //   //   const discountPercentage =
+  //   //     price > 0 ? ((price - discountedPrice) / price) * 100 : 0;
+
+  //   //   updated[index] = {
+  //   //     ...item,
+  //   //     discountedPrice,
+  //   //     discountPercentage: discountPercentage.toFixed(0),
+  //   //   };
+  //   // }
+
+  // };
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
     const item = updated[index];
 
     if (field === "productName") {
+      // always update what user types
+      updated[index] = {
+        ...item,
+        productName: value,
+        isExisting: false, // assume not existing first
+      };
+
+      // now check if this product exists in DB list
       const product = products.find((p) => p.name === value);
       if (product) {
         const price = product.compareAtPrice || 0;
@@ -245,25 +346,9 @@ const PurchaseBillForm = ({
           productName: product.name,
           hsnCode: product.hsnCode || "",
           price,
-          discountPercentage: product.discountPercentage,
+          discountPercentage: product.discountPercentage || 0,
           discountedPrice: discountPrice,
-        };
-      }
-    } else if (field === "hsnCode") {
-      const product = products.find((p) => p.hsnCode === value);
-      if (product) {
-        const price = product.compareAtPrice || 0;
-        const discountPrice = product.price;
-        const discountPercentage = ((price - discountPrice) / price) * 100;
-
-        updated[index] = {
-          ...item,
-          _id: product._id,
-          productName: product.name,
-          hsnCode: product.hsnCode,
-          price,
-          discountPercentage: discountPercentage,
-          discountedPrice: discountPrice,
+          isExisting: true,
         };
       }
     } else if (field === "discountPercentage") {
@@ -290,6 +375,7 @@ const PurchaseBillForm = ({
     } else {
       updated[index][field] = value;
     }
+
     setSelectedProducts(updated);
   };
 
@@ -304,6 +390,7 @@ const PurchaseBillForm = ({
         gst: 0,
         discountPercentage: 0,
         discountedPrice: 0,
+        category: "", //16.08.2025
       },
     ]);
   };
@@ -368,15 +455,44 @@ const PurchaseBillForm = ({
         const payload = {
           ...vendor,
           organization_id: mainUser.organization_id?._id,
-          email:vendor.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
-          password:vendor.first_name.replace(/\s+/g, "").toLowerCase()+"@example.com",
+          email:
+            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
+            "@example.com",
+          password:
+            vendor.first_name.replace(/\s+/g, "").toLowerCase() +
+            "@example.com",
           role_id: vendorRole._id,
           position_id: vendorposition._id,
         };
         const res = await registerUser(payload);
         finalVendor = { ...vendor, _id: res.user.id };
       }
+      // 16.08.2025
+      for (let prod of selectedProducts) {
+        if (!prod.isExisting) {
+          const newProductPayload = {
+            name: prod.productName,
+            category: prod.category,
+            hsnCode: prod.hsnCode,
+            price: prod.discountedPrice,
+            compareAtPrice: prod.price,
+            category: prod.category, 
+            quantity: prod.qty,
+            organization_id: mainUser.organization_id?._id,
+            status: "active",
+          };
+          const res = await addProducts(newProductPayload);
+          prod._id = res.data._id; // update with new product id
+          prod.isExisting = true; // mark as saved
+        } else {
+          const updatePayload = {
+            quantity: Number(prod.qty) || 0,
+            action: "add", // or "add" if you want to increase instead of overwrite
+          };
 
+          await updateInventory(prod._id, updatePayload);
+        }
+      }
       const finalProducts = selectedProducts.map((product) => ({
         _id: product._id,
         name: product.productName,
@@ -396,7 +512,8 @@ const PurchaseBillForm = ({
         paymentType: paymentType,
         advance: paymentDetails.advance,
         balance: paymentDetails.balance,
-        balancePayMode:paymentDetails.balancePayMode +'-'+ paymentDetails.financeName ,
+        balancePayMode:
+          paymentDetails.balancePayMode + "-" + paymentDetails.financeName,
         fullPaid: paymentDetails.fullPaid,
         subtotal: totals.subtotal,
         discount: 0,
@@ -413,7 +530,7 @@ const PurchaseBillForm = ({
         status: "draft",
       };
       console.log("Bill Payload:", billPayload);
-      
+
       const res = await addPurchaseBill(billPayload);
       if (res.success === false) {
         setSnackbarMessage(res.message || "Failed to create purchase bill");
@@ -491,13 +608,22 @@ const PurchaseBillForm = ({
             };
           } else if (
             paymentDetails.advpaymode.toLowerCase() === "finance" ||
-            paymentDetails.balancePayMode.toLowerCase().includes('finance') ||
+            paymentDetails.balancePayMode.toLowerCase().includes("finance") ||
             paymentDetails.fullMode.toLowerCase() === "finance"
           ) {
             paymentPayload = {
               ...paymentPayload,
               financeName: paymentDetails.financeName,
             };
+          }else if (
+            paymentDetails.advpaymode.toLowerCase() === "online transfer" ||
+            paymentDetails.balancePayMode.toLowerCase()==="online transfer" ||
+            paymentDetails.fullMode.toLowerCase() === "online transfer"
+          ) {
+            paymentPayload = {
+              ...paymentPayload,
+              utrId: paymentDetails.utrId,
+            };  // 16.08.25
           } else {
             paymentPayload = {
               ...paymentPayload,
@@ -602,6 +728,7 @@ const PurchaseBillForm = ({
           handleProductChange={handleProductChange}
           handleAddProduct={handleAddProduct}
           handleRemoveProduct={handleRemoveProduct}
+          categories={categories}   // 16.08.25
         />
       )}
 

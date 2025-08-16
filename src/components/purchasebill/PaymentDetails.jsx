@@ -87,6 +87,7 @@ const PaymentDetails = ({
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
                     <MenuItem value="finance">Finance</MenuItem>
+                     <MenuItem value="online transfer">E-Payment</MenuItem> {/*// 16.08.25 */}
                   </TextField>
                 </Grid>
 
@@ -115,6 +116,21 @@ const PaymentDetails = ({
                         setPaymentDetails({
                           ...paymentDetails,
                           financeName: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
+                {paymentDetails.advpaymode === "online transfer" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Transaction Id"
+                      fullWidth
+                      value={paymentDetails.utrId || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          utrId: e.target.value,
                         })
                       }
                     />
@@ -235,6 +251,7 @@ const PaymentDetails = ({
                     <MenuItem value="card">Card</MenuItem>
                     <MenuItem value="cheque">Cheque</MenuItem>
                     <MenuItem value="finance">Finance</MenuItem>
+                    <MenuItem value="online transfer">E-Payment</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -346,6 +363,21 @@ const PaymentDetails = ({
                     />
                   </Grid>
                 )}
+                 {paymentDetails.balancePayMode === "online transfer" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Transaction Id"
+                      fullWidth
+                      value={paymentDetails.utrId || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          utrId: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
                 <TextField
                   label="End Date"
                   type="date"
@@ -394,6 +426,7 @@ const PaymentDetails = ({
                 <MenuItem value="card">Card</MenuItem>
                 <MenuItem value="cheque">Cheque</MenuItem>
                 <MenuItem value="finance">Finance</MenuItem>
+                 <MenuItem value="online transfer">E-Payment</MenuItem>
               </TextField>
             </Grid>
             {paymentDetails.fullMode === "upi" && (
@@ -426,6 +459,21 @@ const PaymentDetails = ({
                 />
               </Grid>
             )}
+            {paymentDetails.fullMode === "online transfer" && (
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Transaction Id"
+                      fullWidth
+                      value={paymentDetails.utrId || ""}
+                      onChange={(e) =>
+                        setPaymentDetails({
+                          ...paymentDetails,
+                          utrId: e.target.value,
+                        })
+                      }
+                    />
+                  </Grid>
+                )}
             {paymentDetails.fullMode === "card" && (
               <>
                 {/* <Grid item xs={12} sm={3}>

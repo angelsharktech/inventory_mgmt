@@ -111,7 +111,7 @@ const Home = ({ setSelectedTab }) => {
 
     const products = prod.data.filter((prod)=> prod?.organization_id === user.organization_id._id)
   
-    const categoryCount = categories.data.filter((cat) => Array.isArray(cat.children) && cat.children.length > 0).length;
+    const categoryCount = categories.data.filter((cat) => Array.isArray(cat.children) && cat.children.length > 0 && cat?.organization_id === user.organization_id._id).length;
   
     setCounts({
       vendors: vendors.length,

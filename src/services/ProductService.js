@@ -66,4 +66,12 @@ export const deleteProduct = async (id) => {
   }
 };
 
-
+export const updateInventory = async (id, data) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/${id}/inventory`, data, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error("Error updating inventory for Product :", error);
+    throw error;
+  }
+};

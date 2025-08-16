@@ -48,6 +48,9 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
     bankName: "",
     chequeNumber: "",
     fullMode: "", // for full payment if needed
+    utrId: "", // for online transfer 16.08.25
+    financeName: "", //16.08.25
+    balancePayMode: "",
   });
 
   useEffect(() => {
@@ -55,13 +58,33 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
       try {
         const res = await getSaleBillById(data?._id);
         const billData = res.data;
-        setBill(billData);
-        setAdvance(Number(billData.advance || 0));
-        const calculatedBalance =
-          Number(billData.grandTotal || 0) -
-          Number(billData.fullPaid || 0) -
-          Number(billData.advance || 0);
-        setBalance(calculatedBalance);
+        if (billData.balancePayMode.toLowerCase().includes("finance")) {
+          // Extract finance name
+          const parts = billData.balancePayMode.split("-");
+          const financeName = parts.length > 1 ? parts[1] : "";
+          console.log(parts, financeName);
+
+          setPaymentDetails({
+            ...paymentDetails,
+            advpaymode: parts[0],
+            financeName: financeName,
+          });
+          setBill({
+            ...billData,
+            paymentType: "full",
+            fullPaid: billData.grandTotal || 0,
+          });
+          setAdvance(billData.balance);
+          setBalance(0);
+        } else {
+          setBill(billData);
+          setAdvance(Number(billData.advance || 0));
+          const calculatedBalance =
+            Number(billData.grandTotal || 0) -
+            Number(billData.fullPaid || 0) -
+            Number(billData.advance || 0);
+          setBalance(calculatedBalance);
+        }
       } catch (err) {
         console.error("Error loading bill by ID", err);
       }
@@ -71,27 +94,72 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
       fetchBill();
     }
   }, [data]);
+
   useEffect(() => {
     const fullPayment = balance === 0 ? bill?.grandTotal : 0;
     setFullPay(fullPayment);
   }, [advance, balance]);
 
   const handleAdvanceChange = async (e) => {
-    const newAdvance = parseFloat(e.target.value || "0");
-    setAdvance(newAdvance);
+    if (bill?.balancePayMode?.toLowerCase().includes("finance")) {
+      return;
+    } // 16.08.25
 
-    const newBalance = (bill?.grandTotal || 0) - (bill?.advance + newAdvance);
-    setBalance(newBalance);
+    const newAdvance = parseFloat(e.target.value || "0");
+
+    // Calculate total advance (existing advance + new advance)
+    const totalAdvance = (bill?.advance || 0) + newAdvance;
+
+    // Calculate new balance
+    const newBalance =
+      (bill?.grandTotal || 0) - totalAdvance - (bill?.fullPaid || 0);
+
+    setAdvance(newAdvance); // Store just the new advance amount
+
+    if (newBalance <= 0) {
+      setBalance(0);
+      setFullPay(bill?.grandTotal || 0);
+    } else {
+      setBalance(newBalance);
+      setFullPay(0);
+    }
   };
 
   const updateBill = async () => {
     try {
-      const updatedData = {
-        advance: advance + bill.advance,
-        balance: balance,
-        paymentType: balance > 0 ? "advance" : "full",
-        fullpaid: fullPay,
-      };
+      const billTotal = bill?.grandTotal || 0;
+      let updatedData = {};
+      let paymentType = "";
+      let financeName = "";
+
+      // Special case: Finance
+      if (bill?.balancePayMode?.toLowerCase().includes("finance")) {
+        const parts = bill.balancePayMode.split("-");
+        financeName = parts.length > 1 ? parts[1] : "";
+
+        updatedData = {
+          advance: 0,
+          balance: 0,
+          paymentType: "full",
+          fullPaid: billTotal,
+        };
+        paymentType = "full";
+      } else {
+        // Normal case
+        const newAdvance = advance || 0;
+        const totalAdvance = (bill?.advance || 0) + newAdvance;
+        const remainingBalance = billTotal - totalAdvance;
+
+        const isFullPayment = remainingBalance <= 0;
+
+        updatedData = {
+          advance: isFullPayment ? 0 : totalAdvance,
+          balance: isFullPayment ? 0 : remainingBalance,
+          paymentType: isFullPayment ? "full" : "advance",
+          fullPaid: isFullPayment ? billTotal : 0,
+        };
+        paymentType = updatedData.paymentType;
+      }
 
       const res = await updateSaleBill(bill._id, updatedData);
       if (res.success === true) {
@@ -106,11 +174,12 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
             paymentType === "advance"
               ? paymentDetails.advpaymode
               : paymentDetails.fullMode,
-          amount: paymentType === "advance" ? advance : bill?.grandTotal || 0,
+          // amount: paymentType === "advance" ? advance : bill?.grandTotal || 0,
+          amount: advance,
           client_id: bill?.bill_to?._id, // customer_id
           salebill: bill?._id, // sale_bill_id
           organization: bill?.org?._id || bill?.organization?._id, // fallback if org is saved in different path
-        billType: "sale",
+          billType: "sale",
         };
 
         // Add payment mode-specific fields
@@ -121,6 +190,21 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
         } else if (selectedMode === "cheque") {
           paymentPayload.bankName = paymentDetails.bankName;
           paymentPayload.chequeNumber = paymentDetails.chequeNumber;
+        }
+        if (
+          paymentDetails.advpaymode.toLowerCase() === "online transfer" ||
+          paymentDetails.balancePayMode.toLowerCase() === "online transfer" ||
+          paymentDetails.fullMode.toLowerCase() === "online transfer"
+        ) {
+          paymentPayload = {
+            ...paymentPayload,
+            utrId: paymentDetails.utrId,
+          };
+        } else if (
+          paymentDetails.advpaymode === "finance" ||
+          paymentDetails.fullMode === "finance"
+        ) {
+          paymentPayload.financeName = paymentDetails.financeName;
         } else {
           paymentPayload.description = `${
             paymentType === "advance" ? "Advance" : "Full"
@@ -142,8 +226,8 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
       }
     } catch (error) {
       console.log(error);
-       setSnackbarMessage(error);
-        setSnackbarOpen(true);
+      setSnackbarMessage(error);
+      setSnackbarOpen(true);
     }
   };
   return (
@@ -257,7 +341,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                     <TextField
                       label="Remaining amount"
                       type="number"
-                      // value={advance}
+                      value={advance}
                       onChange={handleAdvanceChange}
                       fullWidth
                     />
@@ -293,6 +377,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                       <MenuItem value="upi">UPI</MenuItem>
                       <MenuItem value="card">Card</MenuItem>
                       <MenuItem value="cheque">Cheque</MenuItem>
+                      <MenuItem value="finance">Finance</MenuItem>
                     </TextField>
                   </Grid>
 
@@ -321,6 +406,21 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                           setPaymentDetails({
                             ...paymentDetails,
                             cardLastFour: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.advpaymode === "finance" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Finance Name"
+                        fullWidth
+                        value={paymentDetails.financeName}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            financeName: e.target.value,
                           })
                         }
                       />
@@ -389,6 +489,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                       <MenuItem value="upi">UPI</MenuItem>
                       <MenuItem value="card">Card</MenuItem>
                       <MenuItem value="cheque">Cheque</MenuItem>
+                      <MenuItem value="finance">Finance</MenuItem>
                     </TextField>
                   </Grid>
                   {paymentDetails.fullMode === "upi" && (
@@ -416,6 +517,21 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                           setPaymentDetails({
                             ...paymentDetails,
                             cardLastFour: e.target.value,
+                          })
+                        }
+                      />
+                    </Grid>
+                  )}
+                  {paymentDetails.fullMode === "finance" && (
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Finance Nane"
+                        fullWidth
+                        value={paymentDetails.financeName}
+                        onChange={(e) =>
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            financeName: e.target.value,
                           })
                         }
                       />

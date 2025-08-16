@@ -17,6 +17,7 @@ const ProductDetails = ({
   handleProductChange,
   handleAddProduct,
   handleRemoveProduct,
+  categories,  // 16.08.25
 }) => {
   // Keep refs for each product name dropdown
   const productRefs = useRef([]);
@@ -36,52 +37,43 @@ const ProductDetails = ({
       <Divider />
       {selectedProducts.map((item, index) => (
         <Grid container spacing={2} key={index} mt={4}>
+          <Grid item xs={12} sm={2}> {/* Category Dropdown 16.08.25 */}
+            <TextField
+              select
+              label="Category"
+              sx={{ width: "150px" }}
+              value={item.category}
+              onChange={(e) =>
+                handleProductChange(index, "category", e.target.value)
+              }
+            >
+              {categories.map((cat) => (
+                <MenuItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
           <Grid item xs={12} sm={3}>
             <TextField
               sx={{ width: "200px" }}
-              select
               value={item.productName}
               onChange={(e) =>
                 handleProductChange(index, "productName", e.target.value)
               }
               label="Select Product"
-               inputRef={(el) => (productRefs.current[index] = el)} // ✅ attach ref
-              SelectProps={{
-                MenuProps: {
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300, // set dropdown height
-                      overflowY: "auto", // make it scrollable
-                    },
-                  },
-                },
-              }}
-            >
-              {products?.map((prod) => (
-                <MenuItem key={prod._id} value={prod.name}>
-                  {prod.name}
-                </MenuItem>
-              ))}
-            </TextField>
+              inputRef={(el) => (productRefs.current[index] = el)} // ✅ attach ref
+            />
           </Grid>
           <Grid item xs={12} sm={1}>
             <TextField
-              select
               label="HSN"
               value={item.hsnCode}
               onChange={(e) =>
                 handleProductChange(index, "hsnCode", e.target.value)
               }
               sx={{ width: "150px" }}
-            >
-              {[...new Set(products?.map((prod) => prod.hsnCode))].map(
-                (hsn) => (
-                  <MenuItem key={hsn} value={hsn}>
-                    {hsn}
-                  </MenuItem>
-                )
-              )}
-            </TextField>
+            ></TextField>
           </Grid>
           <Grid item xs={12} sm={1}>
             <TextField
