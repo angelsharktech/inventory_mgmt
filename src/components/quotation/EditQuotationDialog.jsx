@@ -34,7 +34,6 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  
 
   // Load quotation data into form
   useEffect(() => {
@@ -160,8 +159,6 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
       console.error("Failed to update quotation", error);
     }
   };
-
-  
 
   return (
     <>
@@ -324,7 +321,7 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
 
                 {/* Add Product Button */}
                 <Grid item xs={12}>
-                  <Button startIcon={<Add />} onClick={handleAddProduct}>
+                  <Button startIcon={<Add />} onClick={handleAddProduct} sx={{ color: "#2F4F4F" }}>
                     Add Product
                   </Button>
                 </Grid>
@@ -359,10 +356,14 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} color="secondary">
+          <Button onClick={onClose} sx={{ color: "#2F4F4F" }}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+          >
             Save
           </Button>
         </DialogActions>
@@ -383,7 +384,6 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-      
     </>
   );
 };

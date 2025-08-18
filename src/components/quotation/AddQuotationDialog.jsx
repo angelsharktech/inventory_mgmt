@@ -344,7 +344,7 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
               </Grid>
 
               <Grid item xs={12}>
-                <Button startIcon={<Add />} onClick={handleAddProduct}>
+                <Button startIcon={<Add />} onClick={handleAddProduct} sx={{ color: "#2F4F4F" }}>
                   Add Product
                 </Button>
               </Grid>
@@ -362,8 +362,8 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={onClose} sx={{ color: "#2F4F4F" }}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained" sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}>
             Save
           </Button>
         </DialogActions>

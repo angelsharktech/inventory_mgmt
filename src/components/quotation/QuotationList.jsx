@@ -142,8 +142,7 @@ const QuotationList = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setOpenAddDialog(true)}
-          sx={{background: "linear-gradient(135deg, #182848, #324b84ff)",
-        color: "white"}}
+          sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
         >
           Add Quotation
         </Button>
