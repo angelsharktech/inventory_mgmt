@@ -476,7 +476,6 @@ useEffect(() => {
             hsnCode: prod.hsnCode,
             price: prod.discountedPrice,
             compareAtPrice: prod.price,
-            category: prod.category, 
             quantity: prod.qty,
             organization_id: mainUser.organization_id?._id,
             status: "active",

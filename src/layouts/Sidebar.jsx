@@ -39,6 +39,7 @@ const navItems = [
   { label: "Purchase Bill", icon: <AccountBalanceWalletIcon /> },
   { label: "Sale Bill", icon: <ReceiptLongIcon /> },
   { label: "Bill Reports", icon: <AssessmentIcon />, hasDropdown: true },
+  { label: "Quotation",  },
   // { label: "Logout", icon: <LogoutIcon /> },
 ];
 

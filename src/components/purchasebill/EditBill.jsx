@@ -148,6 +148,7 @@ const updateBill = async () => {
         fullPaid: billTotal,
       };
       paymentType = "full";
+      paymentDetails.fullMode = "finance"; // Set full payment mode to finance 18.08.25
     } else {
       // Normal case
       const newAdvance = advance || 0;
@@ -186,7 +187,6 @@ const updateBill = async () => {
           organization: bill?.org?._id || bill?.organization?._id, // fallback if org is saved in different path
           billType: "purchase",
         };
-        console.log("Payment Payload:", paymentPayload);
         // Add payment mode-specific fields
         const selectedMode = paymentPayload.paymentType?.toLowerCase();
 
@@ -212,8 +212,6 @@ const updateBill = async () => {
           } payment for Bill`;
         }
         
-        console.log("Payment Payload:", paymentPayload);
-
         try {
           const paymentResult = await addPayment(paymentPayload);
           if (paymentResult?.success) {

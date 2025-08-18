@@ -58,7 +58,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
       try {
         const res = await getSaleBillById(data?._id);
         const billData = res.data;
-        if (billData.balancePayMode.toLowerCase().includes("finance")) {
+        if (billData.balancePayMode?.toLowerCase().includes("finance")) {
           // Extract finance name
           const parts = billData.balancePayMode.split("-");
           const financeName = parts.length > 1 ? parts[1] : "";
@@ -341,7 +341,7 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
                     <TextField
                       label="Remaining amount"
                       type="number"
-                      value={advance}
+                      // value={advance}
                       onChange={handleAdvanceChange}
                       fullWidth
                     />

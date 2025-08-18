@@ -13,6 +13,7 @@ import SaleBillReport from "../components/reports/SaleBillReport";
 import PurchaseBillReport from "../components/reports/PurchaseBillReport";
 import Home from "./Home";
 import HsnReport from "../components/reports/HsnReport";
+import Quotation from "../components/Quotation";
 
 
 
@@ -51,6 +52,9 @@ const Dashboard = () => {
 
       case "HSN Report":
         return <HsnReport />
+
+      case "Quotation":
+        return <Quotation />
 
       default:
         return <h2></h2>;
