@@ -156,12 +156,12 @@ const Login = () => {
         sx={{
           textAlign: "center",
           py: 2,
-          color: "rgba(0,0,0,0.6)",
+          color: "black",
           fontSize: "1 rem",
         }}
       >
         © {new Date().getFullYear()} Angel Shark IT Solution. All rights reserved. Visit our website 
-        <a href='https://www.angelshark.in/' target="blank" style={{color:'rgba(0,0,0,0.6)'}}> www.angelshark.in </a>
+        <a href='https://www.angelshark.in/' target="blank" style={{color:'black'}}> www.angelshark.in </a>
       </Box>
 
       <Snackbar
