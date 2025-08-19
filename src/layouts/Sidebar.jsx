@@ -27,7 +27,7 @@ import {
   ExpandLess,
   ExpandMore,
 } from "@mui/icons-material";
-import RequestPageIcon from '@mui/icons-material/RequestPage';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -40,7 +40,7 @@ const navItems = [
   { label: "Purchase Bill", icon: <AccountBalanceWalletIcon /> },
   { label: "Sale Bill", icon: <ReceiptLongIcon /> },
   { label: "Bill Reports", icon: <AssessmentIcon />, hasDropdown: true },
-  { label: "Quotation", icon: <RequestPageIcon /> },
+  { label: "Quotation", icon: <CurrencyRupeeIcon /> },
   // { label: "Logout", icon: <LogoutIcon /> },
 ];
 
