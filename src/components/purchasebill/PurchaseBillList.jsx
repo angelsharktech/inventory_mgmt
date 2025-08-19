@@ -84,7 +84,6 @@ const PurchaseBillList = () => {
       const FilteredBill = allBills.filter((bill) => {
         return bill.status === "draft";
       });
-      console.log("Filtered Bills:", FilteredBill);
       
       setBills(FilteredBill);
     }
@@ -130,9 +129,7 @@ const PurchaseBillList = () => {
   };
   const handleCancelBill = async (id) => {
     try {
-      console.log("Cancelling bill with ID:", id);
       const response = await cancelPurchaseBill(id, { status: "cancelled" });
-      console.log(response);
       if (response.success === true) {
         setSnackbarMessage("Bill cancelled successfully!");
         setSnackbarOpen(true);
@@ -181,7 +178,7 @@ const PurchaseBillList = () => {
             /> */}
 
             <Button
-              accessKey="p"
+              // accessKey="p"
               variant="contained"
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}

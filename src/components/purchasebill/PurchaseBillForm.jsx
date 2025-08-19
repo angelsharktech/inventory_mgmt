@@ -528,7 +528,6 @@ useEffect(() => {
         createdBy: mainUser._id,
         status: "draft",
       };
-      console.log("Bill Payload:", billPayload);
 
       const res = await addPurchaseBill(billPayload);
       if (res.success === false) {

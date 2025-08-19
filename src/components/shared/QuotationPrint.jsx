@@ -1,28 +1,27 @@
+import { Paper } from "@mui/material";
+
 import React from "react";
 
-const QuotationPrint = ({ quotation }) => {
+const QuotationPrint = React.forwardRef(({ quotation }, ref) => {
   return (
-    <div
-      id="printArea"
-      style={{
-        width: "800px",
-        margin: "0 auto",
-        padding: "20px",
-        border: "2px solid green",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <Paper
+        ref={ref}
+        className="print-only"
+
+        // elevation={3}
+        sx={{ maxWidth: 800, mx: "auto", p: 4 ,mt: 2, height: 960,border: "1px solid green" }}
+      >
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
-          <h2 style={{ color: "orange", margin: "0" }}>{quotation?.organization_id?.name}</h2>
+          <h2 style={{ color: "green", margin: "5" }}>{quotation?.organization_id?.name}</h2>
           <p>{quotation?.createdBy?.first_name +" "+ quotation?.createdBy?.last_name}</p>
           <p>{quotation?.createdBy?.address}</p>
           <p>{quotation?.createdBy?.phone_number}</p>
           
         </div>
         <div style={{ textAlign: "right" }}>
-          <h2 style={{ color: "green", margin: "0" }}>QUOTATION</h2>
+          <h2 style={{ color: "green", margin: "5" }}>QUOTATION</h2>
           <table style={{ borderCollapse: "collapse", marginTop: "10px" }} border="1" cellPadding="5">
             <tbody>
               <tr>
@@ -74,11 +73,11 @@ const QuotationPrint = ({ quotation }) => {
         <tbody>
           {quotation.products.map((p, i) => (
             <tr key={i}>
-              <td>{p.productName}</td>
-              <td>{p.quantity}</td>
-              <td>{p.unitPrice}</td>
-              <td>{p.tax}</td>
-              <td>{p.total.toFixed(2)}</td>
+              <td align="center">{p.productName}</td>
+              <td align="center">{p.quantity}</td>
+              <td align="center">{p.unitPrice}</td>
+              <td align="center">{p.tax}</td>
+              <td align="center">{p.total.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
@@ -96,12 +95,11 @@ const QuotationPrint = ({ quotation }) => {
           </div>
         </div> */}
 
-            <p style={{ marginTop: "30px" }}>
+            <p style={{ marginTop: "50px" }}>
               Customer Acceptance (sign below):
               <br />
               X _____________________________
-              <br />
-              Print Name:
+             
             </p>
 
         {/* Totals */}
@@ -133,11 +131,11 @@ const QuotationPrint = ({ quotation }) => {
         </div>
       </div>
 
-      <p style={{ textAlign: "center", marginTop: "20px", fontStyle: "italic" }}>
-        Thank You For Your Business!
+      <p style={{ textAlign: "center", marginTop: "150px", fontStyle: "italic" }}>
+        This quotation is valid for 30 days from quotation date!
       </p>
-    </div>
+    </Paper>
   );
-};
+});
 
 export default QuotationPrint;

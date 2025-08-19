@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./context/AuthContext";
+import { ShortcutProvider } from "./context/ShortcutContext";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -11,7 +12,9 @@ function App() {
     <>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <ShortcutProvider>
+            <AppRoutes />
+          </ShortcutProvider>
         </AuthProvider>
       </BrowserRouter>
     </>

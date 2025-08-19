@@ -107,7 +107,6 @@ const AddCategory = ({ open, handleClose, refresh }) => {
         };
 
         const res = await addCategories(payload);
-        console.log("main res", res);
         
         if (res) {
           setSnackbarMessage("Category Added!");

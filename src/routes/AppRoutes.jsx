@@ -18,7 +18,6 @@ const AppRoutes = () => {
       <Route path="/register" element={<Registration />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
     
-      {/* <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
 
       <Route path="*" element={<h1>404 - Not Found</h1>} />
     </Routes>

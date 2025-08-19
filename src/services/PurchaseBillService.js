@@ -11,9 +11,7 @@ const getAuthHeader = () => {
 };
 
 export const addPurchaseBill = async (billData) => {
-  try {
-    console.log("Adding purchase bill with data:", billData);
-    
+  try {    
     const response = await axios.post(BASE_URL, billData, getAuthHeader());
     return response.data;
   } catch (error) {

@@ -130,7 +130,6 @@ const SaleBillList = () => {
   const handleCancelBill = async (id) => {
     try {
       const response = await cancelSaleBill(id, { status: "cancelled" });
-      console.log(response);
       if (response.success === true) {
         setSnackbarMessage("Bill cancelled successfully!");
         setSnackbarOpen(true);
@@ -170,7 +169,7 @@ const SaleBillList = () => {
             />
 
             <Button
-              accessKey="s"
+              // accessKey="s"
               variant="contained"
               sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
               onClick={handleOpen}

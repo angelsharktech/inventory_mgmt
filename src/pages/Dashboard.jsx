@@ -1,5 +1,5 @@
 // Dashboard.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Toolbar, Grid, Paper, Typography, Stack } from "@mui/material";
 import Sidebar from "../layouts/Sidebar";
 import Navbar from "../layouts/Navbar";
@@ -14,11 +14,30 @@ import PurchaseBillReport from "../components/reports/PurchaseBillReport";
 import Home from "./Home";
 import HsnReport from "../components/reports/HsnReport";
 import Quotation from "../components/Quotation";
+import GlobalModals from "../components/shared/GlobalModals";
+import { useShortcuts } from "../context/ShortcutContext";
 
 
 
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState("Dashboard");
+
+  // // Global keyboard shortcuts
+  // useEffect(() => {
+  //   const handleKeyDown = (e) => {
+  //     if (e.altKey && e.key === "s") {
+  //       e.preventDefault();
+  //       setIsSaleBillOpen(true); // open SaleBill modal
+  //     }
+  //     if (e.altKey && e.key === "q") {
+  //       e.preventDefault();
+  //       setIsQuotationOpen(true); // open Quotation modal
+  //     }
+  //   };
+
+  //   window.addEventListener("keydown", handleKeyDown);
+  //   return () => window.removeEventListener("keydown", handleKeyDown);
+  // }, []);
 
   const renderContent = () => {
     switch (selectedTab) {
@@ -65,6 +84,7 @@ const Dashboard = () => {
     <Box sx={{ display: "flex" }}>
       <Navbar />
       <Sidebar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+      <GlobalModals />
       <Box
         component="main"
         sx={{
@@ -75,9 +95,11 @@ const Dashboard = () => {
            marginLeft: "230px", 
         }}
       >
+      
         <Toolbar />
         {renderContent()}
       </Box>
+        {/* Global Modals always available */}
     </Box>
   );
 };

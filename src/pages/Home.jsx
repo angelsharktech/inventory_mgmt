@@ -216,7 +216,7 @@ const Home = ({ setSelectedTab }) => {
           </Typography>
           <Box display={"flex"} justifyContent={"flex-end"} gap={2}>
           <Button
-           accessKey="s"
+          //  accessKey="s"
             variant="contained"
             sx={{
               backgroundColor: "#2F4F4F",
@@ -227,7 +227,7 @@ const Home = ({ setSelectedTab }) => {
             Create Sale bill (Alt+S)
           </Button>
           <Button
-          accessKey="p"
+          // accessKey="p"
             variant="contained"
             sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
             onClick={handlePurchaseOpen}

@@ -36,10 +36,8 @@ const ProductDetails = ({
       if (!code) return;
 
       try {
-        console.log("Scanning code:", code);
 
         const product = await getProductByBarcode(code);
-        console.log("Scanned product:", product);
 
         if (product) {
           setSelectedProducts((prev) => {

@@ -62,8 +62,6 @@ const EditBill = ({ open, data, handleCloseEdit, refresh }) => {
           // Extract finance name
       const parts = billData.balancePayMode.split("-");
       const financeName = parts.length > 1 ? parts[1] : "";
-      console.log(parts , financeName);
-      
           setPaymentDetails({
             ...paymentDetails,
             advpaymode: parts[0],

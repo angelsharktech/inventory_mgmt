@@ -21,7 +21,7 @@ import QuotationPrint from "../shared/QuotationPrint";
 // Example API import
 // import { updateQuotation } from "../../services/quotationService";
 
-const EditQuotationDialog = ({ open, onClose, quotation }) => {
+const EditQuotationDialog = ({ open, onClose, quotation ,refresh}) => {
   const [formData, setFormData] = useState({
     quotationNo: "",
     date: "",
@@ -145,12 +145,13 @@ const EditQuotationDialog = ({ open, onClose, quotation }) => {
     try {
       // call API
       const response = await updateQuotation(quotation._id, formData);
-      if (response.status === "true") {
+      
+      if (response.status === true) {
         setSnackbarOpen(true);
         setSnackbarMessage(response.message);
         refresh();
         onClose();
-      } else {
+      } else {        
         setSnackbarOpen(true);
         setSnackbarMessage(response.message);
         return;

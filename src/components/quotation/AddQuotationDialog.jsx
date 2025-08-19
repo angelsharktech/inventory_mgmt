@@ -18,7 +18,7 @@ import { Delete, Add } from "@mui/icons-material";
 import { addQuotation } from "../../services/QuotationService";
 import QuotationPrint from "../shared/QuotationPrint";
 
-const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
+const AddQuotationDialog = ({ open, handleClose, refresh, mainUser }) => {
   const [formData, setFormData] = useState({
     quotationNo: `Q-${Date.now()}`,
     date: new Date().toISOString().split("T")[0],
@@ -126,7 +126,7 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
             products: [{ productName: "", quantity: 1, unitPrice: 0, tax: 18 }],
           });
 
-          onClose(); //  close dialog after success
+          handleClose(); //  close dialog after success
           refresh(); //  Refresh the list after adding
         } else {
           setSnackbarOpen(true);
@@ -143,7 +143,7 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <Dialog open={open} handleClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>Add Quotation</DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2}>
@@ -362,7 +362,7 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={onClose} sx={{ color: "#2F4F4F" }}>Cancel</Button>
+          <Button onClick={handleClose} sx={{ color: "#2F4F4F" }}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}>
             Save
           </Button>
@@ -372,14 +372,14 @@ const AddQuotationDialog = ({ open, onClose, refresh, mainUser }) => {
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
+        handleClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           severity={
             snackbarMessage.includes("successfully") ? "success" : "error"
           }
-          onClose={() => setSnackbarOpen(false)}
+          handleClose={() => setSnackbarOpen(false)}
           variant="filled"
         >
           {snackbarMessage}
