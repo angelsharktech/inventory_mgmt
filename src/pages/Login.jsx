@@ -79,7 +79,6 @@ function Login() {
           production efficiently.
         </Typography>
       </Box>
-
       {/* Right Side - Login Form */}
       <Box
         flex={1}
