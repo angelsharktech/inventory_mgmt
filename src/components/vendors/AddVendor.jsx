@@ -148,8 +148,8 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         organization_id: mainUser.organization_id?._id,
         email: formData.first_name + "@example.com",
         password: formData.first_name + "@example.com",
-        role_id: vendorRole._id,
-        position_id: vendorposition._id,
+        role_id: vendorRole?._id,
+        position_id: vendorposition?._id,
         // gstRegistered: isGstApplicable
       };
       
