@@ -50,7 +50,7 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
     state: "",
     stateCode: "",
   });
-  const [isGstApplicable, setIsGstApplicable] = useState(false);
+  // const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -126,26 +126,27 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
     }
     const payload = {
       ...formData,
+      gstDetails,
       organization_id: mainUser.organization_id?._id,
       email: formData.first_name + "@example.com",
       password: formData.first_name + "@example.com",
       role_id: customerRole._id,
       position_id: customerposition._id,
-      gstRegistered: isGstApplicable
+      // gstRegistered: isGstApplicable
     };
     try {
       const result = await registerUser(payload);
       
       if (result) {
-        if(isGstApplicable === true){
-           const r = await createGstDetails(result.user.id, gstDetails); 
-           if (!r.data) {
-            await deleteUser(result.user.id);  
-            setSnackbarMessage("Enter Valid GST Details!");
-            setSnackbarOpen(true);
-            return;
-          }
-        }
+        // if(isGstApplicable === true){
+        //    const r = await createGstDetails(result.user.id, gstDetails); 
+        //    if (!r.data) {
+        //     await deleteUser(result.user.id);  
+        //     setSnackbarMessage("Enter Valid GST Details!");
+        //     setSnackbarOpen(true);
+        //     return;
+        //   }
+        // }
         setSnackbarMessage("Customer Added successful!");
         setSnackbarOpen(true);
         refresh();
@@ -161,7 +162,7 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
         address: "",
         city: "",
       });
-      setIsGstApplicable(false);
+      // setIsGstApplicable(false);
       setGstDetails({
         gstNumber: "",
         legalName: "",
@@ -202,7 +203,7 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
               </Grid>
             ))}
           </Grid>
-          <Box mt={2}>
+          {/* <Box mt={2}>
             <label>
               <input
                 type="checkbox"
@@ -212,9 +213,9 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
               />
               Is GST Applicable?
             </label>
-          </Box>
+          </Box> */}
 
-          {isGstApplicable && (
+          {/* {isGstApplicable && ( */}
             <Grid container spacing={2} mt={1}>
               {Object.entries(gstDetails).map(([key, value]) => (
                 <Grid item xs={12} sm={6} key={key}>
@@ -235,15 +236,15 @@ const AddCustomer = ({ open, handleClose, refresh }) => {
                 </Grid>
               ))}
             </Grid>
-          )}
+          {/* )} */}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button onClick={handleClose} sx={{ mr: 2, color: "#2F4F4F" }}>
+            <Button onClick={handleClose} sx={{ mr: 2, color: "#182848" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{background: "linear-gradient(135deg, #182848, #324b84ff)",color: "#fff" }}
               onClick={handleSubmit}
             >
               Save

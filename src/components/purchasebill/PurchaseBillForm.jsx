@@ -1,22 +1,15 @@
+// PurchaseBillForm.jsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  Grid,
-  MenuItem,
-  Radio,
-  RadioGroup,
-  FormControl,
-  FormControlLabel,
-  TextField,
   Typography,
-  IconButton,
-  Divider,
 } from "@mui/material";
-import { Delete } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { getAllPositions } from "../../services/Position";
+import {
+  getAllPositions
+} from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import {
   getAllUser,
@@ -28,10 +21,9 @@ import {
   getAllProducts,
   updateInventory,
 } from "../../services/ProductService";
-import { addPayment } from "../../services/PaymentModeService";
+// import { addPayment } from "../../services/PaymentModeService";
 import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
-import PaymentDetails from "./PaymentDetails";
 import VendorDetails from "./VendorDetails";
 import {
   addPurchaseBill,
@@ -44,12 +36,12 @@ const PurchaseBillForm = ({
   setPrintData,
   setSnackbarOpen,
   setSnackbarMessage,
-  // setInvoiceNumber,
   close,
   refresh,
 }) => {
   const { webuser } = useAuth();
   const navigate = useNavigate();
+
   const [vendor, setVendor] = useState({
     _id: "",
     first_name: "",
@@ -66,15 +58,21 @@ const PurchaseBillForm = ({
       hsnCode: "",
       qty: 1,
       price: 0,
-      gst: 0,
+      gstPercent: 0,
       discountPercentage: 0,
       discountedPrice: 0,
-      isExisting: false, //16.08.2025
-      category: "", //16.08.2025
+      isExisting: false,
+      category: "",
+      cgst: 0,
+      sgst: 0,
+      igst: 0,
     },
   ]);
-  const [billType, setBillType] = useState("non-gst");
+
+  // safer defaults
+  const [billType, setBillType] = useState("nongst");
   const [gstPercent, setGstPercent] = useState(0);
+  const [isWithinState, setIsWithinState] = useState(false);
   const [paymentType, setPaymentType] = useState("full");
   const [paymentDetails, setPaymentDetails] = useState({
     advance: 0,
@@ -95,22 +93,35 @@ const PurchaseBillForm = ({
     dueDate: "",
     financeName: "",
     cardType: "",
-    utrId:"",  // 16.08.25
+    utrId: "",
   });
-  const [totals, setTotals] = useState(0);
+
+  const [totals, setTotals] = useState({
+    subtotal: 0,
+    gstTotal: 0,
+    cgst: 0,
+    sgst: 0,
+    igst: 0,
+    grandTotal: 0,
+  });
+
   const [step, setStep] = useState(1);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
-  const [state, setState] = useState();
   const [mainUser, setMainUser] = useState();
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState({ phone_number: "" });
   const [categories, setCategories] = useState([]);
+  const [state, setState] = useState("Maharashtra");
+  const [gstDetails, setGstDetails] = useState({
+    gstNumber: "",
+    legalName: "",
+    state: "",
+    stateCode: "",
+  });
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
-
+  // load positions/roles/users + main user
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -124,115 +135,121 @@ const PurchaseBillForm = ({
         setRoles(roleData);
         setUsers(userData);
         setMainUser(user);
+        refresh();        
+        handleClose();
       } catch (err) {
         console.error("Failed to fetch form data:", err);
       }
     };
-    fetchAll();   
-  }, []);
+    if (webuser?.id) fetchAll();
+  }, [webuser?.id]);
 
-useEffect(() => {
-  const fetchCategories = async () => {
-    if (!mainUser?.organization_id?._id) return; // guard
-    try {
-      const res = await getAllCategories();
-      const parentsOnly = res.data.filter(
-        (cat) =>
-          cat.parent === null &&
-          cat.organization_id === mainUser.organization_id._id
-      );
-      setCategories(parentsOnly);
-    } catch (err) {
-      console.error("Error loading categories", err);
-    }
-  };
-
-  fetchCategories();
-}, [mainUser]); // 16.08.25
-
-  // Calculating totals
+  // categories
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const userRes = await getUserById(webuser.id);
+        const userData = userRes?.data || userRes;
+        setMainUser(userData);
+
+        const catRes = await getAllCategories();
+        const allCats = catRes?.data?.data ?? catRes?.data ?? [];
+
+        const userOrgId =
+          userData?.organization_id?._id ?? userData?.organization_id ?? null;
+
+        const parentsOnly = allCats.filter((cat) => {
+          const catOrgId =
+            cat?.organization_id?._id ?? cat?.organization_id ?? null;
+          return String(catOrgId) === String(userOrgId);
+        });
+
+        setCategories(parentsOnly);
+      } catch (err) {
+        console.error("Error loading categories", err);
+      }
+    };
+
+    if (webuser?.id) fetchCategories();
+  }, [webuser?.id]);
+
+  // compute totals whenever items / gstPercent / billType / state change
+  useEffect(() => {
+    setIsWithinState(String(state || "").toLowerCase() === "maharashtra");
+
     let subtotal = 0;
     selectedProducts.forEach((item) => {
-      const qty = Number(item.qty);
-      const taxable = qty * item.discountedPrice;
-      subtotal += taxable;
+      const qty = Number(item.qty) || 0;
+      const price = Number(item.discountedPrice) || 0;
+      subtotal += qty * price;
     });
-    const isMaharashtra = state?.toLowerCase() === "maharashtra";
+
+    const isMaharashtra = String(state || "").toLowerCase() === "maharashtra";
     const isGST = billType === "gst";
     let gstTotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
+
     if (isGST) {
-      gstTotal = (subtotal * gstPercent) / 100;
+      const rate = Number(gstPercent) || 0;
+      gstTotal = +(subtotal * (rate / 100));
+      // keep rounding to 2 decimals in totals
       if (isMaharashtra) {
-        cgst = gstPercent / 2;
-        sgst = gstPercent / 2;
+        cgst = +(gstTotal / 2);
+        sgst = +(gstTotal / 2);
       } else {
-        igst = gstTotal;
+        igst = +gstTotal;
       }
     }
-    const grandTotal = subtotal + gstTotal;
+
+    const grandTotal = +(subtotal + gstTotal);
+
     setTotals({
-      subtotal,
-      gstTotal,
-      cgst,
-      sgst,
-      igst,
-      grandTotal,
+      subtotal: +subtotal,
+      gstTotal: +gstTotal,
+      cgst: +cgst,
+      sgst: +sgst,
+      igst: +igst,
+      grandTotal: +grandTotal,
     });
   }, [selectedProducts, gstPercent, billType, state]);
 
-  // Fetch product data
+  // fetch products for selection
   useEffect(() => {
-    fetchProducts();
+    const fetchProducts = async () => {
+      try {
+        const data = await getAllProducts();
+        const prod = (data?.data || []).filter(
+          (p) =>
+            p?.organization_id === mainUser?.organization_id?._id &&
+            p.status === "active"
+        );
+        setProducts(prod);
+      } catch (error) {
+        console.error("Error fetching product data", error);
+      }
+    };
+    if (mainUser) fetchProducts();
   }, [mainUser]);
 
-  const fetchProducts = async () => {
-    try {
-      const data = await getAllProducts();
-      const prod = (data?.data || []).filter(
-        (p) =>
-          p?.organization_id === mainUser?.organization_id?._id &&
-          p.status === "active"
-      );
-      setProducts(prod);
-    } catch (error) {
-      console.error("Error fetching product data", error);
-    }
-  };
+  // vendor selection handlers
   const handleVendorSelection = (value, type) => {
     let selectedVendor = null;
-
-    // Validation
-
     if (type === "phone") {
-      // Search by phone
       const phoneRegex = /^[6-9]\d{9}$/;
-
-      // Update vendor state
-      setVendor((prev) => ({
-        ...prev,
-        phone_number: value,
-      }));
+      setVendor((prev) => ({ ...prev, phone_number: value }));
       if (!phoneRegex.test(value)) {
-        setErrors((prev) => ({
-          ...prev,
-          phone_number: "Invalid mobile number",
-        }));
+        setErrors((prev) => ({ ...prev, phone_number: "Invalid mobile number" }));
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          phone_number: "",
-        }));
+        setErrors((prev) => ({ ...prev, phone_number: "" }));
       }
+
       selectedVendor = users.find(
         (u) =>
           u.phone_number === value && u.role_id.name.toLowerCase() === "vendor"
       );
     } else if (type === "name") {
-      // Search by name
       selectedVendor = users.find(
         (s) =>
           s.first_name === value && s.role_id.name.toLowerCase() === "vendor"
@@ -246,100 +263,41 @@ useEffect(() => {
         address: selectedVendor.address || "",
         phone_number: selectedVendor.phone_number || value,
       });
+      setGstDetails({
+        gstNumber: selectedVendor.gstDetails?.gstNumber || "",
+        legalName: selectedVendor.gstDetails?.legalName || "",
+        state: selectedVendor.gstDetails?.state || "",
+        stateCode: selectedVendor.gstDetails?.stateCode || "",
+      });
       setIsExistingVendor(true);
     } else {
       setVendor((prev) => ({
         _id: "",
-        first_name: type === "name" ? value : prev.first_name, // keep existing name
+        first_name: type === "name" ? value : prev.first_name,
         address: prev.address,
-        phone_number: type === "phone" ? value : prev.phone_number, // update phone
+        phone_number: type === "phone" ? value : prev.phone_number,
       }));
+      setGstDetails({
+        gstNumber: "",
+        legalName: "",
+        state: "",
+        stateCode: "",
+      });
       setIsExistingVendor(false);
     }
   };
 
-  // const handleProductChange = (index, field, value) => {
-  //   const updated = [...selectedProducts];
-  //   const item = updated[index];
-
-  //   if (field === "productName") {
-  //     const product = products.find((p) => p.name === value);
-  //     if (product) {
-  //       const price = product.compareAtPrice || 0;
-  //       const discountPrice = product.price;
-  //       updated[index] = {
-  //         ...item,
-  //         _id: product._id,
-  //         productName: product.name,
-  //         hsnCode: product.hsnCode || "",
-  //         price,
-  //         discountPercentage: product.discountPercentage,
-  //         discountedPrice: discountPrice,
-  //         isExisting: true,
-  //       };
-  //     }
-  //   }  else {
-  //     updated[index][field] = value;
-  //   }
-  //   setSelectedProducts(updated);
-  //   // else if (field === "hsnCode") {
-  //   //   const product = products.find((p) => p.hsnCode === value);
-  //   //   if (product) {
-  //   //     const price = product.compareAtPrice || 0;
-  //   //     const discountPrice = product.price;
-  //   //     const discountPercentage = ((price - discountPrice) / price) * 100;
-
-  //   //     updated[index] = {
-  //   //       ...item,
-  //   //       _id: product._id,
-  //   //       productName: product.name,
-  //   //       hsnCode: product.hsnCode,
-  //   //       price,
-  //   //       discountPercentage: discountPercentage,
-  //   //       discountedPrice: discountPrice,
-  //   //     };
-  //   //   }
-  //   // } else if (field === "discountPercentage") {
-  //   //   const discount = parseFloat(value) || 0;
-  //   //   const price = parseFloat(item.price) || 0;
-  //   //   const discountPrice = price - (price * discount) / 100;
-
-  //   //   updated[index] = {
-  //   //     ...item,
-  //   //     discountPercentage: discount.toFixed(0),
-  //   //     discountedPrice: discountPrice,
-  //   //   };
-  //   // } else if (field === "discountedPrice") {
-  //   //   const discountedPrice = parseFloat(value) || 0;
-  //   //   const price = parseFloat(item.price) || 0;
-  //   //   const discountPercentage =
-  //   //     price > 0 ? ((price - discountedPrice) / price) * 100 : 0;
-
-  //   //   updated[index] = {
-  //   //     ...item,
-  //   //     discountedPrice,
-  //   //     discountPercentage: discountPercentage.toFixed(0),
-  //   //   };
-  //   // }
-
-  // };
+  // product row handlers
   const handleProductChange = (index, field, value) => {
     const updated = [...selectedProducts];
-    const item = updated[index];
+    const item = updated[index] || {};
 
     if (field === "productName") {
-      // always update what user types
-      updated[index] = {
-        ...item,
-        productName: value,
-        isExisting: false, // assume not existing first
-      };
-
-      // now check if this product exists in DB list
-      const product = products.find((p) => p.name === value);
+      // if chosen product exists in products list, fill details
+      const product = products.find((p) => p.name.toLowerCase() === value.toLowerCase());
       if (product) {
         const price = product.compareAtPrice || 0;
-        const discountPrice = product.price;
+        const discountPrice = product.price || 0;
         updated[index] = {
           ...item,
           _id: product._id,
@@ -349,55 +307,61 @@ useEffect(() => {
           discountPercentage: product.discountPercentage || 0,
           discountedPrice: discountPrice,
           isExisting: true,
+          category: product.category,
+          gstPercent: product.gstPercent || gstPercent || 0,
+        };
+      } else {
+        updated[index] = {
+          ...item,
+          productName: value,
+          isExisting: false,
         };
       }
     } else if (field === "discountPercentage") {
       const discount = parseFloat(value) || 0;
       const price = parseFloat(item.price) || 0;
-      const discountPrice = price - (price * discount) / 100;
-
+      const discountPrice = +(price - (price * discount) / 100);
       updated[index] = {
         ...item,
-        discountPercentage: discount.toFixed(0),
+        discountPercentage: discount,
         discountedPrice: discountPrice,
       };
     } else if (field === "discountedPrice") {
       const discountedPrice = parseFloat(value) || 0;
       const price = parseFloat(item.price) || 0;
       const discountPercentage =
-        price > 0 ? ((price - discountedPrice) / price) * 100 : 0;
-
+        price > 0 ? +(((price - discountedPrice) / price) * 100) : 0;
       updated[index] = {
         ...item,
         discountedPrice,
-        discountPercentage: discountPercentage.toFixed(0),
+        discountPercentage: Math.round(discountPercentage),
       };
     } else {
-      updated[index][field] = value;
+      updated[index] = { ...item, [field]: value };
     }
 
     setSelectedProducts(updated);
   };
 
   const handleAddProduct = () => {
-    setSelectedProducts([
-      ...selectedProducts,
+    setSelectedProducts((prev) => [
+      ...prev,
       {
         productName: "",
         hsnCode: "",
         qty: 1,
         price: 0,
-        gst: 0,
+        gstPercent: 0,
         discountPercentage: 0,
         discountedPrice: 0,
-        category: "", //16.08.2025
+        category: "",
+        isExisting: false,
       },
     ]);
   };
 
   const handleRemoveProduct = (index) => {
-    const updated = selectedProducts.filter((_, i) => i !== index);
-    setSelectedProducts(updated);
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePincodeChange = async (e) => {
@@ -406,12 +370,11 @@ useEffect(() => {
 
     if (pincode.length === 6) {
       try {
-        const res = await fetch(
-          `https://api.postalpincode.in/pincode/${pincode}`
-        );
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
         if (!res.ok) {
           setSnackbarMessage("API response not OK");
           setSnackbarOpen(true);
+          refresh();
           return;
         }
         const data = await res.json();
@@ -437,21 +400,19 @@ useEffect(() => {
         setSnackbarOpen(true);
         return;
       }
+
       for (let p of selectedProducts) {
-        if (!p.productName || p.qty <= 0 || p.price <= 0) {
+        if (!p.productName || Number(p.qty) <= 0 || Number(p.discountedPrice) <= 0) {
           setSnackbarMessage("Please fill all product details correctly!");
           setSnackbarOpen(true);
           return;
         }
       }
 
+      // register vendor if not existing
       if (!isExistingVendor) {
-        const vendorRole = roles.find(
-          (role) => role.name.toLowerCase() === "vendor"
-        );
-        const vendorposition = positions.find(
-          (pos) => pos.name.toLowerCase() === "vendor"
-        );
+        const vendorRole = roles.find((role) => role.name.toLowerCase() === "vendor");
+        const vendorposition = positions.find((pos) => pos.name.toLowerCase() === "vendor");
         const payload = {
           ...vendor,
           organization_id: mainUser.organization_id?._id,
@@ -461,14 +422,18 @@ useEffect(() => {
           password:
             vendor.first_name.replace(/\s+/g, "").toLowerCase() +
             "@example.com",
-          role_id: vendorRole._id,
-          position_id: vendorposition._id,
+          role_id: vendorRole?._id,
+          position_id: vendorposition?._id,
+          gstDetails
         };
         const res = await registerUser(payload);
-        finalVendor = { ...vendor, _id: res.user.id };
+        finalVendor = { ...vendor, _id: res.user.id || res?.data?.id || res?.data?._id };
       }
-      // 16.08.2025
+
+      // create / update products & inventory
+      // console.log('****',selectedProducts);
       for (let prod of selectedProducts) {
+        // console.log(prod.productName,'****',prod.isExisting);
         if (!prod.isExisting) {
           const newProductPayload = {
             name: prod.productName,
@@ -481,62 +446,115 @@ useEffect(() => {
             status: "active",
           };
           const res = await addProducts(newProductPayload);
-          prod._id = res.data._id; // update with new product id
-          prod.isExisting = true; // mark as saved
+          prod._id = res.data._id;
+          prod.isExisting = true;
         } else {
           const updatePayload = {
             quantity: Number(prod.qty) || 0,
-            action: "add", // or "add" if you want to increase instead of overwrite
+            action: "add",
           };
-
           await updateInventory(prod._id, updatePayload);
         }
       }
-      const finalProducts = selectedProducts.map((product) => ({
-        _id: product._id,
-        name: product.productName,
-        hsnCode: product.hsnCode,
-        qty: Number(product.qty),
-        price: Number(product.discountedPrice),
-        unitPrice: Number(product.price),
-        discount: Number(product.discountPercentage) || 0,
-      }));
 
+      // ---------- compute finalProducts & totals (replace your existing block) ----------
+      const finalProducts = selectedProducts.map((product) => {
+        const qty = Number(product.qty) || 0;
+        // price = the actual selling/unit price after discount (use discountedPrice if available)
+        const unitPrice = Number(product.discountedPrice ?? product.price) || 0;
+        const lineAmount = +(qty * unitPrice); // taxable amount for this line
+
+        // GST percent precedence:
+        // 1) product.gstPercent (explicit)
+        // 2) product.gst (legacy)
+        // 3) parent gstPercent (global from BillType)
+        // 4) fallback to 0
+        const percentFromProduct = Number(product.gstPercent ?? product.gst) || 0;
+        const rate = percentFromProduct || Number(gstPercent) || 0;
+
+        // calculate GST amounts
+        const gstAmount = +((lineAmount * (rate / 100))).toFixed(2);
+        const cgstAmount = isWithinState ? +(gstAmount / 2).toFixed(2) : 0;
+        const sgstAmount = isWithinState ? +(gstAmount / 2).toFixed(2) : 0;
+        const igstAmount = !isWithinState ? +gstAmount.toFixed(2) : 0;
+        const lineTotal = +(lineAmount + gstAmount).toFixed(2);
+
+        return {
+          _id: product._id,
+          name: product.productName || product.name || "",
+          hsnCode: product.hsnCode || "",
+          qty,
+          price: unitPrice,                  // price used for subtotal
+          unitPrice: Number(product.price) || 0, // original price if you keep both
+          discount: Number(product.discountPercentage) || 0,
+          gstPercent: rate,                  // percent (important)
+          gstAmount,                         // amount in ₹
+          cgst: cgstAmount,
+          sgst: sgstAmount,
+          igst: igstAmount,
+          lineTotal,
+        };
+      });
+
+      // compute totals from finalProducts (single source of truth)
+      const computedSubtotal = +finalProducts.reduce((acc, p) => acc + (Number(p.qty) * Number(p.price)), 0).toFixed(2);
+      const computedGstTotal = +finalProducts.reduce((acc, p) => acc + (Number(p.gstAmount) || 0), 0).toFixed(2);
+      const computedCgst = +finalProducts.reduce((acc, p) => acc + (Number(p.cgst) || 0), 0).toFixed(2);
+      const computedSgst = +finalProducts.reduce((acc, p) => acc + (Number(p.sgst) || 0), 0).toFixed(2);
+      const computedIgst = +finalProducts.reduce((acc, p) => acc + (Number(p.igst) || 0), 0).toFixed(2);
+      const computedGrandTotal = +(computedSubtotal + computedGstTotal).toFixed(2);
+
+      const finalTotals = {
+        subtotal: Number(computedSubtotal) || 0,
+        gstTotal: Number(computedGstTotal) || 0,
+        cgst: Number(computedCgst) || 0,
+        sgst: Number(computedSgst) || 0,
+        igst: Number(computedIgst) || 0,
+        grandTotal: Number(computedGrandTotal) || 0,
+      };
+
+      // ---------- final payload (guarantees numeric values) ----------
       const billPayload = {
-        // bill_number: setInvoiceNumber,
         bill_to: finalVendor._id,
         products: finalProducts,
         billType: billType,
         qty: selectedProducts.length,
         paymentType: paymentType,
-        advance: paymentDetails.advance,
-        balance: paymentDetails.balance,
+        advance: Number(paymentDetails.advance) || 0,
+        balance: Number(paymentDetails.balance) || 0,
         balancePayMode:
-          paymentDetails.balancePayMode + "-" + paymentDetails.financeName,
-        fullPaid: paymentDetails.fullPaid,
-        subtotal: totals.subtotal,
+          (paymentDetails.balancePayMode || "") + "-" + (paymentDetails.financeName || ""),
+        fullPaid: Number(paymentDetails.fullPaid) || 0,
+        subtotal: finalTotals.subtotal,
         discount: 0,
-        gstPercent: gstPercent,
-        gstTotal: totals.gstTotal,
-        cgst: totals.cgst,
-        sgst: totals.sgst,
-        igst: totals.igst,
-        grandTotal: totals.grandTotal,
+        // include gstPercent at top-level if your schema expects it:
+        gstPercent: Number(gstPercent) || 0,
+        gstTotal: finalTotals.gstTotal,
+        cgst: finalTotals.cgst,
+        sgst: finalTotals.sgst,
+        igst: finalTotals.igst,
+        grandTotal: finalTotals.grandTotal,
         org: mainUser.organization_id?._id,
-        dueDate: paymentDetails.dueDate,
-        notes: notes,
+        dueDate: paymentDetails.dueDate || null,
+        notes: notes || "",
         createdBy: mainUser._id,
         status: "draft",
       };
 
+      // console.log("billPayload (ready to POST):", JSON.stringify(billPayload, null, 2));
+      // submit bill      
+
       const res = await addPurchaseBill(billPayload);
-      if (res.success === false) {
+      // console.log("addPurchaseBill response:", res);
+
+      // handle error returns from API
+      if (res?.success === false) {
         setSnackbarMessage(res.message || "Failed to create purchase bill");
         setSnackbarOpen(true);
         return;
       }
 
-      if (res.status === 401) {
+      if (res?.status === 401) {
         setSnackbarMessage("Your session is expired Please login again!");
         setSnackbarOpen(true);
         setTimeout(() => {
@@ -545,9 +563,10 @@ useEffect(() => {
         return;
       }
 
-      if (res.success === true) {
+      if (res?.success === true || res?.data) {
         setSnackbarMessage("Purchase bill created successfully!");
         setSnackbarOpen(true);
+
         const billData = {
           biller: finalVendor,
           products: finalProducts,
@@ -558,99 +577,71 @@ useEffect(() => {
           totals,
           org: mainUser.organization_id?.name,
         };
+       if (refresh) refresh();
+        // if payment required, create payment
+        // if (paymentType === "advance" || paymentType === "full") {
+        //   let paymentPayload = {
+        //     paymentType:
+        //       paymentType === "advance"
+        //         ? (paymentDetails.advpaymode || "")
+        //         : (paymentDetails.fullMode || ""),
+        //     amount:
+        //       paymentType === "advance"
+        //         ? Number(paymentDetails.advance) || 0
+        //         : Number(paymentDetails.fullPaid) || 0,
+        //     client_id: finalVendor._id,
+        //     purchasebill: res?.data?._id || res?.data?._id,
+        //     organization: mainUser.organization_id?._id,
+        //     billType: "purchase",
+        //   };
 
-        if (paymentType === "advance" || paymentType === "full") {
-          // Base payload with common fields
-          let paymentPayload = {
-            paymentType:
-              paymentType === "advance"
-                ? paymentDetails.advpaymode
-                : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
-            amount:
-              paymentType === "advance"
-                ? paymentDetails.advance
-                : paymentDetails.fullPaid,
-            client_id: finalVendor._id, //customer_id
-            purchasebill: res?.data?._id, //purchase_bill_id
-            organization: mainUser.organization_id?._id,
-            billType: "purchase",
-          };
+        //   // attach extras based on mode
+        //   const advMode = (paymentDetails.advpaymode || "").toLowerCase();
+        //   const fullMode = (paymentDetails.fullMode || "").toLowerCase();
+        //   const mode = paymentType === "advance" ? advMode : fullMode;
 
-          // Add mode-specific fields
-          if (
-            paymentDetails.advpaymode.toLowerCase() === "upi" ||
-            paymentDetails.fullMode.toLowerCase() === "upi"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              upiId: paymentDetails.transactionNumber,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "cheque" ||
-            paymentDetails.fullMode.toLowerCase() === "cheque"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              bankName: paymentDetails.bankName,
-              chequeNumber: paymentDetails.chequeNumber,
-              chequeDate: paymentDetails.chequeDate,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "card" ||
-            paymentDetails.fullMode.toLowerCase() === "card"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              cardType: paymentDetails.cardType,
-              cardLastFour: paymentDetails.cardLastFour,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "finance" ||
-            paymentDetails.balancePayMode.toLowerCase().includes("finance") ||
-            paymentDetails.fullMode.toLowerCase() === "finance"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              financeName: paymentDetails.financeName,
-            };
-          }else if (
-            paymentDetails.advpaymode.toLowerCase() === "online transfer" ||
-            paymentDetails.balancePayMode.toLowerCase()==="online transfer" ||
-            paymentDetails.fullMode.toLowerCase() === "online transfer"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              utrId: paymentDetails.utrId,
-            };  // 16.08.25
-          } else {
-            paymentPayload = {
-              ...paymentPayload,
-              description: `${
-                paymentType === "advance" ? "Advance" : "Full"
-              } payment for Bill`,
-            };
-          }
+        //   if (mode === "upi") {
+        //     paymentPayload = { ...paymentPayload, upiId: paymentDetails.transactionNumber };
+        //   } else if (mode === "cheque") {
+        //     paymentPayload = {
+        //       ...paymentPayload,
+        //       bankName: paymentDetails.bankName,
+        //       chequeNumber: paymentDetails.chequeNumber,
+        //       chequeDate: paymentDetails.chequeDate,
+        //     };
+        //   } else if (mode === "card") {
+        //     paymentPayload = {
+        //       ...paymentPayload,
+        //       cardType: paymentDetails.cardType,
+        //       cardLastFour: paymentDetails.cardLastFour,
+        //     };
+        //   } else if (mode === "finance" || (paymentDetails.balancePayMode || "").toLowerCase().includes("finance")) {
+        //     paymentPayload = { ...paymentPayload, financeName: paymentDetails.financeName };
+        //   } else if (mode === "online transfer") {
+        //     paymentPayload = { ...paymentPayload, utrId: paymentDetails.utrId };
+        //   } else {
+        //     paymentPayload = { ...paymentPayload, description: `${paymentType === "advance" ? "Advance" : "Full"} payment for Bill` };
+        //   }
 
-          const paymentResult = await addPayment(paymentPayload);
-          if (paymentResult.success === false) {
-            await deletePurchaseBill(res.data._id);
-            setSnackbarMessage(paymentResult.errors);
-            setSnackbarOpen(true);
-            return;
-          } else {
-            setPrintData(billData);
-            setShowPrint(true); // Show bill for printing
-            setTimeout(() => {
-              window.print();
-              setShowPrint(false); // Optional
-            }, 500);
-            if (refresh) {
-              refresh();
-            }
-          }
-        }
+        //   const paymentResult = await addPayment(paymentPayload);
+        //   if (paymentResult?.success === false) {
+        //     // rollback bill if payment creation failed
+        //     await deletePurchaseBill(res.data._id);
+        //     setSnackbarMessage(paymentResult.errors || "Payment creation failed");
+        //     setSnackbarOpen(true);
+        //     return;
+        //   } else {
+        //     setPrintData(billData);
+        //     setShowPrint(true);
+        //     setTimeout(() => {
+        //       window.print();
+        //       setShowPrint(false);
+        //     }, 500);
+        //    
+        //   }
+        // }
 
-        setStep(1);
+        // reset form state
         setVendor({
           first_name: "",
           address: "",
@@ -663,34 +654,34 @@ useEffect(() => {
             qty: 0,
             price: 0,
             discountPercentage: 0,
-            gst: 0,
+            gstPercent: 0,
             discountedPrice: 0,
           },
         ]);
-        setPaymentDetails({
-          advance: 0,
-          balance: 0,
-          advpaymode: "",
-          transactionNumber: "",
-          bankName: "",
-          chequeNumber: "",
-          chequeDate: "",
-          balancePayMode: "",
-          transactionNumber2: "",
-          bankName2: "",
-          chequeNumber2: "",
-          cardLastFour: "",
-          cardLastFour2: "",
-          fullMode: "",
-          fullPaid: 0,
-          dueDate: "",
-        });
+        // setPaymentDetails({
+        //   advance: 0,
+        //   balance: 0,
+        //   advpaymode: "",
+        //   transactionNumber: "",
+        //   bankName: "",
+        //   chequeNumber: "",
+        //   chequeDate: "",
+        //   balancePayMode: "",
+        //   transactionNumber2: "",
+        //   bankName2: "",
+        //   chequeNumber2: "",
+        //   cardLastFour: "",
+        //   cardLastFour2: "",
+        //   fullMode: "",
+        //   fullPaid: 0,
+        //   dueDate: "",
+        //   financeName: "",
+        // });
         close();
       }
     } catch (error) {
-      console.log(error);
-
-      setSnackbarMessage("Vendor " + error);
+      console.error("Submit error:", error);
+      setSnackbarMessage("Vendor " + (error?.message || error));
       setSnackbarOpen(true);
     }
   };
@@ -701,86 +692,57 @@ useEffect(() => {
         Create purchase Bill
       </Typography>
 
-      {/* Step 1: vendor Info */}
-      {step === 1 && (
-        <VendorDetails
-          vendor={vendor}
-          isExistingVendor={isExistingVendor}
-          handleVendorSelection={handleVendorSelection}
-          setVendor={setVendor}
-          errors={errors}
-          supplierList={users.filter(
-            (u) =>
-              u.role_id?.name?.toLowerCase() === "vendor" &&
-              u.organization_id?._id === mainUser?.organization_id?._id &&
-              u.status === "active"
-          )}
-        />
-      )}
+      <BillType
+        billType={billType}
+        setBillType={setBillType}
+        gstPercent={gstPercent}
+        setGstPercent={setGstPercent}
+        state={state}
+        isWithinState={isWithinState}
+        setIsWithinState={setIsWithinState}
+      />
 
-      {/* Step 2: Product Details */}
-      {step === 2 && (
-        <ProductDetails
-          products={products}
-          selectedProducts={selectedProducts}
-          handleProductChange={handleProductChange}
-          handleAddProduct={handleAddProduct}
-          handleRemoveProduct={handleRemoveProduct}
-          categories={categories}   // 16.08.25
-        />
-      )}
+      <VendorDetails
+        vendor={vendor}
+        isExistingVendor={isExistingVendor}
+        handleVendorSelection={handleVendorSelection}
+        setVendor={setVendor}
+        setGstDetails={setGstDetails}
+        gstDetails={gstDetails}
+        errors={errors}
+        supplierList={users.filter(
+          (u) =>
+            u.role_id?.name?.toLowerCase() === "vendor" &&
+            u.organization_id?._id === mainUser?.organization_id?._id &&
+            u.status === "active"
+        )}
+      />
 
-      {/* Step 3: Bill Type */}
-      {step === 3 && (
-        <BillType
-          billType={billType}
-          setBillType={setBillType}
-          gstPercent={gstPercent}
-          setGstPercent={setGstPercent}
-          vendor={vendor}
-          handlePincodeChange={handlePincodeChange}
-          state={state}
-          totals={totals}
-        />
-      )}
+      <ProductDetails
+        products={products}
+        selectedProducts={selectedProducts}
+        handleProductChange={handleProductChange}
+        handleAddProduct={handleAddProduct}
+        handleRemoveProduct={handleRemoveProduct}
+        categories={categories}
+        billType={billType}
+        isWithinState={isWithinState}
+        gstPercent={gstPercent}
+        onTotalsChange={setTotals}
+        onError={(msg) => {
+          setSnackbarMessage(msg);
+          setSnackbarOpen(true);
+        }}
+      />
 
-      {/* Step 4: Payment Type */}
-      {step === 4 && (
-        <PaymentDetails
-          paymentType={paymentType}
-          setPaymentType={setPaymentType}
-          paymentDetails={paymentDetails}
-          setPaymentDetails={setPaymentDetails}
-          totals={totals}
-          notes={notes}
-          setNotes={setNotes}
-        />
-      )}
-
-      {/* Navigation Buttons */}
       <Box mt={4} display="flex" justifyContent="space-between">
-        {step > 1 && (
-          <Button variant="outlined" onClick={prevStep} color="#2F4F4F">
-            Back
-          </Button>
-        )}
-        {step < 4 ? (
-          <Button
-            variant="contained"
-            onClick={nextStep}
-            sx={{ backgroundColor: "#2F4F4F" }}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            sx={{ backgroundColor: "#2F4F4F" }}
-          >
-            Submit Bill
-          </Button>
-        )}
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", color: "#fff" }}
+        >
+          Submit Bill
+        </Button>
       </Box>
     </>
   );

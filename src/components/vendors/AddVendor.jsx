@@ -58,7 +58,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
     state: "",
     stateCode: "",
   });
-  const [isGstApplicable, setIsGstApplicable] = useState(false);
+  // const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -144,27 +144,28 @@ const AddVendor = ({ open, handleClose, refresh }) => {
       const payload = {
         ...formData,
         bankDetails,
+        gstDetails,
         organization_id: mainUser.organization_id?._id,
         email: formData.first_name + "@example.com",
         password: formData.first_name + "@example.com",
         role_id: vendorRole._id,
         position_id: vendorposition._id,
-        gstRegistered: isGstApplicable
+        // gstRegistered: isGstApplicable
       };
       
       const result = await registerUser(payload);
       if (result) {
-         if (result) {
-                if(isGstApplicable === true){
-                   const r = await createGstDetails(result.user.id, gstDetails); 
-                   if (!r.data) {
-                    await deleteUser(result.user.id);                                                       
-                    setSnackbarMessage("Enter Valid GST Details!");
-                    setSnackbarOpen(true);
-                    return;
-                  } 
-                }
-              }
+        //  if (result) {
+        //         if(isGstApplicable === true){
+        //            const r = await createGstDetails(result.user.id, gstDetails); 
+        //            if (!r.data) {
+        //             await deleteUser(result.user.id);                                                       
+        //             setSnackbarMessage("Enter Valid GST Details!");
+        //             setSnackbarOpen(true);
+        //             return;
+        //           } 
+        //         }
+        //       }
         setSnackbarMessage("Supplier Added successful!");
         setSnackbarOpen(true);
         refresh();
@@ -188,7 +189,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         ifscCode: "",
         upiId: "",
       });
-      setIsGstApplicable(false);
+      // setIsGstApplicable(false);
       setGstDetails({
         gstNumber: "",
         legalName: "",
@@ -197,6 +198,8 @@ const AddVendor = ({ open, handleClose, refresh }) => {
       });
       setErrors({ phone_number: "" });
     } catch (error) {
+      console.log("Error adding vendor:", error);
+      
       setSnackbarMessage(error);
       setSnackbarOpen(true);
     }
@@ -231,7 +234,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
               </Grid>
             ))}
           </Grid>
-          <Box mt={2}>
+          {/* <Box mt={2}>
             <label>
               <input
                 type="checkbox"
@@ -241,9 +244,9 @@ const AddVendor = ({ open, handleClose, refresh }) => {
               />
               Is GST Applicable?
             </label>
-          </Box>
+          </Box> */}
 
-          {isGstApplicable && (
+          {/* {isGstApplicable && (
             <Grid container spacing={2} mt={1}>
               {Object.entries(gstDetails).map(([key, value]) => (
                 <Grid item xs={12} sm={6} key={key}>
@@ -264,7 +267,31 @@ const AddVendor = ({ open, handleClose, refresh }) => {
                 </Grid>
               ))}
             </Grid>
-          )}
+          )} */}
+
+          {/* <Typography variant="h6" mt={2} mb={2}>
+            GST Details
+          </Typography>
+            <Grid container spacing={2} mt={1}>
+              {Object.entries(gstDetails).map(([key, value]) => (
+                <Grid item xs={12} sm={6} key={key}>
+                  <TextField
+                    fullWidth
+                    label={key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase())}
+                    name={key}
+                    value={value}
+                    onChange={(e) =>
+                      setGstDetails((prev) => ({
+                        ...prev,
+                        [key]: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+              ))}
+            </Grid>
           <Typography variant="h6" mt={2} mb={2}>
             Bank Details
           </Typography>
@@ -290,15 +317,15 @@ const AddVendor = ({ open, handleClose, refresh }) => {
                 />
               </Grid>
             ))}
-          </Grid>
+          </Grid> */}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button onClick={handleClose} sx={{ mr: 2, color: "#2F4F4F" }}>
+            <Button onClick={handleClose} sx={{ mr: 2, color: "#182848" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{background: "linear-gradient(135deg, #182848, #324b84ff)",color: "#fff" }}  
               onClick={handleSubmit}
             >
               Save
@@ -313,9 +340,7 @@ const AddVendor = ({ open, handleClose, refresh }) => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          severity={
-            snackbarMessage === "Vendor Added successful!" ? "success" : "error"
-          }
+          severity={snackbarMessage === "Supplier Added successful!" ? "success" : "error"}
           variant="filled"
           onClose={() => setSnackbarOpen(false)}
         >

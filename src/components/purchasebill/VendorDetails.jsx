@@ -14,6 +14,7 @@ const VendorDetails = ({
   isExistingVendor,
   handleVendorSelection,
   setVendor,
+  setGstDetails,gstDetails,
   errors,
   supplierList = [],
 }) => {
@@ -88,7 +89,51 @@ const VendorDetails = ({
             onChange={(e) => setVendor({ ...vendor, address: e.target.value })}
             disabled={isExistingVendor}
           />
+          
         </Grid>
+
+        {/* Vendor Gst Details */}
+        <Grid item xs={12} sm={4}>
+          <TextField
+            label="GST Number"
+            fullWidth
+            value={gstDetails?.gstNumber || ""}
+            onChange={(e) => setGstDetails({ ...gstDetails, gstNumber: e.target.value })}
+            disabled={isExistingVendor}
+          />
+          
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            label="Legal Name"
+            fullWidth
+            value={gstDetails?.legalName || ""}
+            onChange={(e) => setGstDetails({ ...gstDetails, legalName: e.target.value })}
+            disabled={isExistingVendor}
+          />
+          
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            label="State"
+            fullWidth
+            value={gstDetails?.state || ""}
+            onChange={(e) => setGstDetails({ ...gstDetails, state: e.target.value })}
+            disabled={isExistingVendor}
+          />
+          
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            label="State Code"
+            fullWidth
+            value={gstDetails?.stateCode || ""}
+            onChange={(e) => setGstDetails({ ...gstDetails, stateCode: e.target.value })}
+            disabled={isExistingVendor}
+          />
+          
+        </Grid>
+
       </Grid>
     </Box>
   );

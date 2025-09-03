@@ -7,18 +7,17 @@ import {
   Paper,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import invoice from "../assets/invoice.jpg";
 import { getAllPositions } from "../services/Position";
 import { getAllOrganization } from "../services/Organization";
 import { getAllRoles } from "../services/Role";
-import { Link } from "react-router-dom";
 import { getAllUser, registerUser } from "../services/UserService";
-import { Snackbar, Alert } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Registration = () => {
-  const [step, setStep] = useState(0); // 0: Personal, 1: Company, 2: Bank
+  const [step, setStep] = useState(0);
 
   const [organizations, setOrganizations] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -49,6 +48,7 @@ const Registration = () => {
     ifscCode: "",
     upiId: "",
   });
+
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [errors, setErrors] = useState({
@@ -66,7 +66,6 @@ const Registration = () => {
           getAllRoles(),
           getAllUser(),
         ]);
-
         setPositions(posData);
         setOrganizations(orgData);
         setRoles(roleData);
@@ -83,7 +82,7 @@ const Registration = () => {
 
     if (name === "email") {
       const emailExists = users?.some(
-        (u) => u.email.toLowerCase() === value.toLowerCase()
+        (u) => u?.email?.toLowerCase() === value?.toLowerCase()
       );
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -109,6 +108,7 @@ const Registration = () => {
         setErrors((prev) => ({ ...prev, phone_number: "" }));
       }
     }
+
     setFormData({ ...formData, [name]: value });
   };
 
@@ -125,26 +125,27 @@ const Registration = () => {
       setSnackbarOpen(true);
       return;
     }
+
     const emailExists = users?.some(
-      (u) => u.email.toLowerCase() === formData.email.toLowerCase()
+      (u) => u?.email?.toLowerCase() === formData.email.toLowerCase()
     );
     if (emailExists) {
       setSnackbarMessage("Email already exists!");
       setSnackbarOpen(true);
       return;
     }
+
     const finalData = { ...formData, bankDetails };
-    // Add API call here
     const result = await registerUser(finalData);
+
     if (result) {
       setSnackbarMessage("Register successful!");
       setSnackbarOpen(true);
       navigate("/login");
-      // setTimeout(() => {
-      // }, 2000);
     }
   };
 
+  // ================== RENDER SECTIONS ==================
   const renderPersonalInfo = () => (
     <>
       {[
@@ -178,31 +179,23 @@ const Registration = () => {
 
   const renderCompanyInfo = () => (
     <>
-      {["company_name"].map((key) => (
-        <Grid item xs={12} sm={6} key={key}>
-          <TextField
-            fullWidth
-            label={key
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (l) => l.toUpperCase())}
-            name={key}
-            value={formData[key]}
-            onChange={handleChange}
-          />
-        </Grid>
-      ))}
       <Grid item xs={12} sm={6}>
         <TextField
           fullWidth
+          label="Company Name"
+          name="company_name"
+          value={formData.company_name}
+          onChange={handleChange}
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} width={250}>
+        <TextField
+          fullWidth
           select
-          label="Organization"
+          label="Organization Name"
           name="organization_id"
           value={formData.organization_id}
           onChange={handleChange}
-          sx={{
-            minWidth: 200,
-            maxWidth: "100%",
-          }}
         >
           {(organizations || []).map((org) => (
             <MenuItem key={org._id} value={org._id}>
@@ -211,18 +204,14 @@ const Registration = () => {
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid item xs={12} sm={6} width={210}>
         <TextField
           fullWidth
           select
-          label="Role"
+          label="Role Name"
           name="role_id"
           value={formData.role_id}
           onChange={handleChange}
-          sx={{
-            minWidth: 225,
-            maxWidth: "100%",
-          }}
         >
           {(roles || []).map((role) => (
             <MenuItem key={role._id} value={role._id}>
@@ -231,18 +220,14 @@ const Registration = () => {
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid item xs={12} sm={6} width={250}>
         <TextField
           fullWidth
           select
-          label="Position"
+          label="Position Name"
           name="position_id"
           value={formData.position_id}
           onChange={handleChange}
-          sx={{
-            minWidth: 200,
-            maxWidth: "100%",
-          }}
         >
           {(positions || []).map((pos) => (
             <MenuItem key={pos._id} value={pos._id}>
@@ -272,40 +257,60 @@ const Registration = () => {
     </>
   );
 
+  // ================== UI ==================
   return (
-    <>
+    <Box display="flex" minHeight="100vh">
+      {/* Left Side */}
       <Box
+        flex={1}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
         sx={{
-          height: "100vh",
-          backgroundImage: `url(${invoice})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "left",
-          // p: 2,
-          overflow: "hidden",
+          p: 6,
+          background: "linear-gradient(135deg, #182848, #324b84ff)",
+          color: "#fff",
         }}
       >
+        <Typography variant="h3" fontWeight="bold" gutterBottom>
+        Angel Inventory
+        </Typography>
+        <Typography variant="h6" sx={{ maxWidth: 500, textAlign: "center" }}>
+          Simplify your factory’s financial management with our powerful billing
+          platform. Register now to streamline operations and gain full control
+          over your business.
+        </Typography>
+      </Box>
+
+      {/* Right Side - Form */}
+      <Box
+        flex={1}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ p: 4 }}
+      >
         <Paper
-          elevation={8}
+          elevation={6}
           sx={{
             p: 4,
-            maxWidth: 500,
-            width: "50%",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            marginLeft: "15%",
-            borderRadius: 5,
-            //   marginTop: "10%",
+            width: 520,
+            borderRadius: 3,
+            backgroundColor: "rgba(255,255,255,0.95)",
           }}
         >
-          <Typography variant="h5" mb={2}>
+          <Typography
+            variant="h4"
+            align="center"
+            gutterBottom
+            sx={{ fontWeight: "bold", color: "#182848" }}
+          >
             {step === 0
               ? "Personal Info"
               : step === 1
-              ? "Company Info"
-              : "Bank Details"}
+                ? "Company Info"
+                : "Bank Details"}
           </Typography>
 
           <Grid container spacing={2}>
@@ -315,12 +320,18 @@ const Registration = () => {
 
             <Grid item xs={12} sx={{ mt: 2 }}>
               {step > 0 && (
-                <Button variant="outlined" onClick={prevStep} sx={{ mr: 2 }}>
+                <Button variant="outlined" onClick={prevStep} sx={{
+                  mr: 2, background: "linear-gradient(135deg, #182848, #324b84ff)",
+                  color: "#fff",
+                }}>
                   Back
                 </Button>
               )}
               {step < 2 ? (
-                <Button variant="contained" onClick={nextStep}>
+                <Button variant="contained" onClick={nextStep} sx={{
+                  background: "linear-gradient(135deg, #182848, #324b84ff)",
+                  color: "#fff",
+                }}>
                   Next
                 </Button>
               ) : (
@@ -328,22 +339,34 @@ const Registration = () => {
                   variant="contained"
                   color="primary"
                   onClick={handleSubmit}
+                  sx={{
+                    background: "linear-gradient(135deg, #182848, #324b84ff)",
+                    color: "#fff",
+                  }}
                 >
                   Submit
                 </Button>
               )}
             </Grid>
           </Grid>
-          <Grid item xs={12} textAlign="right" mt={"3%"}>
-            <Link
-              to="/login"
-              style={{ textDecoration: "none", color: "#1976d2" }}
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Already have an account?{" "}
+            <Button
+              onClick={() => navigate("/login")}
+              sx={{
+                textTransform: "none",
+                color: "#182848",
+                fontWeight: "bold",
+                
+              }}
             >
-              Back To Login
-            </Link>
-          </Grid>
+              Login
+            </Button>
+          </Typography>
         </Paper>
       </Box>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -360,7 +383,7 @@ const Registration = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 };
 

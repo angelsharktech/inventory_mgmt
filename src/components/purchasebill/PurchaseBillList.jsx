@@ -14,9 +14,11 @@ import {
   IconButton,
   Alert,
   Snackbar,
+  Chip,
+  Tooltip,
 } from "@mui/material";
 import moment from "moment";
-import { Visibility } from "@mui/icons-material";
+import { Visibility, WhatsApp } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import {
   cancelPurchaseBill,
@@ -84,7 +86,7 @@ const PurchaseBillList = () => {
       const FilteredBill = allBills.filter((bill) => {
         return bill.status === "draft";
       });
-      
+
       setBills(FilteredBill);
     }
   };
@@ -127,6 +129,7 @@ const PurchaseBillList = () => {
     setEditData(rowData);
     setEdit(true);
   };
+
   const handleCancelBill = async (id) => {
     try {
       const response = await cancelPurchaseBill(id, { status: "cancelled" });
@@ -141,6 +144,35 @@ const PurchaseBillList = () => {
       setSnackbarOpen(true);
     }
   };
+
+  const handleWhatsAppClick = (bill) => {
+    const phoneNumber = bill.bill_to?.phone_number;
+    console.log("Phone Number:", phoneNumber);
+
+    if (!phoneNumber) {
+      setSnackbarMessage("No phone number available for this supplier");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const message = `Dear ${bill.bill_to?.first_name || "Valued Supplier"},
+
+This is a reminder regarding your pending payment for Invoice No: ${bill.bill_number || "N/A"}.
+
+Invoice Amount: ₹${bill.grandTotal?.toFixed(2) || "0.00"}
+Amount Paid: ₹${(Number(bill.advance || 0) + Number(bill.fullPaid || 0)).toFixed(2)}
+Balance Amount: ₹${bill.balance?.toFixed(2) || "0.00"}
+
+Please complete the payment at your earliest convenience.
+
+Thank you,
+${mainUser?.organization_id?.name || "Our Company"}`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
   return (
     <>
       <Box>
@@ -164,23 +196,10 @@ const PurchaseBillList = () => {
               }}
               size="small"
             />
-            {/* <TextField
-              label="End Date"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              size="small"
-              disabled={!startDate} // Disable until start date is selected
-              inputProps={{
-                min: startDate || moment().format("YYYY-MM-DD"), // Disable dates before start date
-              }}
-            /> */}
-
             <Button
               // accessKey="p"
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", color: "#fff" }}
               onClick={handleOpen}
             >
               Create Purchase bill (Alt + P)
@@ -215,7 +234,7 @@ const PurchaseBillList = () => {
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
@@ -226,13 +245,10 @@ const PurchaseBillList = () => {
                 </TableCell>
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Notes</strong>
-                </TableCell>
-                {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Payment Mode</strong>
-                </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Transaction Number</strong>
                 </TableCell> */}
+                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                  <strong>Status</strong>
+                </TableCell>
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Action</strong>
                 </TableCell>
@@ -252,7 +268,7 @@ const PurchaseBillList = () => {
                   <TableCell align="center">
                     {bill.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
                   <TableCell align="center">
@@ -263,30 +279,45 @@ const PurchaseBillList = () => {
                   <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">{bill.notes}</TableCell>
-                  {/* <TableCell align="center">
-                    {bill.paymentType === "advance"
-                      ? "Advance"
-                      : bill.paymentType === "full"
-                      ? "Full"
-                      : "N/A"}
-                  </TableCell> */}
-                  {/* <TableCell align="center">
-                    {bill.referenceId || "N/A"}
-                  </TableCell> */}
-                  <TableCell align="center" sx={{ width: "150px" }}>
+                  <TableCell align="center">{bill.notes}</TableCell> */}
+                  <TableCell align="center">
+                    {bill.balance > 0 ? (
+                      <Chip
+                        label="Pending Payment"
+                        color="warning"
+                        size="small"
+                      />
+                    ) : (
+                      <Chip
+                        label="Paid"
+                        color="success"
+                        size="small"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell align="center" sx={{ width: "180px" }}>
                     <IconButton
                       color="inherit"
                       onClick={() => handleView(bill._id)}
                     >
                       <Visibility style={{ color: "#1976d2" }} />
                     </IconButton>
-                    <IconButton
+                    {/* <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
                       <EditIcon style={{ color: "#f57c00" }} />
-                    </IconButton>
+                    </IconButton> */}
+                    {bill.balance > 0 && (
+                      <Tooltip title="Send payment reminder via WhatsApp">
+                        <IconButton
+                          color="inherit"
+                          onClick={() => handleWhatsAppClick(bill)}
+                        >
+                          <WhatsApp style={{ color: "#25D366" }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <IconButton
                       color="inherit"
                       onClick={() => handleCancelBill(bill._id)}
@@ -294,13 +325,11 @@ const PurchaseBillList = () => {
                       <CancelIcon style={{ color: "#d32f2f" }} />
                     </IconButton>
                   </TableCell>
-                  {/* <TableCell align="center">
-                  </TableCell> */}
                 </TableRow>
               ))}
 
               {/* Totals */}
-              <TableRow
+              {/* <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -309,19 +338,26 @@ const PurchaseBillList = () => {
                   fontWeight: "bold",
                 }}
               >
-                <TableCell colSpan={3}>
+                <TableCell colSpan={4}>
                   <strong>Total Bills: {filteredBills.length}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={2}>
+                <TableCell align="center" colSpan={1}>
                   <strong>Total Amount: {totalBill.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={2}>
+                <TableCell align="center" colSpan={1}>
                   <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
                 </TableCell>
-                <TableCell align="center" colSpan={3}>
+                <TableCell align="center" colSpan={1}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
-              </TableRow>
+                <TableCell align="center" colSpan={3}>
+
+                </TableCell>
+                <TableCell align="center" colSpan={3}>
+
+                </TableCell>
+
+              </TableRow> */}
             </TableBody>
           </Table>
         </TableContainer>
@@ -334,7 +370,8 @@ const PurchaseBillList = () => {
       >
         <Alert
           severity={
-            snackbarMessage === "Bill cancelled successfully!"
+            snackbarMessage === "Bill cancelled successfully!" ||
+              snackbarMessage.includes("successfully")
               ? "success"
               : "error"
           }

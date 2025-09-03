@@ -14,7 +14,7 @@ import {
   Divider,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
-import { getAllProducts } from "../../services/ProductService";
+import { addProducts, getAllProducts, updateInventory } from "../../services/ProductService";
 import {
   getAllUser,
   getUserById,
@@ -24,7 +24,7 @@ import { getAllPositions } from "../../services/Position";
 import { getAllRoles } from "../../services/Role";
 import { useAuth } from "../../context/AuthContext";
 import PaymentDetails from "./PaymentDetails";
-import { addSaleBill, deleteSaleBill } from "../../services/SaleBillService";
+import { addSaleBill, deleteSaleBill, getSaleBillById } from "../../services/SaleBillService";
 import ProductDetails from "./ProductDetails";
 import BillType from "./BillType";
 import CustomerDetails from "./CustomerDetails";
@@ -58,14 +58,20 @@ const SaleBillForm = ({
       hsnCode: "",
       qty: 1,
       price: 0,
-      gst: 0,
       discountPercentage: 0,
       discountedPrice: 0,
+      gstPercent: 0,
+      isExisting: false,
+      category: "",
+      cgst: 0,
+      sgst: 0,
+      igst: 0,
     },
   ]);
-  const [billType, setBillType] = useState("non-gst");
+  const [billType, setBillType] = useState("nongst");
   const [gstPercent, setGstPercent] = useState(0);
   const [paymentType, setPaymentType] = useState("full");
+  const [isWithinState, setIsWithinState] = useState("");
   const [paymentDetails, setPaymentDetails] = useState({
     advance: 0,
     balance: 0,
@@ -95,7 +101,12 @@ const SaleBillForm = ({
   const [mainUser, setMainUser] = useState();
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState({ phone_number: "", products: {} });
-
+  const [gstDetails, setGstDetails] = useState({
+    gstNumber: "",
+    legalName: "",
+    state: "",
+    stateCode: "",
+  });
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
@@ -142,6 +153,7 @@ const SaleBillForm = ({
         igst = gstTotal;
       }
     }
+
     const grandTotal = subtotal + gstTotal;
     setTotals({
       subtotal,
@@ -183,6 +195,12 @@ const SaleBillForm = ({
         address: "",
         phone_number: "",
       });
+      setGstDetails({
+        gstNumber: "",
+        legalName: "",
+        state: "",
+        stateCode: "",
+      });
       setErrors((prev) => ({ ...prev, phone_number: "" }));
       setIsExistingCustomer(false);
       return;
@@ -218,6 +236,12 @@ const SaleBillForm = ({
         address: phoneExists.address,
         phone_number: phone,
       });
+      setGstDetails({
+        gstNumber: phoneExists.gstDetails.gstNumber,
+        legalName: phoneExists.gstDetails.legalName,
+        state: phoneExists.gstDetails.state,
+        stateCode: phoneExists.gstDetails.stateCode,
+      });
       setIsExistingCustomer(true);
     } else {
       setCustomer({
@@ -226,11 +250,18 @@ const SaleBillForm = ({
         address: "",
         phone_number: phone,
       });
+      setGstDetails({
+        gstNumber: "",
+        legalName: "",
+        state: "",
+        stateCode: "",
+      });
       setIsExistingCustomer(false);
     }
   };
 
   const handleProductChange = (index, field, value) => {
+
     const updated = [...selectedProducts];
     const item = updated[index];
 
@@ -247,6 +278,14 @@ const SaleBillForm = ({
           price,
           discountPercentage: product.discountPercentage,
           discountedPrice: discountPrice,
+          gstPercent: product.gstPercent || gstPercent || 0,
+          isExisting: true
+        };
+      } else {
+        updated[index] = {
+          ...item,
+          productName: value,
+          isExisting: false,
         };
       }
     } else if (field === "hsnCode") {
@@ -264,6 +303,14 @@ const SaleBillForm = ({
           price,
           discountPercentage: discountPercentage,
           discountedPrice: discountPrice,
+          gstPercent: product.gstPercent || gstPercent || 0,
+          isExisting: true
+        };
+      } else {
+        updated[index] = {
+          ...item,
+          hsnCode: value,
+          isExisting: false,
         };
       }
     } else if (field === "discountPercentage") {
@@ -313,7 +360,10 @@ const SaleBillForm = ({
         updated[index][field] = qty;
         // setSelectedProducts(updated);
       }
+    } else {
+      updated[index] = { ...item, [field]: value };
     }
+
     setSelectedProducts(updated);
   };
 
@@ -400,46 +450,127 @@ const SaleBillForm = ({
             "@example.com",
           role_id: customerRole._id,
           position_id: customerposition._id,
+          gstDetails:{
+        gstNumber: gstDetails.gstNumber,
+        legalName: gstDetails.legalName,
+        state: gstDetails.state,
+        stateCode: gstDetails.stateCode,
+      }
         };
+        
         const res = await registerUser(payload);
         finalCustomer = { ...customer, _id: res.user.id };
       }
 
-      const finalProducts = selectedProducts.map((product) => ({
-        _id: product._id,
-        name: product.productName,
-        hsnCode: product.hsnCode,
-        qty: Number(product.qty),
-        price: Number(product.discountedPrice),
-        unitPrice: Number(product.price),
-        discount: Number(product.discountPercentage) || 0,
-      }));
+      for (let prod of selectedProducts) {
+        console.log(prod.productName, '****', prod.isExisting);
+        if (!prod.isExisting) {
+          const newProductPayload = {
+            name: prod.productName,
+            category: prod.category,
+            hsnCode: prod.hsnCode,
+            price: prod.discountedPrice,
+            compareAtPrice: prod.price,
+            quantity: prod.qty,
+            organization_id: mainUser.organization_id?._id,
+            status: "active",
+          };
+          const res = await addProducts(newProductPayload);
+          prod._id = res.data._id;
+          prod.isExisting = true;
+        } else {
+          const updatePayload = {
+            quantity: Number(prod.qty) || 0,
+            action: "add",
+          };
+          await updateInventory(prod._id, updatePayload);
+        }
+      }
 
+      // ---------- compute finalProducts & totals (replace your existing block) ----------
+      const finalProducts = selectedProducts.map((product) => {
+        const qty = Number(product.qty) || 0;
+        // price = the actual selling/unit price after discount (use discountedPrice if available)
+        const unitPrice = Number(product.discountedPrice ?? product.price) || 0;
+        const lineAmount = +(qty * unitPrice); // taxable amount for this line
+
+        // GST percent precedence:
+        // 1) product.gstPercent (explicit)
+        // 2) product.gst (legacy)
+        // 3) parent gstPercent (global from BillType)
+        // 4) fallback to 0
+        const percentFromProduct = Number(product.gstPercent ?? product.gst) || 0;
+        const rate = percentFromProduct || Number(gstPercent) || 0;
+
+        // calculate GST amounts
+        const gstAmount = +((lineAmount * (rate / 100))).toFixed(2);
+        const cgstAmount = isWithinState ? +(gstAmount / 2).toFixed(2) : 0;
+        const sgstAmount = isWithinState ? +(gstAmount / 2).toFixed(2) : 0;
+        const igstAmount = !isWithinState ? +gstAmount.toFixed(2) : 0;
+        const lineTotal = +(lineAmount + gstAmount).toFixed(2);
+
+        return {
+          _id: product._id,
+          name: product.productName || product.name || "",
+          hsnCode: product.hsnCode || "",
+          qty,
+          price: unitPrice,                  // price used for subtotal
+          unitPrice: Number(product.price) || 0, // original price if you keep both
+          discount: Number(product.discountPercentage) || 0,
+          gstPercent: rate,                  // percent (important)
+          gstAmount,                         // amount in ₹
+          cgst: cgstAmount,
+          sgst: sgstAmount,
+          igst: igstAmount,
+          lineTotal,
+        };
+      });
+
+      // compute totals from finalProducts (single source of truth)
+      const computedSubtotal = +finalProducts.reduce((acc, p) => acc + (Number(p.qty) * Number(p.price)), 0).toFixed(2);
+      const computedGstTotal = +finalProducts.reduce((acc, p) => acc + (Number(p.gstAmount) || 0), 0).toFixed(2);
+      const computedCgst = +finalProducts.reduce((acc, p) => acc + (Number(p.cgst) || 0), 0).toFixed(2);
+      const computedSgst = +finalProducts.reduce((acc, p) => acc + (Number(p.sgst) || 0), 0).toFixed(2);
+      const computedIgst = +finalProducts.reduce((acc, p) => acc + (Number(p.igst) || 0), 0).toFixed(2);
+      const computedGrandTotal = +(computedSubtotal + computedGstTotal).toFixed(2);
+
+      const finalTotals = {
+        subtotal: Number(computedSubtotal) || 0,
+        gstTotal: Number(computedGstTotal) || 0,
+        cgst: Number(computedCgst) || 0,
+        sgst: Number(computedSgst) || 0,
+        igst: Number(computedIgst) || 0,
+        grandTotal: Number(computedGrandTotal) || 0,
+      };
+
+      // ---------- final payload (guarantees numeric values) ----------
       const billPayload = {
-        // bill_number: setInvoiceNumber,
         bill_to: finalCustomer._id,
         products: finalProducts,
         billType: billType,
         qty: selectedProducts.length,
         paymentType: paymentType,
-        advance: paymentDetails.advance,
-        balance: paymentDetails.balance,
-        fullPaid: paymentDetails.fullPaid,
-        subtotal: totals.subtotal,
+        advance: Number(paymentDetails.advance) || 0,
+        balance: Number(paymentDetails.balance) || 0,
+        balancePayMode:
+          (paymentDetails.balancePayMode || "") + "-" + (paymentDetails.financeName || ""),
+        fullPaid: Number(paymentDetails.fullPaid) || 0,
+        subtotal: finalTotals.subtotal,
         discount: 0,
-        gstPercent: gstPercent,
-        gstTotal: totals.gstTotal,
-        cgst: totals.cgst,
-        sgst: totals.sgst,
-        igst: totals.igst,
-        grandTotal: totals.grandTotal,
+        // include gstPercent at top-level if your schema expects it:
+        gstPercent: Number(gstPercent) || 0,
+        gstTotal: finalTotals.gstTotal,
+        cgst: finalTotals.cgst,
+        sgst: finalTotals.sgst,
+        igst: finalTotals.igst,
+        grandTotal: finalTotals.grandTotal,
         org: mainUser.organization_id?._id,
-        dueDate: paymentDetails.dueDate,
-        notes: notes,
+        dueDate: paymentDetails.dueDate || null,
+        notes: notes || "",
         createdBy: mainUser._id,
-        // status: paymentDetails.balance === 0 ? "issued" : "draft",
         status: "draft",
       };
+      console.log("PPPPPPP", billPayload);
 
       const res = await addSaleBill(billPayload);
 
@@ -453,99 +584,34 @@ const SaleBillForm = ({
       }
 
       if (res.success === true) {
+        console.log("RRRR",res);
+        
         setSnackbarMessage("Sale bill created successfully!");
         setSnackbarOpen(true);
-        const billData = {
-          biller: finalCustomer,
-          products: finalProducts,
-          billType,
-          paymentType,
-          paymentDetails,
-          gstPercent,
-          totals,
-          org: mainUser.organization_id?.name,
-        };
+        // const billData = {
+        //   biller: finalCustomer,
+        //   products: finalProducts,
+        //   billType,
+        //   paymentType,
+        //   paymentDetails,
+        //   gstPercent,
+        //   totals,
+        //   org: mainUser.organization_id?.name,
+        // };
+        const billData = await getSaleBillById(res.data._id);
+        console.log("BBBBBB",billData);
 
-        if (paymentType === "advance" || paymentType === "full") {
-          // Base payload with common fields
-          let paymentPayload = {
-            paymentType:
-              paymentType === "advance"
-                ? paymentDetails.advpaymode
-                : paymentDetails.fullMode, // or paymentDetails.paymode for full payment
-            amount:
-              paymentType === "advance"
-                ? paymentDetails.advance
-                : paymentDetails.fullPaid,
-            client_id: finalCustomer._id, //customer_id
-            salebill: res?.data?._id, //sale_bill_id
-            organization: mainUser.organization_id?._id,
-            billType: "sale",
-          };
-
-          // Add mode-specific fields
-          if (
-            paymentDetails.advpaymode.toLowerCase() === "upi" ||
-            paymentDetails.fullMode.toLowerCase() === "upi"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              upiId: paymentDetails.transactionNumber,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "cheque" ||
-            paymentDetails.fullMode.toLowerCase() === "cheque"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              bankName: paymentDetails.bankName,
-              chequeNumber: paymentDetails.chequeNumber,
-              chequeDate: paymentDetails.chequeDate,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "card" ||
-            paymentDetails.fullMode.toLowerCase() === "card"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              cardType: paymentDetails.cardType,
-              cardLastFour: paymentDetails.cardLastFour,
-            };
-          } else if (
-            paymentDetails.advpaymode.toLowerCase() === "finance" ||
-            paymentDetails.fullMode.toLowerCase() === "finance"
-          ) {
-            paymentPayload = {
-              ...paymentPayload,
-              financeName: paymentDetails.financeName,
-            };
-          } else {
-            paymentPayload = {
-              ...paymentPayload,
-              description: `${
-                paymentType === "advance" ? "Advance" : "Full"
-              } payment for Bill`,
-            };
-          }
-          const paymentResult = await addPayment(paymentPayload);
-          if (paymentResult.success === false) {
-            await deleteSaleBill(res.data._id);
-            setSnackbarMessage(paymentResult.errors);
-            setSnackbarOpen(true);
-            return;
-          } else {
-            setPrintData(billData);
-            setShowPrint(true); // Show bill for printing
-            setTimeout(() => {
-              window.print();
-              setShowPrint(false); // Optional
-            }, 500);
-            if (refresh) {
-              refresh();
-            }
-          }
+        
+        setPrintData(billData.data);
+        setShowPrint(true); // Show bill for printing
+        setTimeout(() => {
+          window.print();
+          setShowPrint(false); // Optional
+        }, 500);
+        if (refresh) {
+          refresh();
         }
-        setStep(1);
+
         setCustomer({
           first_name: "",
           address: "",
@@ -562,27 +628,29 @@ const SaleBillForm = ({
             discountedPrice: 0,
           },
         ]);
-        setPaymentDetails({
-          advance: 0,
-          balance: 0,
-          advpaymode: "",
-          transactionNumber: "",
-          bankName: "",
-          chequeNumber: "",
-          balpaymode: "",
-          transactionNumber2: "",
-          bankName2: "",
-          chequeNumber2: "",
-          cardLastFour: "",
-          cardLastFour2: "",
-          fullMode: "",
-          fullPaid: 0,
-          dueDate: "",
-        });
+        // setPaymentDetails({
+        //   advance: 0,
+        //   balance: 0,
+        //   advpaymode: "",
+        //   transactionNumber: "",
+        //   bankName: "",
+        //   chequeNumber: "",
+        //   balpaymode: "",
+        //   transactionNumber2: "",
+        //   bankName2: "",
+        //   chequeNumber2: "",
+        //   cardLastFour: "",
+        //   cardLastFour2: "",
+        //   fullMode: "",
+        //   fullPaid: 0,
+        //   dueDate: "",
+        // });
 
         close();
       }
     } catch (error) {
+      console.log(error);
+
       setSnackbarMessage("Customer " + error);
       setSnackbarOpen(true);
     }
@@ -595,80 +663,61 @@ const SaleBillForm = ({
       </Typography>
 
       {/* Step 1: Customer Info */}
-      {step === 1 && (
-        <CustomerDetails
-          customer={customer}
-          isExistingCustomer={isExistingCustomer}
-          handleMobile={handleMobile}
-          setCustomer={setCustomer}
-          errors={errors}
-        />
-      )}
-
+      <BillType
+        billType={billType}
+        setBillType={setBillType}
+        gstPercent={gstPercent}
+        setGstPercent={setGstPercent}
+        customer={customer}
+        handlePincodeChange={handlePincodeChange}
+        isWithinState={isWithinState}
+        setIsWithinState={setIsWithinState}
+        totals={totals}
+      />
       {/* Step 2: Product Details */}
-      {step === 2 && (
-        <ProductDetails
-          products={products}
-          selectedProducts={selectedProducts}
-          handleProductChange={handleProductChange}
-          handleAddProduct={handleAddProduct}
-          handleRemoveProduct={handleRemoveProduct}
-          setSelectedProducts={setSelectedProducts} //barcode
-           productErrors={errors.products}
-        />
-      )}
+
+      <CustomerDetails
+        customer={customer}
+        isExistingCustomer={isExistingCustomer}
+        handleMobile={handleMobile}
+        setCustomer={setCustomer}
+        errors={errors}
+        gstDetails={gstDetails}
+        setGstDetails={setGstDetails}
+      />
 
       {/* Step 3: Bill Type */}
-      {step === 3 && (
-        <BillType
-          billType={billType}
-          setBillType={setBillType}
-          gstPercent={gstPercent}
-          setGstPercent={setGstPercent}
-          customer={customer}
-          handlePincodeChange={handlePincodeChange}
-          state={state}
-          totals={totals}
-        />
-      )}
+      <ProductDetails
+        products={products}
+        selectedProducts={selectedProducts}
+        handleProductChange={handleProductChange}
+        handleAddProduct={handleAddProduct}
+        handleRemoveProduct={handleRemoveProduct}
+        setSelectedProducts={setSelectedProducts} //barcode
+        productErrors={errors.products}
+        billType={billType}
+        isWithinState={isWithinState}
+      />
 
       {/* Step 4: Payment Type */}
-      {step === 4 && (
-        <PaymentDetails
-          paymentType={paymentType}
-          setPaymentType={setPaymentType}
-          paymentDetails={paymentDetails}
-          setPaymentDetails={setPaymentDetails}
-          totals={totals}
-          notes={notes}
-          setNotes={setNotes}
-        />
-      )}
+      {/* <PaymentDetails
+        paymentType={paymentType}
+        setPaymentType={setPaymentType}
+        paymentDetails={paymentDetails}
+        setPaymentDetails={setPaymentDetails}
+        totals={totals}
+        notes={notes}
+        setNotes={setNotes}
+      /> */}
 
       {/* Navigation Buttons */}
       <Box mt={4} display="flex" justifyContent="space-between">
-        {step > 1 && (
-          <Button variant="outlined" onClick={prevStep} color="#2F4F4F">
-            Back
-          </Button>
-        )}
-        {step < 4 ? (
-          <Button
-            variant="contained"
-            onClick={nextStep}
-            sx={{ backgroundColor: "#2F4F4F" }}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            sx={{ backgroundColor: "#2F4F4F" }}
-          >
-            Submit Bill
-          </Button>
-        )}
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", color: "#fff" }}          >
+          Submit Bill
+        </Button>
       </Box>
     </>
   );

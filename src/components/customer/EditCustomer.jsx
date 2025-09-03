@@ -46,7 +46,7 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
     state: "",
     stateCode: "",
   });
-  const [isGstApplicable, setIsGstApplicable] = useState(false);
+  // const [isGstApplicable, setIsGstApplicable] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -63,8 +63,12 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
             city: data.city || "",
             bio: data.bio || "",
           });
-          const gstApplicable = data.gstRegistered;
-          setIsGstApplicable(gstApplicable);
+          setGstDetails({
+            gstNumber: data.gstDetails?.gstNumber || "",
+            legalName: data.gstDetails?.legalName || "",
+            state: data.gstDetails?.state || "",
+            stateCode: data.gstDetails?.stateCode || "",
+          });
         }
       } catch (err) {
         console.error("Error loading user", err);
@@ -73,24 +77,24 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
 
     fetchUser();
   }, [data]);
-   useEffect(() => {
-      const fetchGstDetails = async () => {
-        try {
-          const gst = await getGstDetails(data?._id);
+  //  useEffect(() => {
+  //     const fetchGstDetails = async () => {
+  //       try {
+  //         const gst = await getGstDetails(data?._id);
   
-          setGstDetails({
-            gstNumber: gst?.gstNumber || "",
-            legalName: gst?.legalName || "",
-            state: gst?.state || "",
-            stateCode: gst?.stateCode || "",
-          });
-        } catch (err) {
-          console.error("Error fetching GST details", err);
-        }
-      };
+  //         setGstDetails({
+  //           gstNumber: gst?.gstNumber || "",
+  //           legalName: gst?.legalName || "",
+  //           state: gst?.state || "",
+  //           stateCode: gst?.stateCode || "",
+  //         });
+  //       } catch (err) {
+  //         console.error("Error fetching GST details", err);
+  //       }
+  //     };
   
-      fetchGstDetails();
-    }, [isGstApplicable]);
+  //     fetchGstDetails();
+  //   }, [gstDetails]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,10 +107,9 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
   const handleUpdateUser = async () => {
      try {
        const updatedUser = {
-         ...formData,
-         bankDetails,
-         gstRegistered: isGstApplicable,
-       };
+      ...formData,
+      gstDetails,
+    };
        const res = await updateUser(data._id, updatedUser);
  
        if (res === 401) {
@@ -121,26 +124,11 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
        }
        if (res) {
          
-         // if (gstDetails.gstNumber === "") {
-         if (isGstApplicable && gstDetails.gstNumber === "") {
-           const r = await createGstDetails(data._id, gstDetails); // Call your API here
-           if (r.success === true) {
-             setSnackbarMessage("Customer Updated successful!");
-             setSnackbarOpen(true);
-             refresh();
-             handleCloseEdit();
-           }
-           if (r.success === false) {
-             setSnackbarMessage(r.message);
-             setSnackbarOpen(true);
-             return;
-           }
-         }
+         
          setSnackbarMessage("Customer Updated successful!");
          setSnackbarOpen(true);
          refresh();
          handleCloseEdit();
-         // }
        }
      } catch (error) {
        setSnackbarMessage("Failed to update Customer! ");
@@ -174,21 +162,7 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
                 />
               </Grid>
             ))}
-
-            <Box mt={2}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isGstApplicable}
-                  onChange={(e) => setIsGstApplicable(e.target.checked)}
-                  style={{ marginRight: 8 }}
-                />
-                Is GST Applicable?
-              </label>
-            </Box>
           </Grid>
-
-          {isGstApplicable && (
             <Box mt={2}>
               <Typography variant="h6" mb={2}>
                 GST Details
@@ -214,15 +188,14 @@ const EditCustomer = ({ open, data, handleCloseEdit, refresh }) => {
                 ))}
               </Grid>
             </Box>
-          )}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button onClick={handleCloseEdit} sx={{ mr: 2, color: "#2F4F4F" }}>
+            <Button onClick={handleCloseEdit} sx={{ mr: 2, color: "#182848" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{background: "linear-gradient(135deg, #182848, #324b84ff)",color: "#fff" }}
               onClick={handleUpdateUser}
             >
               Update

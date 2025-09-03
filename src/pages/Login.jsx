@@ -1,29 +1,26 @@
 import React, { useState } from "react";
 import {
-  Alert,
   Box,
   Button,
-  Grid,
-  Paper,
-  Snackbar,
   TextField,
   Typography,
+  Paper,
+  IconButton,
+  InputAdornment,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import invoice from "../assets/invoice.jpg";
-import { Link, useNavigate } from "react-router-dom";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/UserService";
 import { useAuth } from "../context/AuthContext";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 
-const Login = () => {
+function Login() {
   const { loginData } = useAuth();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -31,139 +28,160 @@ const Login = () => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       const res = await loginUser(credentials);
       if (res) {
         loginData(res.user, res.token);
-        // localStorage.setItem("token", res.token); // store token if needed
+        localStorage.setItem("token", res.token);
         setSnackbarMessage("Login successful!");
         setShowSnackbar(true);
         setTimeout(() => {
           navigate("/dashboard");
-        }, 500);
+        }, 600);
       }
     } catch (err) {
-      if(err.error){
+      if (err.error) {
         setSnackbarMessage(err.error);
-        setShowSnackbar(true);
-      }
-      if(err.message){
+      } else if (err.message) {
         setSnackbarMessage(err.message);
-        setShowSnackbar(true);
+      } else {
+        setSnackbarMessage("Something went wrong!");
       }
+      setShowSnackbar(true);
     }
   };
 
- return (
-    <Box
-      sx={{
-        height: "100vh",
-        backgroundImage: `url(${invoice})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        display: "flex",
-        flexDirection: "column", // column layout for content + footer
-      }}
-    >
-      {/* Main content wrapper */}
+  return (
+    <Box display="flex" minHeight="100vh">
+      {/* Left Side - Info Section */}
       <Box
+        flex={1}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
         sx={{
-          flex: 1, // pushes footer down
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "left",
-          overflow: "hidden",
+          p: 6,
+          background: "linear-gradient(135deg, #182848, #324b84ff)",
+          color: "#fff",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
+        <Typography variant="h3" fontWeight="bold" gutterBottom>
+         Angel Inventory
+        </Typography>
+        <Typography variant="h6" sx={{ maxWidth: 500, textAlign: "center" }}>
+          Manage your sugar factory operations with ease – from cane procurement
+          to Inventory. Our software helps you track payments, invoices, and
+          production efficiently.
+        </Typography>
+      </Box>
+
+      {/* Right Side - Login Form */}
+      <Box
+        flex={1}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ p: 4 }}
+      >
         <Paper
-          elevation={8}
+          elevation={6}
           sx={{
             p: 4,
-            maxWidth: 500,
-            width: "50%",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            marginLeft: "10%",
-            borderRadius: 5,
+            width: 380,
+            borderRadius: 3,
+            backdropFilter: "blur(8px)",
+            backgroundColor: "rgba(255,255,255,0.9)",
           }}
         >
-          <Typography variant="h4" gutterBottom>
+          <Typography
+            variant="h4"
+            align="center"
+            gutterBottom
+            sx={{ fontWeight: "bold", color: "#182848" }}
+          >
             Login
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={credentials.email}
-                onChange={handleChange}
-              />
-            </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={credentials.password}
-                onChange={handleChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
+          <form onSubmit={handleSubmit}>
+            {/* Email */}
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={credentials.email}
+              onChange={handleChange}
+              required
+            />
+
+            {/* Password */}
+            <TextField
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={credentials.password}
+              onChange={handleChange}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Login Button */}
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{
+                mt: 3,
+                py: 1.5,
+                fontSize: "16px",
+                fontWeight: "bold",
+                background: "linear-gradient(135deg, #182848, #324b84ff)",
+                color: "#fff",
+              }}
+            >
+              Login
+            </Button>
+
+            {/* Register link */}
+            <Typography align="center" sx={{ mt: 2 }}>
+              Don’t have an account?{" "}
               <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSubmit}
-                sx={{ mt: "10%" }}
+                onClick={() => navigate("/register")}
+                sx={{
+                  textTransform: "none",
+                  color: "#182848",
+                  fontWeight: "bold",
+                }}
               >
-                Login
+                Register here
               </Button>
-            </Grid>
-
-            <Grid item xs={12} textAlign="right" mt={"3%"}>
-              <Link
-                to="/register"
-                style={{ textDecoration: "none", color: "#1976d2" }}
-              >
-                No Account? Register Here
-              </Link>
-            </Grid>
-          </Grid>
+            </Typography>
+          </form>
         </Paper>
       </Box>
 
-      {/* Footer inside flex column */}
-      <Box
-        component="footer"
-        sx={{
-          textAlign: "center",
-          py: 2,
-          color: "black",
-          fontSize: "1 rem",
-        }}
-      >
-        © {new Date().getFullYear()} Angel Shark IT Solution. All rights reserved. Visit our website 
-        <a href='https://www.angelshark.in/' target="blank" style={{color:'black'}}> www.angelshark.in </a>
-      </Box>
-
+      {/* Snackbar for login success/error */}
       <Snackbar
         open={showSnackbar}
         autoHideDuration={4000}
@@ -180,6 +198,6 @@ const Login = () => {
       </Snackbar>
     </Box>
   );
-};
+}
 
 export default Login;

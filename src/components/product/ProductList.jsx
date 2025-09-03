@@ -16,11 +16,26 @@ import {
   Alert,
   Menu,
   MenuItem,
+  useMediaQuery,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PrintIcon from "@mui/icons-material/Print";
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { deleteProduct, getAllProducts } from "../../services/ProductService";
 import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
@@ -31,7 +46,8 @@ import FilterData from "../shared/FilterData";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-
+import AddStockIn from "../stock-in/AddStockIn";
+import AddStockOut from "../stock-out/AddStockOut";
 const exportColumns = [
   { label: "HSN Code", key: "hsnCode" },
   { label: "Name", key: "name" },
@@ -50,6 +66,10 @@ const exportColumns = [
 
 const ProductList = () => {
   const { webuser } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  
   const [mainUser, setMainUser] = useState();
   const [products, setProducts] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -62,21 +82,28 @@ const ProductList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [stockInOpen, setStockInOpen] = useState(false);
+  const [stockOutOpen, setStockOutOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  
   const openExportMenu = Boolean(anchorEl);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleCloseEdit = () => setEdit(false);
 
-  const pageSize = 4;
+  const pageSize = 5;
 
   useEffect(() => {
     fetchProducts();
   }, []);
+  
   const fetchProducts = async () => {
     try {
       const result = await getUserById(webuser.id);
-      setMainUser(result); // still update state if needed elsewhere
+      setMainUser(result);
 
       const data = await getAllProducts();
 
@@ -93,20 +120,34 @@ const ProductList = () => {
     setData(rowData);
     setEdit(true);
   };
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
+  
+  const handleDeleteClick = (id) => {
+    setProductToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (productToDelete) {
       try {
-        const res = await deleteProduct(id);
+        const res = await deleteProduct(productToDelete);
         if (res) {
           setSnackbarMessage("Product Deleted!");
           setSnackbarOpen(true);
-          fetchProducts(); // Refresh the list
+          fetchProducts();
         }
       } catch (error) {
         console.error("Error deleting product", error);
-        alert("Failed to delete product.");
+        setSnackbarMessage("Failed to delete product.");
+        setSnackbarOpen(true);
       }
     }
+    setDeleteDialogOpen(false);
+    setProductToDelete(null);
+  };
+  
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setProductToDelete(null);
   };
 
   const handlePrint = async (prod) => {
@@ -117,8 +158,29 @@ const ProductList = () => {
     }
   };
 
+  const handleStockIn = (product) => {
+    setSelectedProduct(product);
+    setStockInOpen(true);
+  };
+
+  const handleStockOut = (product) => {
+    setSelectedProduct(product);
+    setStockOutOpen(true);
+  };
+
+  const handleCloseStockIn = () => {
+    setStockInOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleCloseStockOut = () => {
+    setStockOutOpen(false);
+    setSelectedProduct(null);
+  };
+
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const filteredProducts = products?.filter(
@@ -126,15 +188,18 @@ const ProductList = () => {
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prod.hsnCode?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
   useEffect(() => {
     if (filteredProducts) {
       setTotalPages(Math.ceil(filteredProducts.length / pageSize));
     }
   }, [filteredProducts]);
+  
   const paginatedProducts = filteredProducts?.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+  
   const handleExportClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -143,168 +208,219 @@ const ProductList = () => {
     setAnchorEl(null);
   };
 
+  // Mobile Card View for Products
+  const renderMobileCards = () => {
+    return paginatedProducts?.map((prod) => (
+      <Card key={prod._id} sx={{ mb: 2, boxShadow: 2 }}>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+            <Box>
+              <Typography variant="h6" fontWeight="bold">
+                {prod.name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                HSN: {prod.hsnCode}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {prod.shortDescription}
+              </Typography>
+            </Box>
+            <Chip
+              label={prod.status.charAt(0).toUpperCase() + prod.status.slice(1)}
+              color={prod.status === "active" ? "success" : "default"}
+              size="small"
+            />
+          </Box>
+          
+          <Grid container spacing={1} sx={{ mt: 1 }}>
+            <Grid item xs={6}>
+              <Typography variant="body2">
+                <strong>Price:</strong> ₹{prod.price}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2">
+                <strong>MRP:</strong> ₹{prod.compareAtPrice}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2">
+                <strong>Discount:</strong> {prod.discountPercentage}%
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2">
+                <strong>Qty:</strong> {prod.quantity}
+              </Typography>
+            </Grid>
+          </Grid>
+          
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2" component="span">
+              <strong>Tags: </strong>
+            </Typography>
+            {prod.tags.map((tag, index) => (
+              <Chip
+                key={index}
+                label={tag}
+                size="small"
+                sx={{ m: 0.2, fontSize: '0.7rem' }}
+              />
+            ))}
+          </Box>
+        </CardContent>
+        <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
+          <IconButton color="success" onClick={() => handleStockIn(prod)} size="small">
+            <AddIcon />
+          </IconButton>
+          <IconButton color="warning" onClick={() => handleStockOut(prod)} size="small">
+            <RemoveIcon />
+          </IconButton>
+          <IconButton color="primary" onClick={() => handleEdit(prod)} size="small">
+            <EditIcon />
+          </IconButton>
+          <IconButton color="error" onClick={() => handleDeleteClick(prod._id)} size="small">
+            <DeleteIcon />
+          </IconButton>
+          <IconButton color="inherit" onClick={() => handlePrint(prod)} size="small">
+            <PrintIcon />
+          </IconButton>
+        </CardActions>
+      </Card>
+    ));
+  };
+
   return (
     <>
       <Box>
         <Box
           display="flex"
+          flexDirection={isSmallMobile ? "column" : "row"}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={isSmallMobile ? "flex-start" : "center"}
           mb={2}
+          gap={isSmallMobile ? 2 : 0}
         >
           <Typography variant="h4" fontWeight={600}>
             Products
           </Typography>
-          <FilterData value={searchQuery} onChange={handleSearchChange} />
+          
+          <Box 
+            display="flex" 
+            flexDirection={isSmallMobile ? "column" : "row"} 
+            gap={1} 
+            width={isSmallMobile ? "100%" : "auto"}
+          >
+            <TextField
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              size="small"
+              fullWidth={isSmallMobile}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            
+            <Box display="flex" gap={1} ml={isSmallMobile ? 0 : 1}>
+              <Button
+                variant="contained"
+                sx={{ 
+                 background: "linear-gradient(135deg, #182848, #324b84ff)",color: "#fff",
+                  whiteSpace: 'nowrap',
+                  minWidth: 'auto'
+                }}
+                onClick={handleOpen}
+                fullWidth={isSmallMobile}
+              >
+                {isSmallMobile ? 'Add Product' : 'Add Product (alt+r)'}
+              </Button>
+
+              {/* <Button
+                variant="outlined"
+                onClick={handleExportClick}
+                fullWidth={isSmallMobile}
+                sx={{ whiteSpace: 'nowrap', minWidth: 'auto' }}
+              >
+                <GetAppOutlinedIcon titleAccess="Download As" />
+                {isSmallMobile && ' Export'}
+              </Button> */}
+            </Box>
+          </Box>
         </Box>
 
-        <Box display="flex" justifyContent="flex-end" mb={2}>
-          <Button
-            // accessKey="r"
-            variant="contained"
-            sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
-            onClick={handleOpen}
-          >
-            Add Product (alt+r)
-          </Button>
-
-          <Button
-            variant="outlined"
-            sx={{ ml: 2 }}
-            onClick={handleExportClick}
-            // endIcon={<MoreVertIcon />}
-          >
-           <GetAppOutlinedIcon titleAccess="Download As" />
-          </Button>
-        </Box>
-        <Menu
-          anchorEl={anchorEl}
-          open={openExportMenu}
-          onClose={handleExportClose}
-        >
-          <MenuItem
-            onClick={() => {
-              exportToPDF(products, exportColumns, "Products");
-              handleExportClose();
+        {isMobile ? (
+          <Box>
+            {renderMobileCards()}
+          </Box>
+        ) : (
+          <TableContainer
+            component={Paper}
+            sx={{
+              width: "100%",
+              overflowX: "auto",
             }}
           >
-            PDF
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              exportToExcel(products, exportColumns, "Products");
-              handleExportClose();
-            }}
-          >
-            Excel
-          </MenuItem>
-        </Menu>
-
-        {/* <Box > */}
-        <TableContainer
-          component={Paper}
-          sx={{
-            width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" },
-            overflowX: "auto",
-          }}
-        >
-          <Table sx={{ minWidth: 1000 }}>
-            <TableHead sx={{ backgroundColor: "lightgrey" }}>
-              <TableRow>
-                <TableCell>
-                  <strong>HSN Code</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Name</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Short Description</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Price (₹)</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>MRP (₹)</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Discount (%)</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Quantity</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Status</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Tags</strong>
-                </TableCell>
-                <TableCell width={80}>
-                  <strong>Actions</strong>
-                </TableCell>
-                {/* <TableCell>
-                  <strong>Barcode</strong>
-                </TableCell> */}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedProducts?.map((prod) => (
-                <TableRow key={prod._id}>
-                  <TableCell>{prod.hsnCode}</TableCell>
-                  <TableCell>{prod.name}</TableCell>
-                  <TableCell>{prod.shortDescription}</TableCell>
-                  <TableCell>{prod.price}</TableCell>
-                  <TableCell>{prod.compareAtPrice}</TableCell>
-                  <TableCell>{prod.discountPercentage}%</TableCell>
-                  <TableCell>{prod.quantity}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        prod.status.charAt(0).toUpperCase() +
-                        prod.status.slice(1)
-                      }
-                      color={prod.status === "active" ? "success" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    {prod.tags.map((tag, index) => (
-                      <Chip
-                        key={index}
-                        label={tag}
-                        size="small"
-                        sx={{ m: 0.5 }}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleEdit(prod)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(prod._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                  {/* <TableCell align="center">
-                    <IconButton
-                      color="inherit"
-                      onClick={() => handlePrint(prod)}
-                    >
-                      <PrintIcon />
-                    </IconButton>
-                  </TableCell> */}
+            <Table sx={{ minWidth: 650 }}>
+              <TableHead sx={{ backgroundColor: "lightgrey" }}>
+                <TableRow>
+                  <TableCell><strong>Product Code</strong></TableCell>
+                  <TableCell><strong>Category Name</strong></TableCell>
+                  <TableCell><strong>Product Name</strong></TableCell>
+                  <TableCell><strong>Supplier Name</strong></TableCell>
+                  <TableCell><strong>Short Description</strong></TableCell>
+                  <TableCell><strong>Price (₹)</strong></TableCell>
+                  <TableCell><strong>Quantity</strong></TableCell>
+                  <TableCell><strong>Unit</strong></TableCell>
+                  <TableCell><strong>Status</strong></TableCell>
+                  <TableCell width={160}><strong>Actions</strong></TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        {/* </Box> */}
+              </TableHead>
+              <TableBody>
+                {paginatedProducts?.map((prod) => (
+                  <TableRow key={prod._id}>
+                    <TableCell>{prod.hsnCode}</TableCell>
+                    <TableCell>{prod.name}</TableCell>
+                    <TableCell>{prod.name}</TableCell>
+                    <TableCell>{prod.name}</TableCell>
+                    <TableCell>{prod.shortDescription}</TableCell>
+                    <TableCell>{prod.price}</TableCell>
+                    
+                    <TableCell>{prod.quantity}</TableCell>
+                    <TableCell>{prod.unit}</TableCell>
+                    
+                    <TableCell>
+                      <Chip
+                        label={prod.status.charAt(0).toUpperCase() + prod.status.slice(1)}
+                        color={prod.status === "active" ? "success" : "default"}
+                        size="small"
+                      />
+                    </TableCell>
+                    
+                    <TableCell align="center">
+                      <IconButton color="success" onClick={() => handleStockIn(prod)}>
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton color="warning" onClick={() => handleStockOut(prod)}>
+                        <RemoveIcon />
+                      </IconButton>
+                      <IconButton color="primary" onClick={() => handleEdit(prod)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => handleDeleteClick(prod._id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Box>
 
       <Snackbar
@@ -314,15 +430,27 @@ const ProductList = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          severity={
-            snackbarMessage === "Product Deleted!" ? "success" : "error"
-          }
+          severity={snackbarMessage === "Product Deleted!" ? "success" : "error"}
           onClose={() => setSnackbarOpen(false)}
           variant="filled"
         >
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this product?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <AddProduct
         open={open}
@@ -337,11 +465,29 @@ const ProductList = () => {
         refresh={fetchProducts}
       />
 
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
+      {/* Stock In Dialog */}
+      <AddStockIn
+        open={stockInOpen}
+        handleClose={handleCloseStockIn}
+        product={selectedProduct}
+        refresh={fetchProducts}
       />
+
+      {/* Stock Out Dialog */}
+      <AddStockOut
+        open={stockOutOpen}
+        handleClose={handleCloseStockOut}
+        product={selectedProduct}
+        refresh={fetchProducts}
+      />
+
+      {filteredProducts.length > 0 && (
+        <PaginationComponent
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
 
       <BarcodePrinter product={code} />
     </>

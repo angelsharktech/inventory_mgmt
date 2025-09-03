@@ -17,6 +17,8 @@ import {
 } from "../../services/ProductService";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import { getUserById } from "../../services/UserService";
+import { useAuth } from "../../context/AuthContext";
 
 const style = {
   position: "absolute",
@@ -36,6 +38,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
   const [categories, setCategories] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const { webuser } = useAuth();
   const [form, setForm] = useState({
 
     name: "",
@@ -65,16 +68,36 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await getAllCategories();
-        const parentsOnly = res.data.filter((cat) => cat.parent === null);
+        // get user (normalize shape)
+        const userRes = await getUserById(webuser.id);
+        const userData = userRes?.data || userRes; // adapt if service returns axios response
+        // setMainUser(userData);
+
+        // get categories (normalize to array)
+        const catRes = await getAllCategories();
+        // catRes.data might be { success: true, data: [...] } or might be the array directly
+        const allCats = catRes?.data?.data ?? catRes?.data ?? [];
+
+        // normalize user's organization id
+        const userOrgId =
+          userData?.organization_id?._id ?? userData?.organization_id ?? null;
+
+        const parentsOnly = allCats.filter((cat) => {
+          const catOrgId =
+            cat?.organization_id?._id ?? cat?.organization_id ?? null;
+          return String(catOrgId) === String(userOrgId);
+        });
+
+        // console.log("Fetched categories:", parentsOnly);
         setCategories(parentsOnly);
       } catch (err) {
-        console.error("Error loading categories", err);
+        // console.error("Error loading categories", err);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [webuser.id]);
+  // console.log("EditProduct form state:", categories);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -97,6 +120,8 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             height: prod.dimensions?.height || "",
           },
         });
+        // console.log("Fetched product for edit:", form);
+
       } catch (err) {
         console.error("Error loading product by ID", err);
       }
@@ -113,17 +138,6 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
       ...prev,
       [name]: value,
     }));
-
-    // if (["length", "width", "height"].includes(name)) {
-    //   setForm((prev) => ({
-    //     ...prev,
-    //     dimensions: {
-    //       ...prev.dimensions,
-    //       [name]: value,
-    //     },
-    //   }));
-    // } else {
-    // }
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -170,11 +184,11 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
         lowStockThreshold: parseInt(form.lowStockThreshold),
         variantOptions: form.hasVariants
           ? form.variantOptions.map((opt) => ({
-              name: opt.name,
-              values: opt.values,
-              _id: opt._id,
-              id: opt.id,
-            }))
+            name: opt.name,
+            values: opt.values,
+            _id: opt._id,
+            id: opt.id,
+          }))
           : [],
       };
 
@@ -200,6 +214,37 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
           </Typography>
 
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                sx={{ width: "200px" }}
+                select
+                label="Category"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+              >
+                {categories.map((cat) => (
+                  <MenuItem key={cat._id} value={cat._id}>
+                    {cat.categoryName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                sx={{ width: "200px" }}
+                select
+                label="Supplier Name"
+                name="supplier"
+                value={form.supplier || ""}   // updated to match supplier field
+                onChange={handleChange}
+              >
+                {/* Static supplier names */}
+                <MenuItem value="Vikas Jadhav">Vikas Jadhav</MenuItem>
+                <MenuItem value="Pravin Kanse">Pravin Kanse</MenuItem>
+                <MenuItem value="Radhika Shinde">Radhika Shinde</MenuItem>
+              </TextField>
+            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Name"
@@ -212,7 +257,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="HSN number"
+                label="Product number"
                 name="hsnCode"
                 value={form.hsnCode}
                 onChange={handleChange}
@@ -260,17 +305,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            {/* <Grid item xs={6}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Weight (kg)"
-                name="weight"
-                type="number"
-                value={form.weight}
-                onChange={handleChange}
-              />
-            </Grid> */}
-            <Grid item xs={12} sm={6}>
+            {/* <Grid item xs={12} sm={6}>
               <TextField
                 sx={{ width: "200px" }}
                 label="SKU"
@@ -278,7 +313,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 value={form.sku}
                 onChange={handleChange}
               />
-            </Grid>
+            </Grid> 
             <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
@@ -288,32 +323,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            {/* <Grid item xs={12}>
-              <TextField
-                sx={{ width: "200px" }}
-                multiline
-                label="Description"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-              />
-            </Grid> */}
-            <Grid item xs={12}>
-              <TextField
-                sx={{ width: "200px" }}
-                select
-                label="Category"
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
@@ -322,61 +332,9 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                 value={form.tags}
                 onChange={handleChange}
               />
-            </Grid>
-
-            {/* <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Length (cm)"
-                name="length"
-                type="number"
-                value={form.dimensions.length}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Width (cm)"
-                name="width"
-                type="number"
-                value={form.dimensions.width}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Height (cm)"
-                name="height"
-                type="number"
-                value={form.dimensions.height}
-                onChange={handleChange}
-              />
-            </Grid> */}
-            {/* <Grid item xs={6}>
-              <TextField
-                label="Cost Per Item"
-                name="costPerItem"
-                type="number"
-                value={form.costPerItem}
-                onChange={handleChange}
-                 sx={{ width: "200px" }}
-              />
-            </Grid> */}
-
-            {/* <Grid item xs={6}>
-              <TextField
-                label="Low Stock Threshold"
-                name="lowStockThreshold"
-                type="number"
-                value={form.lowStockThreshold}
-                onChange={handleChange}
-                 sx={{ width: "200px" }}
-              />
-            </Grid> */}
-            {/* <Grid></Grid> */}
-            <Grid item xs={12}>
+            </Grid>*/}
+            
+            {/* <Grid item xs={12}>
               <Box display="flex" alignItems="center">
                 <Typography>Variants:</Typography>
                 <Button
@@ -398,10 +356,9 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                   <Button
                     sx={{ ml: "5px" }}
                     variant="outlined"
-                    color="#2F4F4F"
+                    color="#324b84ff"
                     onClick={addVariantOption}
                   >
-                    {/* + Add Variant Option */}
                     <AddCircleOutlineOutlinedIcon />
                   </Button>
                 )}
@@ -438,7 +395,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
                     </Box>
                   </Grid>
                 ))}
-            </Grid>
+            </Grid> */}
           </Grid>
 
           <Box mt={4} display="flex" justifyContent="flex-end">
@@ -447,7 +404,7 @@ const EditProduct = ({ open, data, handleCloseEdit, refresh }) => {
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", color: "#fff" }}
               onClick={updateProduct}
             >
               Update

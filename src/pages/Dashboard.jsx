@@ -12,10 +12,14 @@ import PurchaseBill from "../components/PurchaseBill";
 import SaleBillReport from "../components/reports/SaleBillReport";
 import PurchaseBillReport from "../components/reports/PurchaseBillReport";
 import Home from "./Home";
-import HsnReport from "../components/reports/HsnReport";
+
 import Quotation from "../components/Quotation";
 import GlobalModals from "../components/shared/GlobalModals";
 import { useShortcuts } from "../context/ShortcutContext";
+import StockIn from "../components/StockIn";
+import StockOut from "../components/StockOut";
+import StockInReport from "../components/reports/StockInReport";
+import StockOutReport from "../components/reports/StockOutReport";
 
 
 
@@ -48,8 +52,8 @@ const Dashboard = () => {
       case "Suppliers":
         return <Vendors />;
 
-      case "Customer":
-        return <Customer />;
+      // case "Customer":
+      //   return <Customer />;
 
       case "Category":
         return <Category />;
@@ -57,23 +61,29 @@ const Dashboard = () => {
       case "Product":
         return <Product />;
 
-      case "Purchase Bill":
-        return <PurchaseBill />;
+      case "Stock In":
+        return <StockIn />;
+      
+      case "Stock Out":
+        return <StockOut />;
 
-      case "Sale Bill":
-        return <SaleBill />;
+      // case "Purchase Bill":
+      //   return <PurchaseBill />;
 
-      case "Sale Bill Report":
-        return <SaleBillReport/>
+      case "Report":
+        return <Report />;
 
-      case "Purchase Bill Report":
-        return <PurchaseBillReport/>
+      case "Stock In Report":
+        return <StockInReport />
 
-      case "HSN Report":
-        return <HsnReport />
+      case "Stock Out Report":
+        return <StockOutReport />
 
-      case "Quotation":
-        return <Quotation />
+      // case "HSN Report":
+      //   return <HsnReport />
+
+      // case "Quotation":
+      //   return <Quotation />
 
       default:
         return <h2></h2>;

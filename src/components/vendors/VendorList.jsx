@@ -12,6 +12,8 @@ import {
   TableHead,
   TableRow,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import EditIcon from "@mui/icons-material/Edit";
@@ -36,16 +38,20 @@ const VendorList = () => {
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [positions, setPositions] = useState([]);
   const [user, setUser] = useState([]);
-   const [mainUser, setMainUser] = useState();
+  const [mainUser, setMainUser] = useState();
   const [roles, setRoles] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
   
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+  const isExtraSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [posData, roleData,user] = await Promise.all([
+        const [posData, roleData, user] = await Promise.all([
           getAllPositions(),
           getAllRoles(),
           getUserById(webuser.id)
@@ -62,10 +68,10 @@ const VendorList = () => {
   }, []);
 
   useEffect(() => {
-    if (roles && roles.length > 0) {
+    if (roles && roles.length > 0 && mainUser) {
       fetchUsers();
     }
-  }, [roles]);
+  }, [roles, mainUser]);
 
   const fetchUsers = async () => {
     try {
@@ -73,16 +79,12 @@ const VendorList = () => {
       setUser(data);
 
       const vendorRole = roles.find((r) => r.name.toLowerCase() === "vendor");
-      // if (vendorRole) {
-      //   const vendorsOnly = data.filter(
-      //     (u) =>{console.log(u.role_id?._id +" " + vendorRole?._id + " "+u.status + " "+  u.organization_id?._id +" "+ mainUser.organization_id?._id)}
-      //   );
-        if (vendorRole) {
-          const vendorsOnly = data.filter(
-            (u) => u.role_id?._id === vendorRole?._id && 
-                   u.status === "active" && 
-                   u.organization_id?._id === mainUser.organization_id?._id
-          );
+      if (vendorRole && mainUser) {
+        const vendorsOnly = data.filter(
+          (u) => u.role_id?._id === vendorRole?._id && 
+                 u.status === "active" && 
+                 u.organization_id?._id === mainUser.organization_id?._id
+        );
         setFilteredVendors(vendorsOnly);
       }
     } catch (error) {
@@ -101,15 +103,17 @@ const VendorList = () => {
       ven.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ven.phone_number?.includes(searchQuery.toLowerCase())
   );
+  
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
-  // --------------end of search
+  
   useEffect(() => {
     if (filteredvendor) {
       setTotalPages(Math.ceil(filteredvendor.length / pageSize));
     }
   }, [filteredvendor]);
+  
   const paginatedVendors = filteredvendor?.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -119,6 +123,7 @@ const VendorList = () => {
     setData(rowData);
     setEdit(true);
   };
+  
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this vendor?")) {
       try {
@@ -138,89 +143,147 @@ const VendorList = () => {
       }
     }
   };
+
+  // Mobile-friendly table view
+  const MobileVendorCard = ({ vendor }) => (
+    <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+        <Typography variant="subtitle1" fontWeight="bold">
+          {vendor.first_name} {vendor.last_name}
+        </Typography>
+        <Box>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handleEdit(vendor)}
+            sx={{ mr: 0.5 }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => handleDelete(vendor._id)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+      <Typography variant="body2" sx={{ mb: 0.5 }}>
+        <strong>Contact:</strong> {vendor.phone_number}
+      </Typography>
+      <Typography variant="body2">
+        <strong>Address:</strong> {vendor.address} {vendor.city}
+      </Typography>
+    </Paper>
+  );
+
   return (
     <>
-      <Box>
+      <Box sx={{ p: isExtraSmallScreen ? 1 : 2 }}>
         <Box
           display="flex"
+          flexDirection={isSmallScreen ? "column" : "row"}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={isSmallScreen ? "flex-start" : "center"}
           mb={2}
+          gap={isSmallScreen ? 2 : 0}
         >
-          <Typography variant="h4" fontWeight={600}>
+          <Typography variant={isSmallScreen ? "h5" : "h4"} fontWeight={600}>
             Suppliers
           </Typography>
-          <FilterData value={searchQuery} onChange={handleSearchChange} />
-        </Box>
-
-        <Box display="flex" justifyContent="flex-end" mb={2}>
-          <Button
-          // accessKey="l"
-            variant="contained"
-            sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
-            onClick={handleOpen}
+          
+          {/* Combined search and button container */}
+          <Box 
+            display="flex" 
+            flexDirection={isSmallScreen ? "column" : "row"} 
+            alignItems={isSmallScreen ? "stretch" : "center"}
+            gap={2}
+            width={isSmallScreen ? "100%" : "auto"}
           >
-            Add Supplier(alt+l)
-          </Button>
+            <Box flexGrow={1} width={isSmallScreen ? "100%" : "auto"} mt={2}>
+              <FilterData 
+                value={searchQuery} 
+                onChange={handleSearchChange} 
+                fullWidth={isSmallScreen}
+              />
+            </Box>
+            <Button
+              variant="contained"
+              sx={{ 
+                background: "linear-gradient(135deg, #182848, #324b84ff)", 
+                color: "#fff",
+                whiteSpace: 'nowrap',
+                width: isSmallScreen ? "100%" : "auto"
+              }}
+              onClick={handleOpen}
+            >
+              {isSmallScreen ? "Add Supplier" : "Add Supplier(alt+l)"}
+            </Button>
+          </Box>
         </Box>
 
-        <TableContainer
-          component={Paper}
-          sx={{
-            width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" },
-            overflowX: "auto",
-          }}
-        >
-          <Table sx={{ minWidth: 1000 }}>
-            <TableHead sx={{ backgroundColor: "lightgrey" }}>
-              <TableRow>
-                <TableCell>
-                  <strong>Name</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Contact Number</strong>
-                </TableCell>
-                {/* <TableCell>
-                  <strong>City</strong>
-                </TableCell> */}
-                <TableCell>
-                  <strong>Address</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Actions</strong>
-                </TableCell>
-                
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedVendors.map((vendor) => (
-                <TableRow key={vendor._id}>
+        {isSmallScreen ? (
+          // Mobile view with cards
+          <Box>
+            {paginatedVendors.map((vendor) => (
+              <MobileVendorCard key={vendor._id} vendor={vendor} />
+            ))}
+          </Box>
+        ) : (
+          // Desktop view with table
+          <TableContainer
+            component={Paper}
+            sx={{
+              width: "100%",
+              overflowX: "auto",
+            }}
+          >
+            <Table sx={{ minWidth: 650 }}>
+              <TableHead sx={{ backgroundColor: "lightgrey" }}>
+                <TableRow>
                   <TableCell>
-                    {vendor.first_name} {vendor.last_name}
+                    <strong>Name</strong>
                   </TableCell>
-                  <TableCell>{vendor.phone_number}</TableCell>
-                  <TableCell>{vendor.address}  {vendor.city}</TableCell>
-                  {/* <TableCell></TableCell> */}
                   <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleEdit(vendor)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(vendor._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <strong>Contact Number</strong>
                   </TableCell>
-                 
+                  <TableCell>
+                    <strong>Address</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Actions</strong>
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {paginatedVendors.map((vendor) => (
+                  <TableRow key={vendor._id}>
+                    <TableCell>
+                      {vendor.first_name} {vendor.last_name}
+                    </TableCell>
+                    <TableCell>{vendor.phone_number}</TableCell>
+                    <TableCell>{vendor.address}  {vendor.city}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEdit(vendor)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(vendor._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Box>
 
       <Snackbar
@@ -230,7 +293,7 @@ const VendorList = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          severity={snackbarMessage === "vendor Deleted!" ? "success" : "error"}
+          severity={snackbarMessage === "Vendor Deleted!" ? "error" : "success"}
           onClose={() => setSnackbarOpen(false)}
           variant="filled"
         >
@@ -245,11 +308,14 @@ const VendorList = () => {
         handleCloseEdit={handleCloseEdit}
         refresh={fetchUsers}
       />
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      
+      {filteredvendor && filteredvendor.length > 0 && (
+        <PaginationComponent
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
     </>
   );
 };

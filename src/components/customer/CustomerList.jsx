@@ -12,6 +12,8 @@ import {
   TableRow,
   IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import EditIcon from "@mui/icons-material/Edit";
@@ -42,6 +44,10 @@ const CustomerList = () => {
   const [mainUser, setMainUser] = useState();
   const pageSize = 6;
 
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+  const isExtraSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -60,11 +66,13 @@ const CustomerList = () => {
     fetchAll();
     fetchUsers();
   }, []);
+  
   useEffect(() => {
     if (roles && roles.length > 0) {
       fetchUsers();
     }
   }, [roles]);
+  
   const fetchUsers = async () => {
     try {
       const data = await getAllUser();
@@ -73,10 +81,7 @@ const CustomerList = () => {
       const customerRole = roles.find(
         (r) => r.name.toLowerCase() === "customer"
       );
-      //  if (customerRole) {
-      //   const customersOnly = data.filter(
-      //     (u) =>{console.log(u.role_id?._id +" " + customerRole?._id + " "+u.status + " "+  u.organization_id?._id +" "+ mainUser.organization_id?._id)}
-      //   );
+      
       if (customerRole) {
         const customersOnly = data.filter(
           (u) =>
@@ -92,7 +97,7 @@ const CustomerList = () => {
     }
   };
 
-  //   search bar code
+  // Search bar code
   const filteredCustomer = filteredCustomers?.filter(
     (cust) =>
       cust.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -100,10 +105,12 @@ const CustomerList = () => {
       cust.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cust.phone_number?.includes(searchQuery.toLowerCase())
   );
+  
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
   // --------------end of search
+  
   useEffect(() => {
     if (filteredCustomer) {
       setTotalPages(Math.ceil(filteredCustomer.length / pageSize));
@@ -123,6 +130,7 @@ const CustomerList = () => {
     setData(rowData);
     setEdit(true);
   };
+  
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this Customer?")) {
       try {
@@ -142,84 +150,147 @@ const CustomerList = () => {
       }
     }
   };
+
+  // Mobile-friendly customer card component
+  const MobileCustomerCard = ({ customer }) => (
+    <Paper sx={{ p: 2, mb: 2, borderRadius: 2, boxShadow: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+        <Typography variant="subtitle1" fontWeight="bold">
+          {customer.first_name} {customer.last_name}
+        </Typography>
+        <Box>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handleEdit(customer)}
+            sx={{ mr: 0.5 }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => handleDelete(customer._id)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+      <Typography variant="body2" sx={{ mb: 0.5 }}>
+        <strong>Contact:</strong> {customer.phone_number}
+      </Typography>
+      <Typography variant="body2">
+        <strong>Address:</strong> {customer.address} {customer.city}
+      </Typography>
+    </Paper>
+  );
+  
   return (
     <>
-      <Box>
+      <Box sx={{ p: isExtraSmallScreen ? 1 : 2 }}>
         <Box
           display="flex"
+          flexDirection={isSmallScreen ? "column" : "row"}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={isSmallScreen ? "flex-start" : "center"}
           mb={2}
+          gap={isSmallScreen ? 2 : 0}
         >
-          <Typography variant="h4" fontWeight={600}>
+          <Typography variant={isSmallScreen ? "h5" : "h4"} fontWeight={600}>
             Customers
           </Typography>
-          <FilterData value={searchQuery} onChange={handleSearchChange} />
-        </Box>
-
-        <Box display="flex" justifyContent="flex-end" mb={2}>
-          <Button
-            // accessKey="c"
-            variant="contained"
-            sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
-            onClick={handleOpen}
+          
+          {/* Combined search and button container */}
+          <Box 
+            display="flex" 
+            flexDirection={isSmallScreen ? "column" : "row"} 
+            alignItems={isSmallScreen ? "stretch" : "center"}
+            gap={2}
+            width={isSmallScreen ? "100%" : "auto"}
           >
-            Add Customer (alt+c)
-          </Button>
+            <Box flexGrow={1} width={isSmallScreen ? "100%" : "auto"}>
+              <FilterData 
+                value={searchQuery} 
+                onChange={handleSearchChange} 
+                fullWidth={isSmallScreen}
+              />
+            </Box>
+            <Button
+              variant="contained"
+              sx={{ 
+                background: "linear-gradient(135deg, #182848, #324b84ff)", 
+                color: "#fff",
+                whiteSpace: 'nowrap',
+                width: isSmallScreen ? "100%" : "auto"
+              }}
+              onClick={handleOpen}
+            >
+              {isSmallScreen ? "Add Customer" : "Add Customer (alt+c)"}
+            </Button>
+          </Box>
         </Box>
 
-        <TableContainer
-          component={Paper}
-          sx={{
-            width: { xs: "30%", sm: "65%", md: "55%", lg: "100%" },
-            overflowX: "auto",
-          }}
-        >
-          <Table sx={{ minWidth: 1000 }}>
-            <TableHead sx={{ backgroundColor: "lightgrey" }}>
-              <TableRow>
-                <TableCell>
-                  <strong>Name</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Contact Number</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Address</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Actions</strong>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedCustomers.map((customer) => (
-                <TableRow key={customer._id}>
+        {isSmallScreen ? (
+          // Mobile view with cards
+          <Box>
+            {paginatedCustomers.map((customer) => (
+              <MobileCustomerCard key={customer._id} customer={customer} />
+            ))}
+          </Box>
+        ) : (
+          // Desktop view with table
+          <TableContainer
+            component={Paper}
+            sx={{
+              width: "100%",
+              overflowX: "auto",
+            }}
+          >
+            <Table sx={{ minWidth: 650 }}>
+              <TableHead sx={{ backgroundColor: "lightgrey" }}>
+                <TableRow>
                   <TableCell>
-                    {customer.first_name} {customer.last_name}
+                    <strong>Name</strong>
                   </TableCell>
-                  <TableCell>{customer.phone_number}</TableCell>
-                  <TableCell>{customer.address}  {customer.city}</TableCell>
                   <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleEdit(customer)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                     <IconButton
-                      color="error"
-                      onClick={() => handleDelete(customer._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <strong>Contact Number</strong>
                   </TableCell>
-                 
+                  <TableCell>
+                    <strong>Address</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Actions</strong>
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {paginatedCustomers.map((customer) => (
+                  <TableRow key={customer._id}>
+                    <TableCell>
+                      {customer.first_name} {customer.last_name}
+                    </TableCell>
+                    <TableCell>{customer.phone_number}</TableCell>
+                    <TableCell>{customer.address}  {customer.city}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEdit(customer)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(customer._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Box>
 
       <Snackbar
@@ -248,11 +319,13 @@ const CustomerList = () => {
         refresh={fetchUsers}
       />
 
-      <PaginationComponent
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      {filteredCustomer && filteredCustomer.length > 0 && (
+        <PaginationComponent
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
     </>
   );
 };

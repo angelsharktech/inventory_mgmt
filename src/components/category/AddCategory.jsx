@@ -16,6 +16,7 @@ import {
 } from "../../services/CategoryService";
 import { useAuth } from "../../context/AuthContext";
 import { getUserById } from "../../services/UserService";
+import Category from "../Category";
 
 const style = {
   position: "absolute",
@@ -32,17 +33,15 @@ const style = {
 const AddCategory = ({ open, handleClose, refresh }) => {
   const {webuser} = useAuth();
   const [categories, setCategories] = useState([]);
-  const [main, setMain] = useState(false);
+  // const [main, setMain] = useState(false);
+    const [mainUser, setMainUser] = useState();
+  const [main, setMain] = useState(true);
+
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    parent: "",
-    mainName: "",
-    mainDescription: "",
+    categoryName: ""
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [mainUser, setMainUser] = useState();
 
   useEffect(() => {
     fetchCategories();
@@ -52,7 +51,7 @@ const AddCategory = ({ open, handleClose, refresh }) => {
       const result = await getUserById(webuser.id);
       setMainUser(result);
       const res = await getAllCategories();
-      const parentsOnly = res.data.filter((cat) => cat.parent === null && cat?.organization_id === result.organization_id?._id);
+      const parentsOnly = res.data.filter((cat) =>  cat?.organization_id._id === result.organization_id?._id);
       setCategories(parentsOnly);
     } catch (err) {
       console.error("Error loading categories", err);
@@ -73,10 +72,7 @@ const AddCategory = ({ open, handleClose, refresh }) => {
 
       setFormData((prev) => ({
         ...prev,
-        // Reset the other type of form data
-        ...(nextMain
-          ? { name: "", description: "", parent: "" } // Clear subcategory fields
-          : { mainName: "", mainDescription: "" }), // Clear main category fields
+          categoryName: "" // Clear subcategory fields
       }));
 
       return nextMain;
@@ -85,13 +81,8 @@ const AddCategory = ({ open, handleClose, refresh }) => {
 
   const handleCancel = () => {
     handleClose();
-    setMain(false);
     setFormData({
-      name: "",
-      description: "",
-      parent: "",
-      mainName: "",
-      mainDescription: "",
+      categoryName: ""
     });
   };
 
@@ -99,30 +90,13 @@ const AddCategory = ({ open, handleClose, refresh }) => {
     try {
       let payload;
       
-      if (main) {
+      
         payload = {
-          name: formData.mainName,
-          description: formData.mainDescription,
-          organization_id: mainUser.organization_id?._id,
-        };
-
-        const res = await addCategories(payload);
-        
-        if (res) {
-          setSnackbarMessage("Category Added!");
-          setSnackbarOpen(true);
-          fetchCategories();
-          handleToggleMain();
-        }
-      } else {
-        payload = {
-          name: formData.name,
-          description: formData.description,
-          parent: formData.parent,
+          categoryName: formData.categoryName,
           organization_id: mainUser.organization_id?._id,
         };
          const res = await addCategories(payload);
-         console.log("child res", res);
+        //  console.log("child res", res);
          
         if (res) {
           setSnackbarMessage("Category Added!");
@@ -132,7 +106,7 @@ const AddCategory = ({ open, handleClose, refresh }) => {
           refresh();
         }
       }
-    } catch (error) {
+     catch (error) {
         console.error("Error adding category", error);
       setSnackbarMessage("Category Already Exist!");
       setSnackbarOpen(true);
@@ -151,80 +125,25 @@ const AddCategory = ({ open, handleClose, refresh }) => {
             <Typography variant="h6" mb={2}>
               Add Category
             </Typography>
-            <Button
-              variant={main ? "outlined" : "contained"}
-              sx={{
-                color: main ? "#2F4F4F" : "#fff",
-                backgroundColor: main ? "transparent" : "#2F4F4F",
-              }}
-              onClick={() => handleToggleMain()}
-            >
-              {main ? "Add Sub Category" : "Add Main Category"}
-            </Button>
           </Box>
-
-          {main ? (
             <>
-              <TextField
-                fullWidth
-                label="Main Category Name"
-                name="mainName"
-                value={formData.mainName}
-                onChange={handleChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Main Description"
-                name="mainDescription"
-                value={formData.mainDescription}
-                onChange={handleChange}
-                margin="normal"
-              />
-            </>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                select
-                label="Parent Category"
-                name="parent"
-                value={formData.parent}
-                onChange={handleChange}
-                margin="normal"
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </TextField>
               <TextField
                 fullWidth
                 label="Category Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Description"
-                name="description"
-                value={formData.description}
+                name="categoryName"
+                value={formData.categoryName}
                 onChange={handleChange}
                 margin="normal"
               />
             </>
-          )}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button onClick={handleCancel} sx={{ mr: 2, color: "#2F4F4F" }}>
+            <Button onClick={handleCancel} sx={{ mr: 2, color: "#182848" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+            sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", }}
               onClick={categoryAdd}
             >
               Save

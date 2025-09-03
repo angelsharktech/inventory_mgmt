@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -20,28 +20,25 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { exportToExcel, exportToPDF } from "../shared/Export";
 import moment from "moment";
 import {
-  getAllPurchaseBills,
-  getPurchaseBillByOrganization,
-} from "../../services/PurchaseBillService";
+  getAllSaleBills,
+  getSaleBillByOrganization,
+} from "../../services/SaleBillService";
 import { useAuth } from "../../context/AuthContext";
 import PaginationComponent from "../shared/PaginationComponent";
 import { getUserById } from "../../services/UserService";
+import { getPaymentByOrganization } from "../../services/PaymentModeService";
 import FilterData from "../shared/FilterData";
 import { useNavigate } from "react-router-dom";
-import { getPaymentByOrganization } from "../../services/PaymentModeService";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import { getPurchaseBillByOrganization } from "../../services/PurchaseBillService";
 
 const exportColumns = [
   { label: "#", key: "index" },
-  { label: "Supplier Name", key: "supplierName" },
+  { label: "Customer Name", key: "customerName" },
   { label: "Invoice No.", key: "invoiceNo" },
   { label: "Bill Date", key: "billDate" },
   { label: "Bill Total ", key: "billTotal" },
-  { label: "Payment Type", key: "paymentType" },
-  { label: "Paid Amount ", key: "paidAmount" },
-  { label: "Balance Amount ", key: "balanceAmount" },
-  { label: "Payment Mode", key: "paymentMode" },
-  { label: "Transaction Number", key: "transactionNumber" },
+
 ];
 
 const PurchaseBillReport = () => {
@@ -49,7 +46,7 @@ const PurchaseBillReport = () => {
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [mainUser, setMainUser] = useState();
+  const [mainUser, setMainUser] = useState(null);
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,8 +72,11 @@ const PurchaseBillReport = () => {
 
   const fetchBills = async () => {
     try {
-      // const data = await getAllPurchaseBills();
-      const data = await getPaymentByOrganization(
+      // const data = await getSaleBillByOrganization(
+      //   mainUser?.organization_id?._id,
+      //   page
+      // );
+      const data = await getPurchaseBillByOrganization(
         mainUser?.organization_id?._id
       );
       if (data.status === 401) {
@@ -89,14 +89,15 @@ const PurchaseBillReport = () => {
 
       // const allBills = data.data.docs || [];
       const allBills = data.data || [];
-      const filteredBills = allBills.filter(
-        (bill) => bill.billType === "purchase"
-      );
-
-      setBills(filteredBills);
+      console.log("All Bills:", allBills);
+      // const filteredBills = allBills.filter((bill) => bill.billType === "sale");
+      
+      setBills(allBills.docs);
+      console.log("Fetched Bills:", bills);
+      
     } catch (err) {
-      console.error("Failed to fetch purchase bills:", err);
-      setError("Failed to load purchase bills");
+      console.error("Failed to fetch sale bills:", err);
+      setError("Failed to load sale bills");
     } finally {
       setLoading(false);
     }
@@ -113,9 +114,9 @@ const PurchaseBillReport = () => {
       if (start) start.setHours(0, 0, 0, 0);
       if (end) end.setHours(23, 59, 59, 999);
 
-      const billNumber = (bill.purchasebill?.bill_number || "").toLowerCase();
-      const billStatus = (bill.purchasebill?.status || "").toLowerCase();
-      const billPayStatus = (bill?.paymentType).toLowerCase();
+      const billNumber = (bill?.bill_number || "").toLowerCase();
+      const billStatus = (bill?.status);
+      // const billPayStatus = (bill?.paymentType).toLowerCase();
       const billName = (
         bill.client_id?.first_name ||
         "" + " " + bill.client_id?.last_name ||
@@ -128,73 +129,73 @@ const PurchaseBillReport = () => {
       const matchesSearch =
         !searchQuery ||
         billNumber.includes(searchQuery) ||
-        billName.includes(searchQuery) ||
-        billStatus.includes(searchQuery) ||
-        billPayStatus.includes(searchQuery);
-      const matchesGST =
-        !gstFilter || bill.purchasebill?.billType === gstFilter;
+        billName.includes(searchQuery)||
+        billStatus.includes(searchQuery)
+        // billPayStatus.includes(searchQuery);
+
+      const matchesGST = !gstFilter || bill?.billType === gstFilter;
+
       return matchesDateRange && matchesSearch && matchesGST;
     });
   }, [bills, startDate, endDate, searchQuery, gstFilter]);
 
-  const getStatementRows = () => {
-    const rows = [];
-    const grouped = {};
+  // const getStatementRows = () => {
+  //   const rows = [];
+  //   const grouped = {};
 
-    filteredBills.forEach((entry) => {
-      const billId = entry.purchasebill?._id;
-      if (!grouped[billId]) grouped[billId] = [];
-      grouped[billId].push(entry);
-    });
+  //   filteredBills.forEach((entry) => {
+  //     const billId = entry.salebill?._id;
+  //     if (!grouped[billId]) grouped[billId] = [];
+  //     grouped[billId].push(entry);
+  //   });
 
-    Object.values(grouped).forEach((entries) => {
-      entries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      const bill = entries[0]?.purchasebill;
-      const billTotal = Number(bill?.grandTotal || 0);
-      let runningBalance = billTotal;
+  //   Object.values(grouped).forEach((entries) => {
+  //     entries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  //     const bill = entries[0]?.salebill;
+  //     const billTotal = Number(bill?.grandTotal || 0);
+  //     let runningBalance = billTotal;
 
-      entries.forEach((entry) => {
-        const paid = Number(entry.amount || 0);
-        const prevBalance = runningBalance;
-        runningBalance = prevBalance - paid;
+  //     entries.forEach((entry) => {
+  //       const paid = Number(entry.amount || 0);
+  //       const prevBalance = runningBalance;
+  //       runningBalance = prevBalance - paid;
 
-        rows.push({
-          ...entry,
-          amount: paid.toFixed(2),
-          previousBalance: prevBalance.toFixed(2),
-          newBalance: runningBalance.toFixed(2),
-          isOpening: false,
-        });
-      });
-    });
+  //       rows.push({
+  //         ...entry,
+  //         amount: paid.toFixed(2),
+  //         previousBalance: prevBalance.toFixed(2),
+  //         newBalance: runningBalance.toFixed(2),
+  //         isOpening: false,
+  //       });
+  //     });
+  //   });
 
-    return rows;
-  };
-
+  //   return rows;
+  // };
+  console.log("Filtered Bills:", filteredBills);
   const mappedBills = useMemo(
     () =>
-      getStatementRows().map((bill, index) => ({
+      filteredBills.map((bill, index) => ({
         index: index + 1,
-        supplierName: `${
-          bill.client_id?.first_name ||
-          "" + " " + bill.client_id?.last_name ||
+        customerName: `${
+          bill.bill_to?.first_name ||
+          "" + " " + bill.bill_to?.last_name ||
           ""
         }`,
-        invoiceNo: bill.purchasebill?.bill_number || "",
+        invoiceNo: bill?.bill_number || "",
         billDate: moment(bill.createdAt).format("DD/MM/YYYY") || "",
-        billTotal: bill.purchasebill?.grandTotal || 0,
-        paymentMode: bill?.paymentType || "",
-        paidAmount: bill.amount || 0, // <- this is the paid amount per row
-        previousBalance:
-          bill.previousBalance || bill.purchasebill?.grandTotal || 0,
-        balanceAmount: bill.newBalance || 0,
-        paymentType:
-          bill.purchasebill?.paymentType === "advance"
-            ? "Advance"
-            : bill.purchasebill?.paymentType === "full"
-            ? "Full"
-            : "",
-        transactionNumber: bill.upiId || "", // optional: can be added from payment details
+        billTotal: bill?.grandTotal || 0,
+        // paymentMode: bill?.paymentType || "",
+        // paidAmount: bill.amount || 0, // <- this is the paid amount per row
+        // previousBalance: bill.previousBalance || bill?.grandTotal || 0,
+        // balanceAmount: bill.newBalance || 0,
+        // paymentType:
+        //   bill.salebill?.paymentType === "advance"
+        //     ? "Advance"
+        //     : bill.salebill?.paymentType === "full"
+        //     ? "Full"
+        //     : "",
+        // transactionNumber: bill.upiId || "", // optional: can be added from payment details
       })),
     [filteredBills]
   );
@@ -212,18 +213,18 @@ const PurchaseBillReport = () => {
   };
 
   const totalBill = filteredBills.reduce(
-    (acc, bill) => acc + (bill.purchasebill?.grandTotal || 0),
+    (acc, bill) => acc + (bill.salebill?.grandTotal || 0),
     0
   );
   const totalPaid = filteredBills.reduce(
     (acc, bill) =>
       acc +
-      Number(bill.purchasebill?.advance || 0) +
-      Number(bill.purchasebill?.fullPaid || 0),
+      Number(bill.salebill?.advance || 0) +
+      Number(bill.salebill?.fullPaid || 0),
     0
   );
   const totalbal = filteredBills.reduce(
-    (acc, bill) => acc + Number(bill.purchasebill?.balance || 0),
+    (acc, bill) => acc + Number(bill.salebill?.balance || 0),
     0
   );
 
@@ -273,9 +274,9 @@ const PurchaseBillReport = () => {
             >
               <MenuItem value="">All</MenuItem>
               <MenuItem value="gst">GST</MenuItem>
-              <MenuItem value="non-gst">Non-GST</MenuItem>
+              <MenuItem value="nongst">Non-GST</MenuItem>
             </TextField>
-            <Button
+               <Button
               variant="outlined"
               // sx={{ ml: 2 }}
               onClick={handleExportClick}
@@ -321,7 +322,7 @@ const PurchaseBillReport = () => {
           component={Paper}
           sx={{
             maxWidth: 1100,
-            margin: "5px auto",
+            margin: "2px auto",
             maxHeight: 550,
             overflowY: "auto",
           }}
@@ -333,7 +334,7 @@ const PurchaseBillReport = () => {
                   <strong>#</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
-                  <strong>Supplier Name</strong>
+                  <strong>Customer Name</strong>
                 </TableCell>
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Invoice No.</strong>
@@ -341,57 +342,52 @@ const PurchaseBillReport = () => {
                 <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Date</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                {/* <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Paid Amount (₹)</strong>
                 </TableCell>
-
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Balance Amount (₹)</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
-                </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                </TableCell> 
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Transaction Number</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                <TableCell sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Status</strong>
-                </TableCell>
-                {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
-                  <strong>bill type</strong>
-                </TableCell> */}
+                </TableCell>*/}
+               
               </TableRow>
             </TableHead>
             <TableBody>
-              {getStatementRows().map((bill, index) => (
+              {filteredBills.map((bill, index) => (
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
-                    {bill.client_id?.first_name ||
-                      "N/A" + " " + bill.client_id?.last_name ||
-                      ""}
+                    {bill.bill_to?.first_name  
+                       + " " + (bill.bill_to?.last_name ? bill.bill_to?.last_name : "") 
+                      }
                   </TableCell>
-                  <TableCell>
-                    {bill.purchasebill?.bill_number || "N/A"}
-                  </TableCell>
+                  <TableCell>{bill?.bill_number || "N/A"}</TableCell>
                   <TableCell>
                     {bill.createdAt
                       ? moment(bill.createdAt).format("DD/MM/YYYY")
                       : "--"}
                   </TableCell>
                   <TableCell>
-                    {bill.purchasebill?.grandTotal?.toFixed(2) || "0.00"}
+                    {bill?.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">
-                    {bill.purchasebill?.paymentType === "advance"
+                  {/* <TableCell align="center">
+                    {bill.salebill?.paymentType === "advance"
                       ? "Advance"
-                      : bill.purchasebill?.paymentType === "full"
+                      : bill.salebill?.paymentType === "full"
                       ? "Full"
                       : "N/A"}
                   </TableCell>
@@ -400,46 +396,19 @@ const PurchaseBillReport = () => {
                       ? "-"
                       : Number(bill.amount || 0).toFixed(2)}
                   </TableCell>
-
                   <TableCell>{bill.newBalance || "0.00"}</TableCell>
                   <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
                   <TableCell align="center">
-                    {/* You'll need to add transaction number logic based on your payment data */}
                     {bill.upiId || "N/A"}
-                  </TableCell>
+                  </TableCell> 
                   <TableCell align="center">
-                    {bill.purchasebill?.status}
-                  </TableCell>
-                  {/* <TableCell align="center">
-                     {bill.purchasebill?.billType || "N/A"}
-                  </TableCell> */}
+                    {bill.salebill?.status }
+                  </TableCell>*/}
                 </TableRow>
               ))}
-              {/* Totals */}
-              <TableRow
-                sx={{
-                  position: "sticky",
-                  bottom: 0,
-                  zIndex: 1,
-                  background: "#e0e0e0ff",
-                  fontWeight: "bold",
-                }}
-              >
-                <TableCell colSpan={9}>
-                  <strong>Total Bills: {filteredBills.length}</strong>
-                </TableCell>
-                {/* <TableCell align="center" colSpan={2}>
-                  <strong>Total Amount: {totalBill.toFixed(2)}</strong>
-                </TableCell> */}
-                <TableCell align="center" colSpan={2}>
-                  <strong>Total Paid: {totalPaid.toFixed(2)}</strong>
-                </TableCell>
-                {/* <TableCell align="center" colSpan={3}>
-                  <strong>Balance: {totalbal.toFixed(2)}</strong>
-                </TableCell> */}
-              </TableRow>
+
             </TableBody>
           </Table>
         </TableContainer>

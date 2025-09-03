@@ -171,7 +171,7 @@ const SaleBillList = () => {
             <Button
               // accessKey="s"
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{background: "linear-gradient(135deg, #182848, #324b84ff)",color: "#fff" }}
               onClick={handleOpen}
             >
               Create Sale bill (Alt + S)
@@ -206,7 +206,7 @@ const SaleBillList = () => {
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Bill Total (₹)</strong>
                 </TableCell>
-                <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
+                {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Type</strong>
                 </TableCell>
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
@@ -217,7 +217,7 @@ const SaleBillList = () => {
                 </TableCell>
                 <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Notes</strong>
-                </TableCell>
+                </TableCell> */}
                 {/* <TableCell align="center" sx={{ background: "#e0e0e0ff" }}>
                   <strong>Payment Mode</strong>
                 </TableCell>
@@ -243,7 +243,7 @@ const SaleBillList = () => {
                   <TableCell align="center">
                     {bill.grandTotal?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     {bill.paymentType || "N/A"}
                   </TableCell>
                   <TableCell align="center">
@@ -254,7 +254,7 @@ const SaleBillList = () => {
                   <TableCell align="center">
                     {bill.balance?.toFixed(2) || "0.00"}
                   </TableCell>
-                  <TableCell align="center">{bill.notes}</TableCell>
+                  <TableCell align="center">{bill.notes}</TableCell> */}
                   {/* <TableCell align="center">
                     {bill.paymentType === "advance"
                       ? "Advance"
@@ -272,12 +272,12 @@ const SaleBillList = () => {
                     >
                       <Visibility style={{ color: "#1976d2" }} />
                     </IconButton>
-                    <IconButton
+                    {/* <IconButton
                       color="inherit"
                       onClick={() => handleEditBill(bill)}
                     >
                       <EditIcon style={{ color: "#f57c00" }} />
-                    </IconButton>
+                    </IconButton> */}
                     <IconButton
                       color="inherit"
                       onClick={() => handleCancelBill(bill._id)}
@@ -289,7 +289,7 @@ const SaleBillList = () => {
               ))}
 
               {/* Totals */}
-              <TableRow
+              {/* <TableRow
                 sx={{
                   position: "sticky",
                   bottom: 0,
@@ -310,7 +310,7 @@ const SaleBillList = () => {
                 <TableCell align="center" colSpan={3}>
                   <strong>Balance: {totalbal.toFixed(2)}</strong>
                 </TableCell>
-              </TableRow>
+              </TableRow> */}
             </TableBody>
           </Table>
         </TableContainer>

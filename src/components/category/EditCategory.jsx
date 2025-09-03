@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  MenuItem,
   Modal,
   Snackbar,
   TextField,
@@ -29,56 +28,34 @@ const style = {
 };
 
 const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
-  const {webuser} = useAuth();
+  const { webuser } = useAuth();
   const [categories, setCategories] = useState([]);
+  // Consistent state shape: use 'name' and 'slug'
   const [formData, setFormData] = useState({
-    name: "",
+    categoryName: "",
     slug: "",
-    description: "",
-    parent: "",
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  // Pre-fill form when modal opens
-  //  useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     try {
-  //       const res = await getAllCategories();
-  //       const parentsOnly = res.data.filter((cat) => cat.parent === null);
-  //       setCategories(parentsOnly);
-
-  //       if (data) {
-  //         // Find the parent category by name to get its _id
-  //         const matchedParent = parentsOnly.find(cat => cat.name === data.parent);
-
-  //         setFormData({
-  //           name: data.name || "",
-  //           description: data.description || "",
-  //           parent: matchedParent?._id || "", // get _id if matched
-  //         });
-  //       }
-  //     } catch (err) {
-  //       console.error("Error loading categories", err);
-  //     }
-  //   };
-
-  //   fetchCategories();
-  // }, [data]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // fetch current user (organization) and categories
         const result = await getUserById(webuser.id);
         const res = await getAllCategories();
-        const parentsOnly = res.data.filter((cat) => cat.parent === null && cat?.organization_id === result.organization_id?._id);
+
+        // Filter categories by organization id (adjust fields per your API)
+        const parentsOnly = res.data.filter(
+          (cat) => cat?.organization_id?._id === result.organization_id?._id
+        );
         setCategories(parentsOnly);
 
         if (data) {
+          // Prefill with backend's field names: assume data has .name and .slug/_id
           setFormData({
-            name: data.name || "",
-            slug: data.name || "",
-            description: data.description || "",
-            parent: data.parent?._id || "", // access parent._id directly
+            categoryName: data.categoryName ?? data.categoryName ?? "",
+            slug: data.slug ?? (data.name ? String(data.name).toLowerCase() : ""),
           });
         }
       } catch (err) {
@@ -86,33 +63,47 @@ const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
       }
     };
 
-    fetchCategories();
-  }, [data]);
+    if (webuser?.id) fetchCategories();
+  }, [data, webuser]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
   const handleUpdate = async () => {
     try {
+      // Build payload with fields your backend expects (name and slug)
       const payload = {
-        ...formData,
-        slug: formData.name.toLowerCase(),
-        parent: formData.parent === "" ? null : formData.parent,
+        categoryName: formData.categoryName,
+        // slug: formData.categoryName ? formData.categoryName.toLowerCase().replace(/\s+/g, "-") : formData.slug,
+        // add other fields here if needed, e.g. parent
       };
-      const result = await updateCategory(data.id, payload);
+
+      // Make sure you pass the correct id field expected by the API (data._id or data.id)
+      const idToUse = data._id ?? data.id;
+      if (!idToUse) {
+        throw new Error("Missing category id to update (data._id or data.id)");
+      }
+
+      const result = await updateCategory(idToUse, payload);
+      // check result shape — adapt if your service returns e.g. result.data.success
       if (result) {
         setSnackbarMessage("Category Updated!");
         setSnackbarOpen(true);
-        refresh();
-        handleCloseEdit();
+        refresh?.(); // call parent's refresh if provided
+        handleCloseEdit?.();
+      } else {
+        // defensive: if result is falsy
+        setSnackbarMessage("Update failed: empty response");
+        setSnackbarOpen(true);
       }
     } catch (error) {
       console.error("Update failed", error);
-      setSnackbarMessage(error);
+      setSnackbarMessage(error?.message ?? "Update failed");
       setSnackbarOpen(true);
     }
   };
@@ -127,36 +118,30 @@ const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
 
           <TextField
             fullWidth
-            select
-            label="Parent Category"
-            name="parent"
-            value={formData.parent}
-            onChange={handleChange}
-            margin="normal"
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat._id} value={cat._id}>
-                {cat.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            fullWidth
             label="Category Name"
-            name="name"
-            value={formData.name}
+            name="categoryName"                   // <-- use "name"
+            value={formData.categoryName}
             onChange={handleChange}
             margin="normal"
           />
+{/* 
+          <TextField
+            fullWidth
+            label="Slug (optional)"
+            name="slug"
+            value={formData.slug}
+            onChange={handleChange}
+            margin="normal"
+            helperText="Auto-generated from name if left empty"
+          /> */}
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button onClick={handleCloseEdit} sx={{ mr: 2 }}>
+            <Button onClick={handleCloseEdit} sx={{ mr: 2, color: "#182848" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)" }}
               onClick={handleUpdate}
             >
               Update
@@ -164,6 +149,7 @@ const EditCategory = ({ edit, data, handleCloseEdit, refresh }) => {
           </Box>
         </Box>
       </Modal>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

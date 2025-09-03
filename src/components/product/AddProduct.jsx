@@ -46,14 +46,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
     quantity: "",
     category: "",
     tags: "",
-    unit:"",
-    // description: "",
-    // weight: "",
-    // dimensions: {
-    //   length: "",
-    //   width: "",
-    //   height: "",
-    // },
+    unit: "",
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -64,11 +57,27 @@ const AddProduct = ({ open, handleClose, refresh }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const result = await getUserById(webuser.id)
-        setMainUser(result)
-        const res = await getAllCategories();
-        const parentsOnly = res.data.filter((cat) => cat.parent === null && cat?.organization_id === result.organization_id?._id);
-        
+        // get user (normalize shape)
+        const userRes = await getUserById(webuser.id);
+        const userData = userRes?.data || userRes; // adapt if service returns axios response
+        setMainUser(userData);
+
+        // get categories (normalize to array)
+        const catRes = await getAllCategories();
+        // catRes.data might be { success: true, data: [...] } or might be the array directly
+        const allCats = catRes?.data?.data ?? catRes?.data ?? [];
+
+        // normalize user's organization id
+        const userOrgId =
+          userData?.organization_id?._id ?? userData?.organization_id ?? null;
+
+        const parentsOnly = allCats.filter((cat) => {
+          const catOrgId =
+            cat?.organization_id?._id ?? cat?.organization_id ?? null;
+          return String(catOrgId) === String(userOrgId);
+        });
+
+        // console.log("Fetched categories:", parentsOnly);
         setCategories(parentsOnly);
       } catch (err) {
         console.error("Error loading categories", err);
@@ -76,14 +85,14 @@ const AddProduct = ({ open, handleClose, refresh }) => {
     };
 
     fetchCategories();
-  }, []);
+  }, [webuser.id]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
-   
   };
 
   const handleCancel = () => {
@@ -99,13 +108,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       quantity: "",
       category: "",
       tags: "",
-      unit:"",
-      // weight: "",
-      // dimensions: {
-      //   length: "",
-      //   width: "",
-      //   height: "",
-      // },
+      unit: "",
     });
   };
 
@@ -115,36 +118,38 @@ const AddProduct = ({ open, handleClose, refresh }) => {
       setSnackbarOpen(true);
       return;
     }
-    // if (form.hsnCode.length < 6 || form.hsnCode.length > 8) {
-    //   setSnackbarMessage("HSN code must be 6 to 8 digits!");
-    //   setSnackbarOpen(true);
-    //   return;
-    // }
+
+
+
+    if (form.compareAtPrice && (form.compareAtPrice) < (form.price)) {
+      setSnackbarMessage("MRP should be greater than Selling Price!");
+      setSnackbarOpen(true);
+      return;
+    }
 
     const product = {
       ...form,
-      category: form.category ? form.category : (form.category = ""),
       price: parseFloat(form.price),
-      compareAtPrice: parseFloat(form.compareAtPrice),
-      quantity: parseInt(form.quantity),
-      // weight: parseFloat(form.weight),
-      tags: form.tags.split(",").map((tag) => tag.trim()),
+      compareAtPrice: parseFloat(form.compareAtPrice) || 0,
+      quantity: parseInt(form.quantity) || 0,
+      tags: form.tags ? form.tags.split(",").map((tag) => tag.trim()) : [],
       hasVariant: hasVariant,
       variantOptions: hasVariant === "Yes" ? variants : [],
       createdBy: webuser.id,
-      organization_id: mainUser.organization_id?._id,
+      organization_id: mainUser?.organization_id?._id || mainUser?.organization_id,
     };
-    try {           
+
+    try {
       const res = await addProducts(product);
-      
-      if (res) {
+      // console.log("Add product response:", res);
+      if (res.success === true) {
         setSnackbarMessage("Product Added!");
         setSnackbarOpen(true);
+        handleClose();
         refresh();
-        handleCancel();
       }
     } catch (error) {
-      console.error("Error adding product", error);
+      // console.error("Error adding product", error);
     }
   };
 
@@ -156,10 +161,45 @@ const AddProduct = ({ open, handleClose, refresh }) => {
             Add Product
           </Typography>
 
+
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                sx={{ width: "200px" }}
+                select
+                label="Category Name"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+              >
+                {categories.map((cat) => (
+                  <MenuItem key={cat._id || cat.id} value={cat._id || cat.id}>
+                    {cat.categoryName || cat.name || cat.title || "Unnamed category"}
+                  </MenuItem>
+                ))}
+
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                sx={{ width: "200px" }}
+                select
+                label="Supplier Name"
+                name="supplier"
+                value={form.supplier || ""}   // updated to match supplier field
+                onChange={handleChange}
+              >
+                {/* Static supplier names */}
+                <MenuItem value="Vikas Jadhav">Vikas Jadhav</MenuItem>
+                <MenuItem value="Pravin Kanse">Pravin Kanse</MenuItem>
+                <MenuItem value="Radhika Shinde">Radhika Shinde</MenuItem>
+              </TextField>
+            </Grid>
+
+
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Name"
+                label="Product Name"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
@@ -170,7 +210,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
             <Grid item xs={12} sm={6}>
               <TextField
                 sx={{ width: "200px" }}
-                label="HSN Number"
+                label="Product Code"
                 name="hsnCode"
                 value={form.hsnCode}
                 onChange={handleChange}
@@ -188,7 +228,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 required
               />
             </Grid>
-            <Grid item xs={6}>
+            {/* <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
                 label="MRP(₹)"
@@ -197,8 +237,8 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 value={form.compareAtPrice}
                 onChange={handleChange}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </Grid> */}
+            {/* <Grid item xs={12} sm={6}>
               <TextField
                 sx={{ width: "200px" }}
                 label="SKU"
@@ -206,7 +246,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 value={form.sku}
                 onChange={handleChange}
               />
-            </Grid>
+            </Grid> */}
 
             <Grid item xs={12}>
               <TextField
@@ -217,19 +257,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            {/* <Grid item xs={12}>
-              <TextField
-                sx={{ width: "200px" }}
-                multiline
-                //   minRows={3}
-                label="Description"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-              />
-            </Grid> */}
-            
-
             <Grid item xs={6}>
               <TextField
                 sx={{ width: "200px" }}
@@ -249,36 +276,10 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-            {/* <Grid item xs={6}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Weight (kg)"
-                name="weight"
-                type="number"
-                value={form.weight}
-                onChange={handleChange}
-              />
-            </Grid> */}
 
-            <Grid item xs={12}>
-              <TextField
-                sx={{ width: "200px" }}
-                select
-                label="Category"
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                //   margin="normal"
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
 
-            <Grid item xs={12}>
+
+            {/* <Grid item xs={12}>
               <TextField
                 sx={{ width: "200px" }}
                 label="Tags (comma separated)"
@@ -287,38 +288,6 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 onChange={handleChange}
               />
             </Grid>
-
-            {/* Dimensions */}
-            {/* <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Length (cm)"
-                name="length"
-                type="number"
-                value={form.dimensions.length}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Width (cm)"
-                name="width"
-                type="number"
-                value={form.dimensions.width}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                sx={{ width: "200px" }}
-                label="Height (cm)"
-                name="height"
-                type="number"
-                value={form.dimensions.height}
-                onChange={handleChange}
-              />
-            </Grid> */}
             <Grid item xs={12}>
               <Autocomplete
                 options={["Yes", "No"]}
@@ -329,8 +298,8 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                 )}
                 sx={{ width: "200px" }}
               />
-            </Grid>
-            {hasVariant === "Yes" && (
+            </Grid> */}
+            {/* {hasVariant === "Yes" && (
               <>
                 {variants.map((variant, idx) => (
                   <Grid container spacing={2} key={idx}>
@@ -361,7 +330,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                       />
                     </Grid>
                     <Grid item xs={2} mt={1}>
-                      <Button 
+                      <Button
                         onClick={() => {
                           const updated = [...variants];
                           updated.splice(idx, 1);
@@ -370,7 +339,7 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                         color="error"
                         variant="outlined"
                       >
-                       <RemoveCircleOutlineOutlinedIcon/>
+                        <RemoveCircleOutlineOutlinedIcon />
                       </Button>
                     </Grid>
                   </Grid>
@@ -383,20 +352,20 @@ const AddProduct = ({ open, handleClose, refresh }) => {
                     variant="outlined"
                     color="#2F4F4F"
                   >
-                    <AddCircleOutlineOutlinedIcon/>
+                    <AddCircleOutlineOutlinedIcon />
                   </Button>
                 </Box>
               </>
-            )}
+            )} */}
           </Grid>
 
           <Box mt={4} display="flex" justifyContent="flex-end">
-            <Button onClick={handleCancel} sx={{ mr: 2, color: "#2F4F4F" }}>
+            <Button onClick={handleCancel} sx={{ mr: 2, color: "#324b84ff" }}>
               Cancel
             </Button>
             <Button
               variant="contained"
-              sx={{ backgroundColor: "#2F4F4F", color: "#fff" }}
+              sx={{ background: "linear-gradient(135deg, #182848, #324b84ff)", color: "#fff" }}
               onClick={handleSave}
             >
               Save

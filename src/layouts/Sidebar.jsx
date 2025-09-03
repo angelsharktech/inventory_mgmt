@@ -34,21 +34,22 @@ import { useAuth } from "../context/AuthContext";
 const navItems = [
   { label: "Dashboard", icon: <DashboardIcon /> },
   { label: "Suppliers", icon: <StoreIcon /> },
-  { label: "Customer", icon: <PeopleIcon /> },
+  // { label: "Customer", icon: <PeopleIcon /> },
   { label: "Category", icon: <CategoryIcon /> },
   { label: "Product", icon: <Inventory2Icon /> },
-  { label: "Purchase Bill", icon: <AccountBalanceWalletIcon /> },
-  { label: "Sale Bill", icon: <ReceiptLongIcon /> },
-  { label: "Bill Reports", icon: <AssessmentIcon />, hasDropdown: true },
-  { label: "Quotation", icon: <CurrencyRupeeIcon /> },
+  { label: "Stock In", icon: <AccountBalanceWalletIcon /> },
+  { label: "Stock Out", icon: <ReceiptLongIcon /> },
+  { label: "Reports", icon: <AssessmentIcon />, hasDropdown: true },
+  // { label: "Quotation", icon: <CurrencyRupeeIcon /> },
   // { label: "Logout", icon: <LogoutIcon /> },
 ];
 
-const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report","HSN Report"];  //
+const billReportsSubItems = ["Stock In Report", "Stock Out Report"];  
+// const billReportsSubItems = ["Sale Bill Report", "Purchase Bill Report","HSN Report"];  
 
 const selectedStyle = {
   background: "#fff !important",
-  color: "#2F4F4F !important",
+  color: "#182848 !important",
   borderRadius: "8px",
   fontWeight: 600,
   boxShadow: 2,
@@ -61,9 +62,9 @@ const unselectedStyle = {
   transition: "background 0.2s, color 0.2s",
   "&:hover": {
     backgroundColor: "#fff",
-    color: "#2F4F4F", // text color on hover
+    color: "#182848", 
     "& .MuiListItemIcon-root": {
-      color: "#2F4F4F", // icon color on hover
+      color: "#182848", 
     },
   },
 };
@@ -96,8 +97,8 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
     <Box
       sx={{
         width: 200,
-        backgroundColor: "#2F4F4F",
-        color: "white",
+        background: "linear-gradient(135deg, #182848, #324b84ff)",
+        color: "#fff",
         // mt: 7,
          height: `100vh`,
         px: 2,
@@ -133,7 +134,7 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
                   onClick={() => setOpenReports(!openReports)}
                   sx={selectedTab.startsWith("Report") ? selectedStyle : unselectedStyle}
                 >
-                  <ListItemIcon sx={{ color: selectedTab.startsWith("Report") ? "#2F4F4F" : "white" }}>
+                  <ListItemIcon sx={{ color: selectedTab.startsWith("Report") ? "#182848" : "white" }}>
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText primary={item.label} />
@@ -166,7 +167,7 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
                 onClick={() => handleNavClick(item.label)}
                 sx={selectedTab === item.label ? selectedStyle : unselectedStyle}
               >
-                <ListItemIcon sx={{ color: selectedTab === item.label ? "#2F4F4F" : "white" }}>
+                <ListItemIcon sx={{ color: selectedTab === item.label ? "#182848" : "white" }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.label} />
